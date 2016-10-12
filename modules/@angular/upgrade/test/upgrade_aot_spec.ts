@@ -10,7 +10,7 @@ import {Injector, Class, Component, EventEmitter, NO_ERRORS_SCHEMA, NgModule, Ng
 import {async} from '@angular/core/testing';
 import {BrowserModule, platformBrowser, } from '@angular/platform-browser';
 import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
-import {UpgradeModule} from '@angular/upgrade';
+import {UpgradeModule, ng2ProviderFactory, ng1ServiceProvider} from '@angular/upgrade';
 import * as angular from '@angular/upgrade/src/angular_js';
 
 export function main() {
@@ -947,7 +947,7 @@ export function main() {
         schemas: [NO_ERRORS_SCHEMA],
         providers: [
           {provide: Ng2Service, useValue: 'ng2 service value'},
-          UpgradeModule.ng1ServiceProvider({ provide: Ng1Service, ng1Token: 'ng1Service' })
+          ng1ServiceProvider({ provide: Ng1Service, ng1Token: 'ng1Service' })
         ]
       })
       class MyNg2Module extends UpgradeModule {
@@ -956,7 +956,7 @@ export function main() {
 
       // create the ng1 module that will import an ng2 service
       const ng1Module = angular.module('ng1Module', [])
-        .factory('ng2Service', UpgradeModule.ng2ProviderFactory(Ng2Service))
+        .factory('ng2Service', ng2ProviderFactory(Ng2Service))
         .factory('ng1Service', () => 'ng1 service value');
 
       it('should export ng2 instance to ng1', async(() => {

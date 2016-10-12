@@ -1,28 +1,6 @@
 import {NgModule, Injector, NgZone, FactoryProvider, ComponentFactory, ComponentFactoryResolver} from '@angular/core';
-import * as angular from './angular_js';
-
-// Temporary global location where the ng1Injector is stored during bootstrap
-let tempGlobalNg1Injector: angular.IInjectorService = null;
-
-///////////////////////////////////
-// START: ng1 service factories
-// We must use exported named functions for the ng2 factories
-// to keep the compiler happy:
-// > Metadata collected contains an error that will be reported at runtime:
-// >   Function calls are not supported.
-// >   Consider replacing the function or lambda with a reference to an exported function
-export function $injectorFactory() {
-  return tempGlobalNg1Injector;
-}
-export function $rootScopeFactory(i: angular.IInjectorService) {
-  return i.get('$rootScope');
-}
-export function $compileFactory(i: angular.IInjectorService) {
-  return i.get('$compile');
-}
-// END: ng1 service factories
-///////////////////////////////////
-
+import { ng1Providers, setNg1Injector } from './ng1_providers';
+import * as angular from '../angular_js';
 
 /**
  * UpgradeModule is the base class for the module that will contain all the
@@ -30,44 +8,9 @@ export function $compileFactory(i: angular.IInjectorService) {
  * between Angular 1 and Angular 2+
  */
 @NgModule({
-  providers: [
-    { provide: '$injector', useFactory: $injectorFactory },
-    { provide: '$rootScope', useFactory: $rootScopeFactory, deps: ['$injector']},
-    { provide: '$compile', useFactory: $compileFactory, deps: ['$injector']}
-    // Add other providers as necessary
-  ]
+  providers: [ng1Providers]
 })
 export class UpgradeModule {
-  /**
-   * Create an Angular 1 factory that will return an Angular 2 injectable thing
-   * (e.g. service, pipe, component, etc)
-   *
-   * Usage:
-   *
-   * ```
-   * angular1Module.factory('someService', ng2ProviderFactory(SomeService))
-   * ```
-   */
-  static ng2ProviderFactory(token: any) {
-    return ['ng2Injector', (i: Injector) => i.get(token)];
-  }
-
-  /**
-   * Create an Angular 2 provider description for accessing an Angular 1 service
-   * in Angular 2
-   *
-   * Usage:
-   *
-   * ```
-   * @NgModule({
-   *   providers: [UpgradeModule.ng1ServiceProvider({provide: SomeServiceToken, ng1Token: 'someService'}],
-   *   ...
-   * })
-   * ```
-   */
-  static ng1ServiceProvider({provide, ng1Token}: {provide: any, ng1Token: any}): FactoryProvider {
-    return {provide: provide, useFactory: (i: angular.IInjectorService) => i.get(ng1Token), deps: ['$injector']};
-  }
 
   static downgradeNg2Component({component, inputs = [], outputs = []}:
                                 {component: any, inputs?: string[], outputs?: string[]}) : Function {
@@ -114,10 +57,18 @@ export class UpgradeModule {
     this.ngZone = ng2Injector.get(NgZone);
   }
 
+  // This method prevents the bootstrapping code from complaining about a
+  // lack of `bootstrap` component in the metadata.
   ngDoBootstrap() {}
 
+  /**
+   * Bootstrap this NgModule with into an Angular 1 application.
+   * @param element the element on which to bootstrap the Angular 1 application
+   * @param [modules] the Angular 1 modules to bootstrap for this application
+   * @param [config] optional extra Angular 1 config block to run when bootstrapping
+   */
   bootstrapNg1(element: Element,
-               modules?: any[],
+               modules?: string[],
                config?: angular.IAngularBootstrapConfig)
   {
     // Create an ng1 module to bootstrap
@@ -140,8 +91,7 @@ export class UpgradeModule {
   }
 
   private provideNg1InjectorToNg2(ng1Injector: angular.IInjectorService) {
-    this.ng1Injector = tempGlobalNg1Injector = ng1Injector;
+    setNg1Injector(this.ng1Injector = ng1Injector);
     this.ng2Injector.get('$injector'); // force the reading of the value.
-    tempGlobalNg1Injector = null; // prevent memory leak
   }
 }
