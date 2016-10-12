@@ -85,8 +85,8 @@ export class UpgradeModule {
     // Create an ng1 module to bootstrap
     const upgradeModule = angular.module('angular1UpgradeModule', modules)
       .value('ng2Injector', this.ng2Injector)
-      .run(['$injector', ($injector: angular.IInjectorService) => this.provideNg1InjectorToNg2($injector)])
-      .config(config);
+      .config(['$injector', ($injector: angular.IInjectorService) => this.provideNg1InjectorToNg2($injector)]);
+//      .config(config);
 
     // Bootstrap the module
     angular.bootstrap(element, [upgradeModule.name], config);
