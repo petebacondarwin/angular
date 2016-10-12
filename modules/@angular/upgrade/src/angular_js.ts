@@ -15,7 +15,7 @@ export interface IModule {
   controller(name: string, type: any): IModule;
   factory(key: string, factoryFn: any): IModule;
   value(key: string, value: any): IModule;
-  run(a: any): void;
+  run(a: any): IModule;
 }
 export interface ICompileService {
   (element: Element|NodeList|string, transclude?: Function): ILinkFn;
