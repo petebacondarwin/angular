@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {Injector, Class, Component, EventEmitter, NO_ERRORS_SCHEMA, NgModule, Testability, destroyPlatform, forwardRef} from '@angular/core';
+import {Injector, Class, Component, EventEmitter, NO_ERRORS_SCHEMA, NgModule, NgModuleRef, OpaqueToken, Testability, destroyPlatform, forwardRef} from '@angular/core';
 import {async} from '@angular/core/testing';
 import {BrowserModule, platformBrowser, } from '@angular/platform-browser';
 import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
@@ -925,51 +925,51 @@ export function main() {
     //      }));
     // });
 
-    describe('injection', () => {
-      function SomeToken() {}
+    fdescribe('injection', () => {
 
-      fit('should export ng2 instance to ng1', (done) => {
+      // Tokens used in ng2 to identify services
+      const Ng2Service = new OpaqueToken('ng2-service');
+      const Ng1Service = new OpaqueToken('ng1-service');
 
-        // create the ng1 module that will import an ng2 service
-        const ng1Module = angular.module('ng1Module', [])
-          .factory('someToken', UpgradeModule.ng2ProviderFactory(SomeToken));
+      // Sample ng1 NgModule for tests
+      @NgModule({
+        imports: [BrowserModule, UpgradeModule],
+        schemas: [NO_ERRORS_SCHEMA],
+        providers: [
+          {provide: Ng2Service, useValue: 'ng2 service value'},
+          UpgradeModule.ng1ServiceProvider({ provide: Ng1Service, ng1Token: 'ng1Service' })
+        ]
+      })
+      class MyNg2Module extends UpgradeModule {
+        constructor(injector: Injector) { super(injector); }
+      }
 
-        // create the ng2 module that will export a service
-        @NgModule({
-          providers: [{provide: SomeToken, useValue: 'correct_value'}],
-          imports: [BrowserModule, UpgradeModule],
-          schemas: [NO_ERRORS_SCHEMA]
-        })
-        class MyNg2Module extends UpgradeModule {
-          constructor(injector: Injector) {
-            super(injector);
-            this.bootstrapNg1(html('<div>'), [ng1Module.name]);
-          }
-        }
+      // create the ng1 module that will import an ng2 service
+      const ng1Module = angular.module('ng1Module', [])
+        .factory('ng2Service', UpgradeModule.ng2ProviderFactory(Ng2Service))
+        .factory('ng1Service', () => 'ng1 service value');
 
+      function cleanup(ref: NgModuleRef<MyNg2Module>) {
+        ref.destroy();
+        ref.instance.ng1Injector.get('$rootScope').$destroy();
+      }
+
+      it('should export ng2 instance to ng1', async(() => {
         platformBrowserDynamic().bootstrapModule(MyNg2Module).then((ref) => {
-          expect(ref.instance.ng1Injector.get('someToken')).toBe('correct_value');
-          done();
+          ref.instance.bootstrapNg1(html('<div>'), [ng1Module.name]);
+          const ng1Injector = ref.instance.ng1Injector;
+          expect(ng1Injector.get('ng2Service')).toBe('ng2 service value');
+          cleanup(ref);
         });
-      });
+      }));
 
-      // it('should export ng1 instance to ng2', async(() => {
-      //      const MyNg2Module =
-      //          NgModule({imports: [BrowserModule]}).Class({constructor: function() {}});
-
-      //      const adapter: UpgradeAdapter = new UpgradeAdapter(MyNg2Module);
-      //      const module = angular.module('myExample', []);
-      //      module.value('testValue', 'secreteToken');
-      //      adapter.upgradeNg1Provider('testValue');
-      //      adapter.upgradeNg1Provider('testValue', {asToken: 'testToken'});
-      //      adapter.upgradeNg1Provider('testValue', {asToken: String});
-      //      adapter.bootstrap(html('<div>'), ['myExample']).ready((ref) => {
-      //        expect(ref.ng2Injector.get('testValue')).toBe('secreteToken');
-      //        expect(ref.ng2Injector.get(String)).toBe('secreteToken');
-      //        expect(ref.ng2Injector.get('testToken')).toBe('secreteToken');
-      //        ref.dispose();
-      //      });
-      //    }));
+      it('should export ng1 instance to ng2', async(() => {
+        platformBrowserDynamic().bootstrapModule(MyNg2Module).then((ref) => {
+          ref.instance.bootstrapNg1(html('<div>'), [ng1Module.name]);
+          var ng2Injector = ref.instance.ng2Injector;
+          expect(ng2Injector.get(Ng1Service)).toBe('ng1 service value');
+        });
+      }));
     });
 
   //   describe('testability', () => {
