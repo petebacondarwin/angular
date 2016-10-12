@@ -928,7 +928,7 @@ export function main() {
     describe('injection', () => {
       function SomeToken() {}
 
-      fit('should export ng2 instance to ng1', async(() => {
+      fit('should export ng2 instance to ng1', (done) => {
 
         // create the ng1 module that will import an ng2 service
         const ng1Module = angular.module('ng1Module', [])
@@ -937,26 +937,21 @@ export function main() {
         // create the ng2 module that will export a service
         @NgModule({
           providers: [{provide: SomeToken, useValue: 'correct_value'}],
-          imports: [BrowserModule],
+          imports: [BrowserModule, UpgradeModule],
           schemas: [NO_ERRORS_SCHEMA]
         })
         class MyNg2Module extends UpgradeModule {
           constructor(injector: Injector) {
             super(injector);
-            console.log(ng1Module.name);
-            debugger;
             this.bootstrapNg1(html('<div>'), [ng1Module.name]);
-            console.log('bootstrap called');
-            debugger;
           }
         }
 
         platformBrowserDynamic().bootstrapModule(MyNg2Module).then((ref) => {
-          debugger;
-          //console.log(ref.injector.get('$rootScope'));
-          //expect(ref.ng1Injector.get('someToken')).toBe('correct_value');
+          expect(ref.instance.ng1Injector.get('someToken')).toBe('correct_value');
+          done();
         });
-      }));
+      });
 
       // it('should export ng1 instance to ng2', async(() => {
       //      const MyNg2Module =
