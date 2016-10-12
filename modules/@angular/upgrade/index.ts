@@ -12,6 +12,8 @@
  * Entry point for all public APIs of the upgrade package.
  */
 export * from './src/upgrade';
-export { UpgradeModule } from './src/upgrade_module';
+export { UpgradeModule } from './src/aot/upgrade_module';
+export {ng2ProviderFactory } from './src/aot/ng2_provider_factory';
+export { ng1ServiceProvider } from './src/aot/ng1_service_provider';
 
 // This file only reexports content of the `src` folder. Keep it that way.
