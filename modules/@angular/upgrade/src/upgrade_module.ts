@@ -1,4 +1,4 @@
-import {NgModule, Injector, NgZone, FactoryProvider} from '@angular/core';
+import {NgModule, Injector, NgZone, FactoryProvider, ComponentFactory, ComponentFactoryResolver} from '@angular/core';
 import * as angular from './angular_js';
 
 // Temporary global location where the ng1Injector is stored during bootstrap
@@ -70,8 +70,39 @@ export class UpgradeModule {
   }
 
   static downgradeNg2Component({component, inputs = [], outputs = []}:
-                                {component: any, inputs?: string[], outputs?: string[]}) {
+                                {component: any, inputs?: string[], outputs?: string[]}) : Function {
+    (<any>directiveFactory).$inject = ['$injector', '$parse', directiveFactory];
+    return directiveFactory;
 
+    function directiveFactory(
+        ng1Injector: angular.IInjectorService,
+        parse: angular.IParseService): angular.IDirective {
+      const NG2_INJECTOR = 'ng2.Injector';
+      var idCount = 0;
+      return {
+        restrict: 'E',
+        require: '?^' + NG2_INJECTOR,
+        link: (scope: angular.IScope,
+              element: angular.IAugmentedJQuery,
+              attrs: angular.IAttributes,
+              parentInjector: Injector,
+              transclude: angular.ITranscludeFunction) => {
+
+          if (parentInjector === null) {
+            parentInjector = ng1Injector.get(NG2_INJECTOR);
+          }
+
+          const componentFactoryResolver : ComponentFactoryResolver = parentInjector.get(ComponentFactoryResolver);
+          var componentFactory: ComponentFactory<any> = componentFactoryResolver.resolveComponentFactory(component);
+
+          if (!componentFactory) {
+            throw new Error('Expecting ComponentFactory for: ' + component);
+          }
+
+          //TODO: create and add the component
+        }
+      };
+    }
   }
 
   public ng2Injector: Injector;

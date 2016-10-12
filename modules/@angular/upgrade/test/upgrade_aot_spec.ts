@@ -20,7 +20,7 @@ export function main() {
 
     it('should have angular 1 loaded', () => expect(angular.version.major).toBe(1));
 
-    xit('should instantiate ng2 in ng1 template and project content', async(() => {
+    it('should instantiate ng2 in ng1 template and project content', async(() => {
 
       // the ng2 component that will be used in ng1 (downgraded)
       @Component({
