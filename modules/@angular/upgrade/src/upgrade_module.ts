@@ -49,7 +49,7 @@ export class UpgradeModule {
    * ```
    */
   static ng2ProviderFactory(token: any) {
-    return ['$injector', (i: Injector) => i.get(token)];
+    return ['ng2Injector', (i: Injector) => i.get(token)];
   }
 
   /**
@@ -78,6 +78,8 @@ export class UpgradeModule {
     this.ngZone = ng2Injector.get(NgZone);
   }
 
+  ngDoBootstrap() {}
+
   bootstrapNg1(element: Element,
                modules?: any[],
                config?: angular.IAngularBootstrapConfig): angular.IInjectorService
@@ -85,7 +87,7 @@ export class UpgradeModule {
     // Create an ng1 module to bootstrap
     const upgradeModule = angular.module('angular1UpgradeModule', modules)
       .value('ng2Injector', this.ng2Injector)
-      .config(['$injector', ($injector: angular.IInjectorService) => this.provideNg1InjectorToNg2($injector)]);
+      .run(['$injector', ($injector: angular.IInjectorService) => this.provideNg1InjectorToNg2($injector)]);
 //      .config(config);
 
     // Bootstrap the module
