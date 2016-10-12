@@ -6,6 +6,10 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+export interface IInjectableFactory extends Function {
+  $inject?: (string|Function)[]
+}
+
 export interface IModule {
   name: string;
   requires: [string];

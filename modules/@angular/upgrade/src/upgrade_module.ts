@@ -71,14 +71,11 @@ export class UpgradeModule {
 
   static downgradeNg2Component({component, inputs = [], outputs = []}:
                                 {component: any, inputs?: string[], outputs?: string[]}) : Function {
-    (<any>directiveFactory).$inject = ['$injector', '$parse', directiveFactory];
-    return directiveFactory;
-
-    function directiveFactory(
-        ng1Injector: angular.IInjectorService,
-        parse: angular.IParseService): angular.IDirective {
       const NG2_INJECTOR = 'ng2.Injector';
-      var idCount = 0;
+
+    const directiveFactory: angular.IInjectableFactory =
+      function (ng1Injector: angular.IInjectorService, parse: angular.IParseService) : angular.IDirective {
+
       return {
         restrict: 'E',
         require: '?^' + NG2_INJECTOR,
@@ -99,10 +96,13 @@ export class UpgradeModule {
             throw new Error('Expecting ComponentFactory for: ' + component);
           }
 
-          //TODO: create and add the component
+          const componentRef = componentFactory.create(parentInjector);
         }
       };
-    }
+    };
+
+    directiveFactory.$inject = ['$injector', '$parse', directiveFactory];
+    return directiveFactory;
   }
 
   public ng2Injector: Injector;
