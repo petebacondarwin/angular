@@ -82,7 +82,7 @@ export class UpgradeModule {
 
   bootstrapNg1(element: Element,
                modules?: any[],
-               config?: angular.IAngularBootstrapConfig): angular.IInjectorService
+               config?: angular.IAngularBootstrapConfig)
   {
     // Create an ng1 module to bootstrap
     const upgradeModule = angular.module('angular1UpgradeModule', modules)
