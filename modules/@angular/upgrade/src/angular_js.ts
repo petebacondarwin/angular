@@ -7,6 +7,8 @@
  */
 
 export interface IModule {
+  name: string;
+  requires: [string];
   config(fn: any): IModule;
   directive(selector: string, factory: any): IModule;
   component(selector: string, component: IComponent): IModule;
