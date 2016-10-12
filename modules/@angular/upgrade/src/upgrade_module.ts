@@ -69,6 +69,11 @@ export class UpgradeModule {
     return {provide: provide, useFactory: (i: angular.IInjectorService) => i.get(ng1Token), deps: ['$injector']};
   }
 
+  static downgradeNg2Component({component, inputs = [], outputs = []}:
+                                {component: any, inputs?: string[], outputs?: string[]}) {
+
+  }
+
   public ng2Injector: Injector;
   public ng1Injector: angular.IInjectorService;
   public ngZone: NgZone;

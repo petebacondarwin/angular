@@ -20,28 +20,38 @@ export function main() {
 
     it('should have angular 1 loaded', () => expect(angular.version.major).toBe(1));
 
-    // it('should instantiate ng2 in ng1 template and project content', async(() => {
-    //      const ng1Module = angular.module('ng1', []);
+    xit('should instantiate ng2 in ng1 template and project content', async(() => {
 
-    //      const Ng2 = Component({
-    //                    selector: 'ng2',
-    //                    template: `{{ 'NG2' }}(<ng-content></ng-content>)`
-    //                  }).Class({constructor: function() {}});
+      // the ng2 component that will be used in ng1 (downgraded)
+      @Component({
+        selector: 'ng2',
+        template: `{{ 'NG2' }}(<ng-content></ng-content>)`
+      })
+      class Ng2Component {}
 
-    //      const Ng2Module = NgModule({declarations: [Ng2], imports: [BrowserModule]}).Class({
-    //        constructor: function() {}
-    //      });
+      // our upgrade module to host the component to downgrade
+      @NgModule({
+        imports: [BrowserModule, UpgradeModule],
+        declarations: [Ng2Component],
+        entryComponents: [Ng2Component]
+      })
+      class Ng2Module extends UpgradeModule {
+        constructor(injector: Injector) { super(injector); }
+      }
 
-    //      const element =
-    //          html('<div>{{ \'ng1[\' }}<ng2>~{{ \'ng-content\' }}~</ng2>{{ \']\' }}</div>');
+      // the ng1 app module that will consume the downgraded component
+      const ng1Module = angular.module('ng1', [])
+        // create an ng1 facade of the ng1 component
+        .directive('ng2', UpgradeModule.downgradeNg2Component({ component: Ng2Component }));
 
-    //      const adapter: UpgradeAdapter = new UpgradeAdapter(Ng2Module);
-    //      ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-    //      adapter.bootstrap(element, ['ng1']).ready((ref) => {
-    //        expect(document.body.textContent).toEqual('ng1[NG2(~ng-content~)]');
-    //        ref.dispose();
-    //      });
-    //    }));
+      const element =
+          html('<div>{{ \'ng1[\' }}<ng2>~{{ \'ng-content\' }}~</ng2>{{ \']\' }}</div>');
+
+      platformBrowserDynamic().bootstrapModule(Ng2Module).then((ref) => {
+        ref.instance.bootstrapNg1(element, [ng1Module.name]);
+        expect(document.body.textContent).toEqual('ng1[NG2(~ng-content~)]');
+      });
+    }));
 
     // it('should instantiate ng1 in ng2 template and project content', async(() => {
     //      const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
@@ -925,7 +935,7 @@ export function main() {
     //      }));
     // });
 
-    fdescribe('injection', () => {
+    describe('injection', () => {
 
       // Tokens used in ng2 to identify services
       const Ng2Service = new OpaqueToken('ng2-service');
@@ -949,17 +959,11 @@ export function main() {
         .factory('ng2Service', UpgradeModule.ng2ProviderFactory(Ng2Service))
         .factory('ng1Service', () => 'ng1 service value');
 
-      function cleanup(ref: NgModuleRef<MyNg2Module>) {
-        ref.destroy();
-        ref.instance.ng1Injector.get('$rootScope').$destroy();
-      }
-
       it('should export ng2 instance to ng1', async(() => {
         platformBrowserDynamic().bootstrapModule(MyNg2Module).then((ref) => {
           ref.instance.bootstrapNg1(html('<div>'), [ng1Module.name]);
           const ng1Injector = ref.instance.ng1Injector;
           expect(ng1Injector.get('ng2Service')).toBe('ng2 service value');
-          cleanup(ref);
         });
       }));
 
