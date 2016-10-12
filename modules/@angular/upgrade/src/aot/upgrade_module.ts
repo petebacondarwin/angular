@@ -1,5 +1,6 @@
 import {NgModule, Injector, NgZone, FactoryProvider, ComponentFactory, ComponentFactoryResolver} from '@angular/core';
 import { ng1Providers, setNg1Injector } from './ng1_providers';
+import { NG2_INJECTOR, NG1_INJECTOR } from '../constants';
 import * as angular from '../angular_js';
 
 const NG1_UPGRADE_MODULE_NAME = 'angular1UpgradeModule';
@@ -37,17 +38,17 @@ export class UpgradeModule {
    * @param [config] optional extra Angular 1 config block to run when bootstrapping
    */
   bootstrapNg1(element: Element,
-               modules?: string[],
+               modules: string[] = [],
                config: angular.IAngularBootstrapConfig = () => {})
   {
     // Create an ng1 module to bootstrap
     const upgradeModule = angular.module(NG1_UPGRADE_MODULE_NAME, modules)
-      .value('ng2Injector', this.ng2Injector)
-      .run(['$injector', (ng1Injector: angular.IInjectorService) => {
+      .value(NG2_INJECTOR, this.ng2Injector)
+      .run([NG1_INJECTOR, (ng1Injector: angular.IInjectorService) => {
         // store the ng1 injector so that our ng2 injector provider can access it
         setNg1Injector(this.ng1Injector = ng1Injector);
         // force the reading of the value from the ng2 injector provider.
-        this.ng2Injector.get('$injector');
+        this.ng2Injector.get(NG1_INJECTOR);
       }])
       .config(config);
 

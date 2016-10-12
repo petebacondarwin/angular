@@ -47,6 +47,6 @@ export function downgradeNg2Component(info: ComponentInfo) : Function {
     };
   };
 
-  directiveFactory.$inject = ['$injector', '$parse', directiveFactory];
+  directiveFactory.$inject = ['$injector', '$parse'];
   return directiveFactory;
 }
