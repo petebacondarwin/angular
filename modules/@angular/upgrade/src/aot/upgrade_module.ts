@@ -2,51 +2,17 @@ import {NgModule, Injector, NgZone, FactoryProvider, ComponentFactory, Component
 import { ng1Providers, setNg1Injector } from './ng1_providers';
 import * as angular from '../angular_js';
 
+const NG1_UPGRADE_MODULE_NAME = 'angular1UpgradeModule';
+
 /**
  * UpgradeModule is the base class for the module that will contain all the
  * information about what Angular providers and component are to be bridged
  * between Angular 1 and Angular 2+
+ *
+ * TODO: Add more detailed information here with examples
  */
-@NgModule({
-  providers: [ng1Providers]
-})
+@NgModule({ providers: [ng1Providers] })
 export class UpgradeModule {
-
-  static downgradeNg2Component({component, inputs = [], outputs = []}:
-                                {component: any, inputs?: string[], outputs?: string[]}) : Function {
-      const NG2_INJECTOR = 'ng2.Injector';
-
-    const directiveFactory: angular.IInjectableFactory =
-      function (ng1Injector: angular.IInjectorService, parse: angular.IParseService) : angular.IDirective {
-
-      return {
-        restrict: 'E',
-        require: '?^' + NG2_INJECTOR,
-        link: (scope: angular.IScope,
-              element: angular.IAugmentedJQuery,
-              attrs: angular.IAttributes,
-              parentInjector: Injector,
-              transclude: angular.ITranscludeFunction) => {
-
-          if (parentInjector === null) {
-            parentInjector = ng1Injector.get(NG2_INJECTOR);
-          }
-
-          const componentFactoryResolver : ComponentFactoryResolver = parentInjector.get(ComponentFactoryResolver);
-          var componentFactory: ComponentFactory<any> = componentFactoryResolver.resolveComponentFactory(component);
-
-          if (!componentFactory) {
-            throw new Error('Expecting ComponentFactory for: ' + component);
-          }
-
-          const componentRef = componentFactory.create(parentInjector);
-        }
-      };
-    };
-
-    directiveFactory.$inject = ['$injector', '$parse', directiveFactory];
-    return directiveFactory;
-  }
 
   public ng2Injector: Injector;
   public ng1Injector: angular.IInjectorService;
@@ -57,8 +23,11 @@ export class UpgradeModule {
     this.ngZone = ng2Injector.get(NgZone);
   }
 
-  // This method prevents the bootstrapping code from complaining about a
-  // lack of `bootstrap` component in the metadata.
+  /**
+   * This method prevents the bootstrapping code from complaining about a
+   * lack of `bootstrap` component in the metadata.
+   * @internal
+   */
   ngDoBootstrap() {}
 
   /**
@@ -69,20 +38,20 @@ export class UpgradeModule {
    */
   bootstrapNg1(element: Element,
                modules?: string[],
-               config?: angular.IAngularBootstrapConfig)
+               config: angular.IAngularBootstrapConfig = () => {})
   {
     // Create an ng1 module to bootstrap
-    const upgradeModule = angular.module('angular1UpgradeModule', modules)
+    const upgradeModule = angular.module(NG1_UPGRADE_MODULE_NAME, modules)
       .value('ng2Injector', this.ng2Injector)
-      .run(['$injector', ($injector: angular.IInjectorService) => this.provideNg1InjectorToNg2($injector)]);
+      .run(['$injector', (ng1Injector: angular.IInjectorService) => {
+        // store the ng1 injector so that our ng2 injector provider can access it
+        setNg1Injector(this.ng1Injector = ng1Injector);
+        // force the reading of the value from the ng2 injector provider.
+        this.ng2Injector.get('$injector');
+      }])
+      .config(config);
 
-    // Only add the config if it is there
-    // QUESTION? Do we really need this param?
-    if (config) {
-      upgradeModule.config(config);
-    }
-
-    // Bootstrap the module
+    // Bootstrap the angular 1 application
     angular.bootstrap(element, [upgradeModule.name], config);
 
     // Wire up the ng1 rootScope to the zone
@@ -90,8 +59,4 @@ export class UpgradeModule {
     this.ngZone.onMicrotaskEmpty.subscribe((_: any) => $rootScope.$evalAsync());
   }
 
-  private provideNg1InjectorToNg2(ng1Injector: angular.IInjectorService) {
-    setNg1Injector(this.ng1Injector = ng1Injector);
-    this.ng2Injector.get('$injector'); // force the reading of the value.
-  }
 }

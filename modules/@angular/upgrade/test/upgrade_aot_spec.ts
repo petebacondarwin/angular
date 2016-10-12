@@ -10,7 +10,7 @@ import {Injector, Class, Component, EventEmitter, NO_ERRORS_SCHEMA, NgModule, Ng
 import {async} from '@angular/core/testing';
 import {BrowserModule, platformBrowser, } from '@angular/platform-browser';
 import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
-import {UpgradeModule, ng2ProviderFactory, ng1ServiceProvider} from '@angular/upgrade';
+import {UpgradeModule, ng2ProviderFactory, ng1ServiceProvider, downgradeNg2Component} from '@angular/upgrade';
 import * as angular from '@angular/upgrade/src/angular_js';
 
 export function main() {
@@ -42,7 +42,7 @@ export function main() {
       // the ng1 app module that will consume the downgraded component
       const ng1Module = angular.module('ng1', [])
         // create an ng1 facade of the ng1 component
-        .directive('ng2', UpgradeModule.downgradeNg2Component({ component: Ng2Component }));
+        .directive('ng2', downgradeNg2Component({ component: Ng2Component }));
 
       const element =
           html('<div>{{ \'ng1[\' }}<ng2>~{{ \'ng-content\' }}~</ng2>{{ \']\' }}</div>');
