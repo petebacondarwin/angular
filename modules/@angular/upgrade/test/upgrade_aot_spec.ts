@@ -20,7 +20,7 @@ export function main() {
 
     it('should have angular 1 loaded', () => expect(angular.version.major).toBe(1));
 
-    it('should instantiate ng2 in ng1 template and project content', async(() => {
+    fit('should instantiate ng2 in ng1 template and project content', async(() => {
 
       // the ng2 component that will be used in ng1 (downgraded)
       @Component({
@@ -42,7 +42,7 @@ export function main() {
       // the ng1 app module that will consume the downgraded component
       const ng1Module = angular.module('ng1', [])
         // create an ng1 facade of the ng1 component
-        .directive('ng2', downgradeNg2Component({ component: Ng2Component }));
+        .directive('ng2', downgradeNg2Component({ selector: 'ng2', type: Ng2Component }));
 
       const element =
           html('<div>{{ \'ng1[\' }}<ng2>~{{ \'ng-content\' }}~</ng2>{{ \']\' }}</div>');
