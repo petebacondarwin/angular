@@ -39,7 +39,7 @@ export class UpgradeModule {
    */
   bootstrapNg1(element: Element,
                modules: string[] = [],
-               config: angular.IAngularBootstrapConfig = () => {})
+               config = () => {})
   {
     // Create an ng1 module to bootstrap
     const upgradeModule = angular.module(NG1_UPGRADE_MODULE_NAME, modules)
