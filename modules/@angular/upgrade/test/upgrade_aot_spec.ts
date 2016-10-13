@@ -9,7 +9,7 @@
 import {Injector, Class, Component, OnChanges, OnDestroy, SimpleChanges, EventEmitter,
         NO_ERRORS_SCHEMA, NgModule, NgModuleRef, OpaqueToken, Testability, destroyPlatform,
         forwardRef} from '@angular/core';
-import {async} from '@angular/core/testing';
+import {async, fakeAsync, tick} from '@angular/core/testing';
 import {BrowserModule, platformBrowser, } from '@angular/platform-browser';
 import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
 import {UpgradeModule, ng2ProviderFactory, ng1ServiceProvider, downgradeNg2Component} from '@angular/upgrade';
@@ -300,41 +300,48 @@ export function main() {
       }));
 
 
-      // it('should fallback to the root ng2.injector when compiled outside the dom', async(() => {
-      //      const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-      //      const ng1Module = angular.module('ng1', []);
+      it('should fallback to the root ng2.injector when compiled outside the dom', async(() => {
 
-      //      ng1Module.directive('ng1', [
-      //        '$compile',
-      //        ($compile: any /** TODO #9100 */) => {
-      //          return {
-      //            link: function(
-      //                $scope: any /** TODO #9100 */, $element: any /** TODO #9100 */,
-      //                $attrs: any /** TODO #9100 */) {
-      //              const compiled = $compile('<ng2></ng2>');
-      //              const template = compiled($scope);
-      //              $element.append(template);
-      //            }
-      //          };
-      //        }
-      //      ]);
+        @Component({selector: 'ng2', template: 'test'})
+        class Ng2Component {}
 
-      //      const Ng2 =
-      //          Component({selector: 'ng2', template: 'test'}).Class({constructor: function() {}});
+        @NgModule({
+          declarations: [Ng2Component],
+          entryComponents: [Ng2Component],
+          imports: [BrowserModule, UpgradeModule],
+          schemas: [NO_ERRORS_SCHEMA]
+        })
+        class Ng2Module extends UpgradeModule {
+          constructor(injector: Injector) { super(injector); }
+        }
 
-      //      const Ng2Module = NgModule({
-      //                          declarations: [Ng2],
-      //                          imports: [BrowserModule],
-      //                          schemas: [NO_ERRORS_SCHEMA],
-      //                        }).Class({constructor: function() {}});
+        const ng1Module = angular.module('ng1', [])
+          .directive('ng1', [
+            '$compile',
+            ($compile: angular.ICompileService) => {
+              return {
+                link: function(
+                    $scope: angular.IScope,
+                    $element: angular.IAugmentedJQuery,
+                    $attrs: angular.IAttributes) {
+                  const compiled = $compile('<ng2></ng2>');
+                  const template = compiled($scope);
+                  $element.append(template);
+                }
+              };
+            }
+          ])
+          .directive('ng2', downgradeNg2Component({
+            type: Ng2Component,
+            selector: 'ng2'
+          }));
 
-      //      ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-      //      const element = html('<ng1></ng1>');
-      //      adapter.bootstrap(element, ['ng1']).ready((ref) => {
-      //        expect(multiTrim(document.body.textContent)).toEqual('test');
-      //        ref.dispose();
-      //      });
-      //    }));
+        const element = html('<ng1></ng1>');
+        platformBrowserDynamic().bootstrapModule(Ng2Module).then((ref) => {
+          ref.instance.bootstrapNg1(element, [ng1Module.name]);
+          expect(multiTrim(document.body.textContent)).toEqual('test');
+        });
+      }));
     });
 
     // describe('upgrade ng1 component', () => {
@@ -1006,28 +1013,35 @@ export function main() {
       }));
     });
 
-  //   describe('testability', () => {
-  //     it('should handle deferred bootstrap', async(() => {
-  //          const MyNg2Module =
-  //              NgModule({imports: [BrowserModule]}).Class({constructor: function() {}});
+    describe('testability', () => {
+      it('should handle deferred bootstrap', fakeAsync(() => {
+        @NgModule({
+          imports: [BrowserModule, UpgradeModule]
+        })
+        class MyNg2Module extends UpgradeModule {
+          constructor(injector: Injector) { super(injector); }
+        }
 
-  //          const adapter: UpgradeAdapter = new UpgradeAdapter(MyNg2Module);
-  //          angular.module('ng1', []);
-  //          let bootstrapResumed: boolean = false;
+        const ng1Module = angular.module('ng1', []);
+        let bootstrapResumed: boolean = false;
+        const element = html('<div></div>');
+        window.name = 'NG_DEFER_BOOTSTRAP!' + window.name;
 
-  //          const element = html('<div></div>');
-  //          window.name = 'NG_DEFER_BOOTSTRAP!' + window.name;
+        platformBrowserDynamic().bootstrapModule(MyNg2Module).then((ref) => {
+          ref.instance.bootstrapNg1(element, [ng1Module.name]);
+        });
 
-  //          adapter.bootstrap(element, ['ng1']).ready((ref) => {
-  //            expect(bootstrapResumed).toEqual(true);
-  //            ref.dispose();
-  //          });
+        setTimeout(() => {
+          bootstrapResumed = true;
+          (<any>window).angular.resumeBootstrap();
+        }, 100);
 
-  //          setTimeout(() => {
-  //            bootstrapResumed = true;
-  //            (<any>window).angular.resumeBootstrap();
-  //          }, 100);
-  //        }));
+        expect(bootstrapResumed).toEqual(false);
+        tick(100);
+        expect(bootstrapResumed).toEqual(true);
+
+      }));
+    });
 
   //     it('should wait for ng2 testability', async(() => {
   //          const MyNg2Module =
