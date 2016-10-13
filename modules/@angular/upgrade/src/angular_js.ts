@@ -8,11 +8,11 @@
 
 export type Ng1Token = string;
 
-export interface IInjectableFactory extends Function {
+export interface IAnnotatedFunction extends Function {
   $inject?: Ng1Token[]
 }
 
-export type IInjectable = (Ng1Token|Function)[] | IInjectableFactory;
+export type IInjectable = (Ng1Token|Function)[] | IAnnotatedFunction;
 
 export interface IModule {
   name: string;
@@ -112,6 +112,17 @@ export interface IAugmentedJQuery {
   append(content: IAugmentedJQuery|string): IAugmentedJQuery;
   length: number;
   [index: number]: Node;
+}
+export interface IProvider {
+  $get: IInjectable
+}
+export interface IProvideService {
+  provider(token: Ng1Token, provider: IProvider): IProvider;
+  factory(token: Ng1Token, factory: IInjectable): IProvider;
+  service(token: Ng1Token, type: IInjectable): IProvider;
+  value(token: Ng1Token, value: any): IProvider;
+  constant(token: Ng1Token, value: any): void;
+  decorator(token: Ng1Token, factory: IInjectable): void;
 }
 export interface IParseService { (expression: string): ICompiledExpression; }
 export interface ICompiledExpression { assign(context: any, value: any): any; }

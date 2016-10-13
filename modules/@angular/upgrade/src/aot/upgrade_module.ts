@@ -1,6 +1,6 @@
-import {NgModule, Injector, NgZone, FactoryProvider, ComponentFactory, ComponentFactoryResolver} from '@angular/core';
+import {NgModule, Injector, NgZone, FactoryProvider, ComponentFactory, ComponentFactoryResolver, Testability} from '@angular/core';
 import { ng1Providers, setNg1Injector } from './ng1_providers';
-import { NG2_INJECTOR, NG1_INJECTOR } from '../constants';
+import { NG2_INJECTOR, NG1_INJECTOR, NG1_PROVIDE, NG1_TESTABILITY } from '../constants';
 import * as angular from '../angular_js';
 
 const NG1_UPGRADE_MODULE_NAME = 'angular1UpgradeModule';
@@ -39,7 +39,7 @@ export class UpgradeModule {
    */
   bootstrapNg1(element: Element,
                modules: string[] = [],
-               config = () => {})
+               config: angular.IInjectable = () => {})
   {
     // Create an ng1 module to bootstrap
     const upgradeModule = angular.module(NG1_UPGRADE_MODULE_NAME, modules)
@@ -53,6 +53,31 @@ export class UpgradeModule {
         // Wire up the ng1 rootScope to the zone
         var $rootScope = ng1Injector.get('$rootScope');
         this.ngZone.onMicrotaskEmpty.subscribe((_: any) => $rootScope.$evalAsync());
+      }])
+      .config([
+        NG1_INJECTOR, NG1_PROVIDE,
+        ($injector: angular.IInjectorService, $provide: angular.IProvideService) => {
+          if ($injector.has(NG1_TESTABILITY)) {
+            // $provide.decorator(NG1_TESTABILITY, ['$delegate', function(testabilityDelegate: angular.ITestabilityService) {
+
+            //     var originalWhenStable: Function = testabilityDelegate.whenStable;
+            //     var newWhenStable = (callback: Function): void => {
+            //       var whenStableContext: any = this;
+            //       originalWhenStable.call(this, function() {
+            //         var ng2Testability: Testability = this.ng2Injector.get(Testability);
+            //         if (ng2Testability.isStable()) {
+            //           callback.apply(this, arguments);
+            //         } else {
+            //           ng2Testability.whenStable(newWhenStable.bind(whenStableContext, callback));
+            //         }
+            //       });
+            //     };
+
+            //     testabilityDelegate.whenStable = newWhenStable;
+            //     return testabilityDelegate;
+            //   }
+            // ]);
+          }
       }])
       .config(config);
 
