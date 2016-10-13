@@ -6,14 +6,17 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {Injector, Class, Component, OnChanges, OnDestroy, SimpleChanges, EventEmitter,
-        NO_ERRORS_SCHEMA, NgModule, NgModuleRef, OpaqueToken, Testability, destroyPlatform,
-        forwardRef} from '@angular/core';
-import {async, fakeAsync, tick} from '@angular/core/testing';
-import {BrowserModule, platformBrowser, } from '@angular/platform-browser';
-import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
-import {UpgradeModule, ng2ProviderFactory, ng1ServiceProvider, downgradeNg2Component} from '@angular/upgrade';
-import {parseFields} from '@angular/upgrade/src/metadata';
+import {
+  Injector, Class, Component, OnChanges, OnDestroy, SimpleChanges, EventEmitter, NO_ERRORS_SCHEMA,
+  NgModule, NgModuleRef, OpaqueToken, Testability, destroyPlatform, forwardRef
+} from '@angular/core';
+import { async, fakeAsync, tick } from '@angular/core/testing';
+import { BrowserModule, platformBrowser } from '@angular/platform-browser';
+import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+import {
+  UpgradeModule, ng2ProviderFactory, ng1ServiceProvider, downgradeNg2Component
+} from '@angular/upgrade';
+import { parseFields } from '@angular/upgrade/src/metadata';
 import * as angular from '@angular/upgrade/src/angular_js';
 
 export function main() {
@@ -44,7 +47,7 @@ export function main() {
 
       // the ng1 app module that will consume the downgraded component
       const ng1Module = angular.module('ng1', [])
-        // create an ng1 facade of the ng1 component
+        // create an ng1 facade of the ng2 component
         .directive('ng2', downgradeNg2Component({ selector: 'ng2', type: Ng2Component }));
 
       const element =
@@ -139,6 +142,7 @@ export function main() {
             $rootScope['eventA'] = '?';
             $rootScope['eventB'] = '?';
           });
+
         @Component({
           selector: 'ng2',
           inputs: [
@@ -298,7 +302,6 @@ export function main() {
           expect(destroyed).toBe(true);
         });
       }));
-
 
       it('should fallback to the root ng2.injector when compiled outside the dom', async(() => {
 
@@ -994,7 +997,7 @@ export function main() {
       // create the ng1 module that will import an ng2 service
       const ng1Module = angular.module('ng1Module', [])
         .factory('ng2Service', ng2ProviderFactory(Ng2Service))
-        .factory('ng1Service', () => 'ng1 service value');
+        .value('ng1Service', 'ng1 service value');
 
       it('should export ng2 instance to ng1', async(() => {
         platformBrowserDynamic().bootstrapModule(MyNg2Module).then((ref) => {
