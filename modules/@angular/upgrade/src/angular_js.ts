@@ -29,7 +29,7 @@ export interface ICompileService {
   (element: Element|NodeList|string, transclude?: Function): ILinkFn;
 }
 export interface ILinkFn {
-  (scope: IScope, cloneAttachFn?: Function, options?: ILinkFnOptions): void;
+  (scope: IScope, cloneAttachFn?: Function, options?: ILinkFnOptions): IAugmentedJQuery;
 }
 export interface ILinkFnOptions {
   parentBoundTranscludeFn?: Function;
@@ -109,6 +109,7 @@ export interface IAugmentedJQuery {
   inheritedData(name: string, value?: any): any;
   contents(): IAugmentedJQuery;
   parent(): IAugmentedJQuery;
+  append(content: IAugmentedJQuery|string): IAugmentedJQuery;
   length: number;
   [index: number]: Node;
 }

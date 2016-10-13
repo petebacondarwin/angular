@@ -49,15 +49,15 @@ export class UpgradeModule {
         setNg1Injector(this.ng1Injector = ng1Injector);
         // force the reading of the value from the ng2 injector provider.
         this.ng2Injector.get(NG1_INJECTOR);
+
+        // Wire up the ng1 rootScope to the zone
+        var $rootScope = ng1Injector.get('$rootScope');
+        this.ngZone.onMicrotaskEmpty.subscribe((_: any) => $rootScope.$evalAsync());
       }])
       .config(config);
 
     // Bootstrap the angular 1 application
     angular.bootstrap(element, [upgradeModule.name], config);
-
-    // Wire up the ng1 rootScope to the zone
-    var $rootScope = this.ng1Injector.get('$rootScope');
-    this.ngZone.onMicrotaskEmpty.subscribe((_: any) => $rootScope.$evalAsync());
   }
 
 }
