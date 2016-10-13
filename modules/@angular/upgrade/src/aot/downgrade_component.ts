@@ -34,7 +34,7 @@ export function downgradeNg2Component(info: ComponentInfo) : Function {
           throw new Error('Expecting ComponentFactory for: ' + info.type);
         }
 
-
+        debugger;
         const facade = new DowngradeNg2ComponentAdapter(
             idPrefix + (idCount++), info, element, attrs, scope, <Injector>parentInjector, parse,
             componentFactory);
