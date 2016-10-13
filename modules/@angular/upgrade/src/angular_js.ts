@@ -6,20 +6,24 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+export type Ng1Token = string;
+
 export interface IInjectableFactory extends Function {
-  $inject?: (string|Function)[]
+  $inject?: Ng1Token[]
 }
+
+export type IInjectable = (Ng1Token|Function)[] | IInjectableFactory;
 
 export interface IModule {
   name: string;
-  requires: [string];
-  config(fn: any): IModule;
-  directive(selector: string, factory: any): IModule;
+  requires: Ng1Token[];
+  config(fn: IInjectable): IModule;
+  directive(selector: string, factory: IInjectable): IModule;
   component(selector: string, component: IComponent): IModule;
-  controller(name: string, type: any): IModule;
-  factory(key: string, factoryFn: any): IModule;
-  value(key: string, value: any): IModule;
-  run(a: any): IModule;
+  controller(name: string, type: IInjectable): IModule;
+  factory(key: Ng1Token, factoryFn: IInjectable): IModule;
+  value(key: Ng1Token, value: any): IModule;
+  run(a: IInjectable): IModule;
 }
 export interface ICompileService {
   (element: Element|NodeList|string, transclude?: Function): ILinkFn;
@@ -45,25 +49,27 @@ export interface IRootScopeService {
   $$childHead: IScope;
   $$nextSibling: IScope;
 }
-export interface IScope extends IRootScopeService {}
+export type IScope = IRootScopeService | any;
 export interface IAngularBootstrapConfig {}
 export interface IDirective {
   compile?: IDirectiveCompileFn;
-  controller?: any;
+  controller?: string | Function;
   controllerAs?: string;
-  bindToController?: boolean|Object;
+  bindToController?: boolean | { [key: string]: string };
   link?: IDirectiveLinkFn|IDirectivePrePost;
   name?: string;
   priority?: number;
   replace?: boolean;
-  require?: any;
+  require?: DirectiveRequireProperty;
   restrict?: string;
-  scope?: any;
-  template?: any;
-  templateUrl?: any;
+  scope?: boolean | { [key: string]: string };
+  template?: string | Function;
+  templateUrl?: string | Function;
+  templateNamespace?: string;
   terminal?: boolean;
-  transclude?: any;
+  transclude?: boolean | "element" | { [key: string]: string };
 }
+export type DirectiveRequireProperty = Ng1Token[] | Ng1Token | { [key: string]: Ng1Token };
 export interface IDirectiveCompileFn {
   (templateElement: IAugmentedJQuery, templateAttributes: IAttributes,
    transclude: ITranscludeFunction): IDirectivePrePost;
@@ -77,13 +83,13 @@ export interface IDirectiveLinkFn {
    controller: any, transclude: ITranscludeFunction): void;
 }
 export interface IComponent {
-  bindings?: Object;
-  controller?: any;
+  bindings?: { [key: string]: string };
+  controller?: string | Function;
   controllerAs?: string;
-  require?: any;
-  template?: any;
-  templateUrl?: any;
-  transclude?: any;
+  require?: DirectiveRequireProperty;
+  template?: string | Function;
+  templateUrl?: string | Function;
+  transclude?: boolean;
 }
 export interface IAttributes { $observe(attr: string, fn: (v: string) => void): void; }
 export interface ITranscludeFunction {

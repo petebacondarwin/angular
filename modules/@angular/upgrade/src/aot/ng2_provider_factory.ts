@@ -1,4 +1,5 @@
 import { Injector } from '@angular/core';
+import { NG2_INJECTOR } from '@angular/upgrade/src/constants';
 
 /**
  * Create an Angular 1 factory that will return an Angular 2 injectable thing
@@ -11,5 +12,5 @@ import { Injector } from '@angular/core';
  * ```
  */
 export function ng2ProviderFactory(token: any) {
-  return ['ng2Injector', (i: Injector) => i.get(token)];
+  return [NG2_INJECTOR, (i: Injector) => i.get(token)];
 }
