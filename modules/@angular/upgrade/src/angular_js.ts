@@ -16,7 +16,7 @@ export type IInjectable = (Ng1Token|Function)[] | IInjectableFactory;
 
 export interface IModule {
   name: string;
-  requires: Ng1Token[];
+  requires: (string|IInjectable)[];
   config(fn: IInjectable): IModule;
   directive(selector: string, factory: IInjectable): IModule;
   component(selector: string, component: IComponent): IModule;
@@ -48,12 +48,13 @@ export interface IRootScopeService {
   $$childTail: IScope;
   $$childHead: IScope;
   $$nextSibling: IScope;
+  [key: string]: any;
 }
-export type IScope = IRootScopeService | any;
+export type IScope = IRootScopeService;
 export interface IAngularBootstrapConfig {}
 export interface IDirective {
   compile?: IDirectiveCompileFn;
-  controller?: string | Function;
+  controller?: string | IInjectable;
   controllerAs?: string;
   bindToController?: boolean | { [key: string]: string };
   link?: IDirectiveLinkFn|IDirectivePrePost;
@@ -84,7 +85,7 @@ export interface IDirectiveLinkFn {
 }
 export interface IComponent {
   bindings?: { [key: string]: string };
-  controller?: string | Function;
+  controller?: string | IInjectable;
   controllerAs?: string;
   require?: DirectiveRequireProperty;
   template?: string | Function;
