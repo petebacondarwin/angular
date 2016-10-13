@@ -50,7 +50,7 @@ export interface IRootScopeService {
   $$nextSibling: IScope;
   [key: string]: any;
 }
-export type IScope = IRootScopeService;
+export interface IScope extends IRootScopeService {};
 export interface IAngularBootstrapConfig {}
 export interface IDirective {
   compile?: IDirectiveCompileFn;
