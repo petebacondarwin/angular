@@ -32,14 +32,14 @@ export class UpgradeModule {
   ngDoBootstrap() {}
 
   /**
-   * Bootstrap this NgModule with into an Angular 1 application.
+   * Bootstrap this NgModule into an Angular 1 application.
    * @param element the element on which to bootstrap the Angular 1 application
    * @param [modules] the Angular 1 modules to bootstrap for this application
    * @param [config] optional extra Angular 1 config block to run when bootstrapping
    */
   bootstrapNg1(element: Element,
                modules: string[] = [],
-               config: angular.IInjectable = () => {})
+               config?: angular.IAngularBootstrapConfig)
   {
     // Create an ng1 module to bootstrap
     const upgradeModule = angular.module(NG1_UPGRADE_MODULE_NAME, modules)
@@ -78,8 +78,7 @@ export class UpgradeModule {
             //   }
             // ]);
           }
-      }])
-      .config(config);
+      }]);
 
     // Bootstrap the angular 1 application
     angular.bootstrap(element, [upgradeModule.name], config);
