@@ -1014,15 +1014,17 @@ export function main() {
     });
 
     describe('testability', () => {
-      it('should handle deferred bootstrap', fakeAsync(() => {
-        @NgModule({
-          imports: [BrowserModule, UpgradeModule]
-        })
-        class MyNg2Module extends UpgradeModule {
-          constructor(injector: Injector) { super(injector); }
-        }
 
-        const ng1Module = angular.module('ng1', []);
+      @NgModule({
+        imports: [BrowserModule, UpgradeModule]
+      })
+      class MyNg2Module extends UpgradeModule {
+        constructor(injector: Injector) { super(injector); }
+      }
+
+      const ng1Module = angular.module('ng1', []);
+
+      it('should handle deferred bootstrap', fakeAsync(() => {
         let bootstrapResumed: boolean = false;
         const element = html('<div></div>');
         window.name = 'NG_DEFER_BOOTSTRAP!' + window.name;
@@ -1039,34 +1041,36 @@ export function main() {
         expect(bootstrapResumed).toEqual(false);
         tick(100);
         expect(bootstrapResumed).toEqual(true);
-
       }));
-    });
 
-  //     it('should wait for ng2 testability', async(() => {
-  //          const MyNg2Module =
-  //              NgModule({imports: [BrowserModule]}).Class({constructor: function() {}});
+      xit('should wait for ng2 testability', fakeAsync(() => {
+          const element = html('<div></div>');
 
-  //          const adapter: UpgradeAdapter = new UpgradeAdapter(MyNg2Module);
-  //          angular.module('ng1', []);
-  //          const element = html('<div></div>');
-  //          adapter.bootstrap(element, ['ng1']).ready((ref) => {
-  //            const ng2Testability: Testability = ref.ng2Injector.get(Testability);
-  //            ng2Testability.increasePendingRequestCount();
-  //            let ng2Stable = false;
+          platformBrowserDynamic().bootstrapModule(MyNg2Module).then((ref) => {
+            ref.instance.bootstrapNg1(element, [ng1Module.name]);
 
-  //            angular.getTestability(element).whenStable(() => {
-  //              expect(ng2Stable).toEqual(true);
-  //              ref.dispose();
-  //            });
+            const ng2Testability: Testability = ref.instance.ng2Injector.get(Testability);
+            ng2Testability.increasePendingRequestCount();
+            let ng2Stable = false;
+            let ng1Stable = false;
 
-  //            setTimeout(() => {
-  //              ng2Stable = true;
-  //              ng2Testability.decreasePendingRequestCount();
-  //            }, 100);
-  //          });
-  //        }));
-  //   });
+            angular.getTestability(element).whenStable(() => {
+              ng1Stable = true;
+            });
+
+            setTimeout(() => {
+              ng2Stable = true;
+              ng2Testability.decreasePendingRequestCount();
+            }, 100);
+
+            expect(ng1Stable).toEqual(false);
+            expect(ng2Stable).toEqual(false);
+            tick(100);
+            expect(ng1Stable).toEqual(true);
+            expect(ng2Stable).toEqual(true);
+          });
+        }));
+      });
 
   //   it('should allow attribute selectors for components in ng2', async(() => {
   //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => MyNg2Module));

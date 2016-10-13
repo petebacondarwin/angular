@@ -11,7 +11,7 @@ export function downgradeNg2Component(info: ComponentInfo) : Function {
   const idPrefix = `NG2_UPGRADE_${downgradeCount++}_`;
   let idCount = 0;
 
-  const directiveFactory: angular.IInjectableFactory =
+  const directiveFactory: angular.IAnnotatedFunction =
     function (ng1Injector: angular.IInjectorService, parse: angular.IParseService) : angular.IDirective {
 
     return {
