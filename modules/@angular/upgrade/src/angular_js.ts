@@ -51,7 +51,7 @@ export interface IRootScopeService {
   [key: string]: any;
 }
 export interface IScope extends IRootScopeService {};
-export interface IAngularBootstrapConfig {}
+export type IAngularBootstrapConfig = IInjectable;
 export interface IDirective {
   compile?: IDirectiveCompileFn;
   controller?: string | IInjectable;
