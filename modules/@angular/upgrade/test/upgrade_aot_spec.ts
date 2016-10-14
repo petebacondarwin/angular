@@ -14,7 +14,7 @@ import {
 import { async, fakeAsync, tick } from '@angular/core/testing';
 import { BrowserModule, platformBrowser } from '@angular/platform-browser';
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
-import { Ng1Adapter, Ng1Module, downgradeInjectable, downgradeComponent, UpgradeComponent } from '@angular/upgrade';
+import { UpgradeModule, downgradeInjectable, downgradeComponent, UpgradeComponent } from '@angular/upgrade';
 import { parseFields } from '@angular/upgrade/src/metadata';
 import * as angular from '@angular/upgrade/src/angular_js';
 
@@ -37,7 +37,7 @@ export function main() {
 
         // our upgrade module to host the component to downgrade
         @NgModule({
-          imports: [BrowserModule, Ng1Module],
+          imports: [BrowserModule, UpgradeModule],
           declarations: [Ng2Component],
           entryComponents: [Ng2Component]
         })
@@ -54,7 +54,7 @@ export function main() {
             html('<div>{{ \'ng1[\' }}<ng2>~{{ \'ng-content\' }}~</ng2>{{ \']\' }}</div>');
 
         platformBrowserDynamic().bootstrapModule(Ng2Module).then((ref) => {
-          const adapter = ref.injector.get(Ng1Adapter) as Ng1Adapter;
+          const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
           adapter.bootstrapNg1(element, [ng1Module.name]);
           expect(document.body.textContent).toEqual('ng1[NG2(~ng-content~)]');
         });
@@ -236,7 +236,7 @@ export function main() {
         @NgModule({
           declarations: [Ng2Component],
           entryComponents: [Ng2Component],
-          imports: [BrowserModule, Ng1Module]
+          imports: [BrowserModule, UpgradeModule]
         })
         class Ng2Module {
           ngDoBootstrap() {}
@@ -250,7 +250,7 @@ export function main() {
           | modelA: {{modelA}}; modelB: {{modelB}}; eventA: {{eventA}}; eventB: {{eventB}};
           </div>`);
         platformBrowserDynamic().bootstrapModule(Ng2Module).then((ref) => {
-          const adapter = ref.injector.get(Ng1Adapter) as Ng1Adapter;
+          const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
           adapter.bootstrapNg1(element, [ng1Module.name]);
           expect(multiTrim(document.body.textContent))
               .toEqual(
@@ -272,7 +272,7 @@ export function main() {
         @NgModule({
           declarations: [Ng2Component],
           entryComponents: [Ng2Component],
-          imports: [BrowserModule, Ng1Module]
+          imports: [BrowserModule, UpgradeModule]
         })
         class Ng2Module {
           ngDoBootstrap() {}
@@ -290,12 +290,12 @@ export function main() {
           }));
         const element = html('<ng1></ng1>');
         platformBrowserDynamic().bootstrapModule(Ng2Module).then((ref) => {
-          const adapter = ref.injector.get(Ng1Adapter) as Ng1Adapter;
+          const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
           adapter.bootstrapNg1(element, [ng1Module.name]);
           expect(element.textContent).toContain('test');
           expect(destroyed).toBe(false);
 
-          const $rootScope = adapter.ng1Injector.get('$rootScope');
+          const $rootScope = adapter.$injector.get('$rootScope');
           $rootScope.$apply('destroyIt = true');
 
           expect(element.textContent).not.toContain('test');
@@ -311,7 +311,7 @@ export function main() {
         @NgModule({
           declarations: [Ng2Component],
           entryComponents: [Ng2Component],
-          imports: [BrowserModule, Ng1Module]
+          imports: [BrowserModule, UpgradeModule]
         })
         class Ng2Module {
           ngDoBootstrap() {}
@@ -343,7 +343,7 @@ export function main() {
 
         const element = html('<ng1></ng1>');
         platformBrowserDynamic().bootstrapModule(Ng2Module).then((ref) => {
-          const adapter = ref.injector.get(Ng1Adapter) as Ng1Adapter;
+          const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
           adapter.bootstrapNg1(element, [ng1Module.name]);
           // the fact that the body contains the correct text means that the
           // downgraded component was able to access the moduleInjector
@@ -411,7 +411,7 @@ export function main() {
         @NgModule({
           declarations: [Ng1, Ng2],
           entryComponents: [Ng2],
-          imports: [BrowserModule, Ng1Module]
+          imports: [BrowserModule, UpgradeModule]
         })
         class Ng2Module {
           ngDoBootstrap() {}
@@ -419,7 +419,7 @@ export function main() {
 
         const element = html(`<ng2></ng2>`);
         platformBrowserDynamic().bootstrapModule(Ng2Module).then(ref => {
-          var adapter = ref.injector.get(Ng1Adapter) as Ng1Adapter;
+          var adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
           adapter.bootstrapNg1(element, [ng1Module.name]);
 
           // we need to do setTimeout, because the EventEmitter uses setTimeout to schedule
@@ -1038,7 +1038,7 @@ export function main() {
 
       // Sample ng1 NgModule for tests
       @NgModule({
-        imports: [BrowserModule, Ng1Module],
+        imports: [BrowserModule, UpgradeModule],
         providers: [
           {provide: Ng2Service, useValue: 'ng2 service value'},
           // the following line is the "upgrade" of an Angular 1 service
@@ -1056,16 +1056,16 @@ export function main() {
 
       it('should export ng2 instance to ng1', async(() => {
         platformBrowserDynamic().bootstrapModule(MyNg2Module).then((ref) => {
-          const adapter = ref.injector.get(Ng1Adapter) as Ng1Adapter;
+          const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
           adapter.bootstrapNg1(html('<div>'), [ng1Module.name]);
-          const ng1Injector = adapter.ng1Injector;
+          const ng1Injector = adapter.$injector;
           expect(ng1Injector.get('ng2Service')).toBe('ng2 service value');
         });
       }));
 
       it('should export ng1 instance to ng2', async(() => {
         platformBrowserDynamic().bootstrapModule(MyNg2Module).then((ref) => {
-          const adapter = ref.injector.get(Ng1Adapter) as Ng1Adapter;
+          const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
           adapter.bootstrapNg1(html('<div>'), [ng1Module.name]);
           var ng2Injector = adapter.injector;
           expect(ng2Injector.get(Ng1Service)).toBe('ng1 service value');
@@ -1076,7 +1076,7 @@ export function main() {
     describe('testability', () => {
 
       @NgModule({
-        imports: [BrowserModule, Ng1Module]
+        imports: [BrowserModule, UpgradeModule]
       })
       class MyNg2Module {
         ngDoBootstrap() {}
@@ -1092,7 +1092,7 @@ export function main() {
         window.name = 'NG_DEFER_BOOTSTRAP!' + window.name;
 
         platformBrowserDynamic().bootstrapModule(MyNg2Module).then((ref) => {
-          const adapter = ref.injector.get(Ng1Adapter) as Ng1Adapter;
+          const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
           adapter.bootstrapNg1(element, [ng1Module.name]);
         });
 
@@ -1110,7 +1110,7 @@ export function main() {
         const element = html('<div></div>');
 
         platformBrowserDynamic().bootstrapModule(MyNg2Module).then((ref) => {
-        const adapter = ref.injector.get(Ng1Adapter) as Ng1Adapter;
+        const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
           adapter.bootstrapNg1(element, [ng1Module.name]);
 
           const ng2Testability: Testability = adapter.injector.get(Testability);
@@ -1154,10 +1154,11 @@ export function main() {
 
         @NgModule({
           declarations: [Ng1Component, Ng2Component],
-          imports: [BrowserModule]
+          entryComponents: [Ng2Component],
+          imports: [BrowserModule, UpgradeModule]
         })
         class Ng2Module {
-          ngDoBootstrap() {}
+          ngDoBootstrap() { /* this is a placeholder to stop the boostrapper from complaining */}
         }
 
         const ng1Module = angular.module('myExample', [])
@@ -1173,7 +1174,7 @@ export function main() {
         document.body.innerHTML = '<ng2 name="World">project</ng2>';
 
         platformBrowserDynamic().bootstrapModule(Ng2Module).then(ref => {
-          var adapter = ref.injector.get(Ng1Adapter) as Ng1Adapter;
+          var adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
           adapter.bootstrapNg1(document.body.firstElementChild, [ng1Module.name]);
 
           expect(multiTrim(document.body.textContent))
