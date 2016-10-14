@@ -2,7 +2,7 @@ import { downgradeInjectable } from '@angular/upgrade/src/aot/downgrade_injectab
 import { INJECTOR_KEY } from '@angular/upgrade/src/aot/constants';
 
 export function main() {
-  fdescribe('downgradeInjectable', () => {
+  describe('downgradeInjectable', () => {
     it('should return an Angular 1 annotated factory for the token', () => {
       const factory = downgradeInjectable('someToken');
       expect(factory[0]).toEqual(INJECTOR_KEY);
