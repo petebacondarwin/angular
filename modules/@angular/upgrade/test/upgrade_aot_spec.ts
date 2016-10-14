@@ -356,7 +356,7 @@ export function main() {
 
     describe('upgrade ng1 component', () => {
       it('should bind properties, events', async(() => {
-        console.log(angular.version);
+
         const ng1 = {
           template: 'Hello {{fullName}}; A: {{dataA}}; B: {{dataB}}; C: {{modelC}}; | ',
           bindings: {fullName: '@', modelA: '=dataA', modelB: '=dataB', modelC: '=', event: '&'},
@@ -1061,32 +1061,31 @@ export function main() {
         ngDoBootstrap() {}
       }
 
-      const ng1Module = angular.module('ng1', []);
-
       it('should handle deferred bootstrap', fakeAsync(() => {
-        let bootstrapResumed: boolean = false;
-        let bootstrapCompleted: boolean = false;
+        let applicationRunning = false;
+        const ng1Module = angular.module('ng1', []).run(() => {
+          applicationRunning = true;
+        });
+
         const element = html('<div></div>');
         window.name = 'NG_DEFER_BOOTSTRAP!' + window.name;
 
         platformBrowserDynamic().bootstrapModule(MyNg2Module).then((ref) => {
           const adapter = ref.injector.get(Ng1Adapter) as Ng1Adapter;
           adapter.bootstrapNg1(element, [ng1Module.name]);
-          expect(bootstrapResumed).toEqual(true);
-          bootstrapCompleted = true;
         });
 
         setTimeout(() => {
-          bootstrapResumed = true;
           (<any>window).angular.resumeBootstrap();
         }, 100);
 
-        expect(bootstrapResumed).toEqual(false);
+        expect(applicationRunning).toEqual(false);
         tick(100);
-        expect(bootstrapCompleted).toEqual(true);
+        expect(applicationRunning).toEqual(true);
       }));
 
       xit('should wait for ng2 testability', fakeAsync(() => {
+          const ng1Module = angular.module('ng1', [])
           const element = html('<div></div>');
 
           platformBrowserDynamic().bootstrapModule(MyNg2Module).then((ref) => {
