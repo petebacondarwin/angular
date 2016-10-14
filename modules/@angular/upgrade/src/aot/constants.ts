@@ -1,4 +1,3 @@
-
 export const UPGRADE_MODULE_NAME = '$$UpgradeModule';
 export const INJECTOR_KEY = '$$angularInjector';
 

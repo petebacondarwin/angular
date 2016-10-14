@@ -48,7 +48,7 @@ export function main() {
         // the ng1 app module that will consume the downgraded component
         const ng1Module = angular.module('ng1', [])
           // create an ng1 facade of the ng2 component
-          .directive('ng2', downgradeComponent({ selector: 'ng2', type: Ng2Component }));
+          .directive('ng2', downgradeComponent({ component: Ng2Component }));
 
         const element =
             html('<div>{{ \'ng1[\' }}<ng2>~{{ \'ng-content\' }}~</ng2>{{ \']\' }}</div>');
@@ -222,15 +222,14 @@ export function main() {
         }
 
         ng1Module.directive('ng2', downgradeComponent({
-          type: Ng2Component,
-          selector: 'ng2',
-          inputs: parseFields([
+          component: Ng2Component,
+          inputs: [
             'literal', 'interpolate', 'oneWayA', 'oneWayB', 'twoWayA', 'twoWayB'
-          ]),
-          outputs: parseFields([
+          ],
+          outputs: [
             'eventA', 'eventB', 'twoWayAEmitter: twoWayAChange',
             'twoWayBEmitter: twoWayBChange'
-          ])
+          ]
         }));
 
         @NgModule({
@@ -284,10 +283,7 @@ export function main() {
               template: '<div ng-if="!destroyIt"><ng2></ng2></div>'
             };
           })
-          .directive('ng2', downgradeComponent({
-            type: Ng2Component,
-            selector: 'ng2'
-          }));
+          .directive('ng2', downgradeComponent({ component: Ng2Component }));
         const element = html('<ng1></ng1>');
         platformBrowserDynamic().bootstrapModule(Ng2Module).then((ref) => {
           const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
@@ -336,10 +332,7 @@ export function main() {
               };
             }
           ])
-          .directive('ng2', downgradeComponent({
-            type: Ng2Component,
-            selector: 'ng2'
-          }));
+          .directive('ng2', downgradeComponent({ component: Ng2Component }));
 
         const element = html('<ng1></ng1>');
         platformBrowserDynamic().bootstrapModule(Ng2Module).then((ref) => {
@@ -1169,7 +1162,7 @@ export function main() {
               template: 'ng1[Hello {{title}}!](<span ng-transclude></span>)'
             };
           })
-          .directive('ng2', downgradeComponent({ type: Ng2Component, selector: 'ng2' }));
+          .directive('ng2', downgradeComponent({ component: Ng2Component }));
 
         document.body.innerHTML = '<ng2 name="World">project</ng2>';
 
