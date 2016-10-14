@@ -1130,7 +1130,7 @@ export function main() {
     });
 
     describe('examples', () => {
-      it('should verify UpgradeAdapter example', async(() => {
+      fit('should verify UpgradeAdapter example', async(() => {
 
         // This is wrapping (upgrading) an Angular 1 component to be used in an Angular 2 component
         @Directive({ selector: 'ng1' })
