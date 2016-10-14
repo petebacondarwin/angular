@@ -1,5 +1,5 @@
-import {NgModule, Injector, NgZone, FactoryProvider, ComponentFactory, ComponentFactoryResolver, Testability} from '@angular/core';
-import { ng1Providers, setNg1Injector } from './ng1_providers';
+import {Injector, Injectable, NgZone, FactoryProvider, ComponentFactory, ComponentFactoryResolver, Testability} from '@angular/core';
+import { storeNg1Injector } from './ng1_module';
 import { UPGRADE_MODULE_INJECTOR, NG1_INJECTOR, NG1_PROVIDE, NG1_TESTABILITY } from '../constants';
 import { controllerKey } from '../util';
 import * as angular from '../angular_js';
@@ -7,28 +7,20 @@ import * as angular from '../angular_js';
 const NG1_UPGRADE_MODULE_NAME = 'angular1UpgradeModule';
 
 /**
- * UpgradeModule is the base class for the module that will contain all the
- * information about what Angular providers and component are to be bridged
- * between Angular 1 and Angular 2+
+ * Ng1Adapter used to bootstrap the Angular 1 application
+ * in an ngUpgrade context
  *
  * NOTE: the Angular 1 injector is `this.ng1Injector`;
  *       the Angular 2+ injector is `this.injector`
  *
  * TODO: Add more detailed information here with runnable examples
  */
-@NgModule({ providers: [ng1Providers] })
-export class UpgradeModule {
+@Injectable()
+export class Ng1Adapter {
 
   public ng1Injector: angular.IInjectorService;
 
   constructor(public injector: Injector, public ngZone: NgZone) {}
-
-  /**
-   * This method prevents the Angular bootstrapper from complaining about a
-   * lack of `bootstrap` component in the `@NgModule` metadata.
-   * @internal
-   */
-  ngDoBootstrap() {}
 
   /**
    * Bootstrap this NgModule into an Angular 1 application.
@@ -50,7 +42,7 @@ export class UpgradeModule {
         // We store the ng1 injector so that the provider in the module injector can access it
         // Then we "get" the ng1 injector from the module injector, which triggers the provider to read
         // the stored injector and release the reference to it.
-        setNg1Injector(this.ng1Injector = ng1Injector);
+        storeNg1Injector(this.ng1Injector = ng1Injector);
         this.injector.get(NG1_INJECTOR);
 
 
@@ -90,8 +82,8 @@ export class UpgradeModule {
       }]);
 
     // Bootstrap the angular 1 application inside our zone
-   this.ngZone.run(() => {
+    this.ngZone.run(() => {
       angular.bootstrap(element, [upgradeModule.name], config);
-   });
+    });
   }
 }
