@@ -8,7 +8,7 @@
 
 import {
   Injector, Class, Component, Directive, ElementRef, Input, Output, OnChanges, OnDestroy,
-  SimpleChanges, EventEmitter, NO_ERRORS_SCHEMA, NgModule, NgModuleRef, OpaqueToken, Testability,
+  SimpleChanges, EventEmitter, NgModule, NgModuleRef, OpaqueToken, Testability,
   destroyPlatform, forwardRef
 } from '@angular/core';
 import { async, fakeAsync, tick } from '@angular/core/testing';
@@ -236,8 +236,7 @@ export function main() {
         @NgModule({
           declarations: [Ng2Component],
           entryComponents: [Ng2Component],
-          imports: [BrowserModule, Ng1Module],
-          schemas: [NO_ERRORS_SCHEMA],
+          imports: [BrowserModule, Ng1Module]
         })
         class Ng2Module {
           ngDoBootstrap() {}
@@ -273,8 +272,7 @@ export function main() {
         @NgModule({
           declarations: [Ng2Component],
           entryComponents: [Ng2Component],
-          imports: [BrowserModule, Ng1Module],
-          schemas: [NO_ERRORS_SCHEMA]
+          imports: [BrowserModule, Ng1Module]
         })
         class Ng2Module {
           ngDoBootstrap() {}
@@ -313,8 +311,7 @@ export function main() {
         @NgModule({
           declarations: [Ng2Component],
           entryComponents: [Ng2Component],
-          imports: [BrowserModule, Ng1Module],
-          schemas: [NO_ERRORS_SCHEMA]
+          imports: [BrowserModule, Ng1Module]
         })
         class Ng2Module {
           ngDoBootstrap() {}
@@ -414,8 +411,7 @@ export function main() {
         @NgModule({
           declarations: [Ng1, Ng2],
           entryComponents: [Ng2],
-          imports: [BrowserModule, Ng1Module],
-          // schemas: [NO_ERRORS_SCHEMA]
+          imports: [BrowserModule, Ng1Module]
         })
         class Ng2Module {
           ngDoBootstrap() {}
@@ -426,14 +422,13 @@ export function main() {
           var adapter = ref.injector.get(Ng1Adapter) as Ng1Adapter;
           adapter.bootstrapNg1(element, [ng1Module.name]);
 
-          // // we need to do setTimeout, because the EventEmitter uses setTimeout to schedule
-          // // events, and so without this we would not see the events processed.
-          // setTimeout(() => {
-          //   expect(multiTrim(document.body.textContent))
-          //       .toEqual(
-          //           'Hello SAVKIN, Victor, SF; A: VICTOR; B: SAVKIN; C: SF; | Hello TEST; A: First; B: Last; C: City; | WORKS-SAVKIN, Victor, SF');
-          //   ref.dispose();
-          // }, 0);
+          // we need to do setTimeout, because the EventEmitter uses setTimeout to schedule
+          // events, and so without this we would not see the events processed.
+          setTimeout(() => {
+            expect(multiTrim(document.body.textContent))
+                .toEqual(
+                    'Hello SAVKIN, Victor, SF; A: VICTOR; B: SAVKIN; C: SF; | Hello TEST; A: First; B: Last; C: City; | WORKS-SAVKIN, Victor, SF');
+          }, 0);
 
           expect(multiTrim(document.body.textContent)).toBe(
               'Hello SAVKIN, Victor, SF; A: VICTOR; B: SAVKIN; C: SF; | ' +
@@ -1044,7 +1039,6 @@ export function main() {
       // Sample ng1 NgModule for tests
       @NgModule({
         imports: [BrowserModule, Ng1Module],
-        schemas: [NO_ERRORS_SCHEMA],
         providers: [
           {provide: Ng2Service, useValue: 'ng2 service value'},
           // the following line is the "upgrade" of an Angular 1 service
@@ -1160,8 +1154,7 @@ export function main() {
 
         @NgModule({
           declarations: [Ng1Component, Ng2Component],
-          imports: [BrowserModule],
-          schemas: [NO_ERRORS_SCHEMA],
+          imports: [BrowserModule]
         })
         class Ng2Module {
           ngDoBootstrap() {}
