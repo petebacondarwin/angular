@@ -13,8 +13,7 @@
  */
 export * from './src/upgrade';
 export { UpgradeModule } from './src/aot/upgrade_module';
-export { ng2ProviderFactory } from './src/aot/ng2_provider_factory';
-export { ng1ServiceProvider } from './src/aot/ng1_service_provider';
+export { downgradeInjectable } from './src/aot/downgrade_injectable';
 export { downgradeNg2Component } from './src/aot/downgrade_component';
 
 // This file only reexports content of the `src` folder. Keep it that way.
