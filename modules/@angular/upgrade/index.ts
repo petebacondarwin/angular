@@ -12,7 +12,8 @@
  * Entry point for all public APIs of the upgrade package.
  */
 export * from './src/upgrade';
-export { UpgradeModule } from './src/aot/upgrade_module';
+export { Ng1Adapter } from './src/aot/ng1_adapter';
+export { Ng1Module } from './src/aot/ng1_module';
 export { downgradeInjectable } from './src/aot/downgrade_injectable';
 export { downgradeNg2Component } from './src/aot/downgrade_component';
 
