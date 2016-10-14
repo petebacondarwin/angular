@@ -371,8 +371,8 @@ export function main() {
           selector: 'ng1'
         })
         class Ng1 extends UpgradeComponent {
-          constructor(elementRef: ElementRef) {
-            super('ng1', elementRef);
+          constructor(elementRef: ElementRef, upgradeModule: UpgradeModule) {
+            super('ng1', elementRef, upgradeModule);
           }
 
           @Input() set fullName(value: string) { this.setInput('fullName', value); }
@@ -1134,7 +1134,11 @@ export function main() {
 
         // This is wrapping (upgrading) an Angular 1 component to be used in an Angular 2 component
         @Directive({ selector: 'ng1' })
-        class Ng1Component extends UpgradeComponent {}
+        class Ng1Component extends UpgradeComponent {
+          constructor(elementRef: ElementRef, upgradeModule: UpgradeModule) {
+            super('ng1', elementRef, upgradeModule);
+          }
+        }
 
         // This is an Angular 2 component that will be downgraded
         @Component({
