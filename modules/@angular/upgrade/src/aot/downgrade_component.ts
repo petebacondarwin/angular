@@ -1,7 +1,7 @@
 import { Injector, ComponentFactory, ComponentFactoryResolver } from '@angular/core';
 import { INJECTOR_KEY, $INJECTOR, $PARSE } from './constants';
-import { ComponentInfo } from '../metadata';
 import { DowngradeComponentAdapter } from './downgrade_component_adapter';
+import { ComponentInfo } from './component_info';
 import * as angular from '../angular_js';
 
 let downgradeCount = 0;
@@ -28,10 +28,10 @@ export function downgradeComponent(info: ComponentInfo) : Function {
         }
 
         const componentFactoryResolver : ComponentFactoryResolver = parentInjector.get(ComponentFactoryResolver);
-        const componentFactory: ComponentFactory<any> = componentFactoryResolver.resolveComponentFactory(info.type);
+        const componentFactory: ComponentFactory<any> = componentFactoryResolver.resolveComponentFactory(info.component);
 
         if (!componentFactory) {
-          throw new Error('Expecting ComponentFactory for: ' + info.type);
+          throw new Error('Expecting ComponentFactory for: ' + info.component);
         }
 
         const facade = new DowngradeComponentAdapter(

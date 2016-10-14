@@ -6,11 +6,10 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {ChangeDetectorRef, ComponentFactory, ComponentRef, EventEmitter, Injector, OnChanges, ReflectiveInjector, SimpleChange, SimpleChanges} from '@angular/core';
-
+import { Type, ChangeDetectorRef, ComponentFactory, ComponentRef, EventEmitter, Injector, OnChanges, ReflectiveInjector, SimpleChange, SimpleChanges} from '@angular/core';
+import { ComponentInfo, PropertyBinding } from './component_info';
 import * as angular from '../angular_js';
 import {$SCOPE} from './constants';
-import {ComponentInfo} from '../metadata';
 
 const INITIAL_VALUE = {
   __UNINITIALIZED__: true
@@ -18,6 +17,7 @@ const INITIAL_VALUE = {
 
 export class DowngradeComponentAdapter {
   component: any = null;
+  inputs: Attr
   inputChangeCount: number = 0;
   inputChanges: SimpleChanges = null;
   componentRef: ComponentRef<any> = null;
@@ -51,8 +51,9 @@ export class DowngradeComponentAdapter {
     var attrs = this.attrs;
     var inputs = this.info.inputs || [];
     for (var i = 0; i < inputs.length; i++) {
-      var input = inputs[i];
+      var input = new PropertyBinding(inputs[i]);
       var expr: any /** TODO #9100 */ = null;
+
       if (attrs.hasOwnProperty(input.attr)) {
         var observeFn = ((prop: any /** TODO #9100 */) => {
           var prevValue = INITIAL_VALUE;
@@ -67,6 +68,7 @@ export class DowngradeComponentAdapter {
           };
         })(input.prop);
         attrs.$observe(input.attr, observeFn);
+
       } else if (attrs.hasOwnProperty(input.bindAttr)) {
         expr = (attrs as any /** TODO #9100 */)[input.bindAttr];
       } else if (attrs.hasOwnProperty(input.bracketAttr)) {
@@ -90,7 +92,7 @@ export class DowngradeComponentAdapter {
       }
     }
 
-    var prototype = this.info.type.prototype;
+    var prototype = this.info.component.prototype;
     if (prototype && (<OnChanges>prototype).ngOnChanges) {
       // Detect: OnChanges interface
       this.inputChanges = {};
@@ -117,7 +119,7 @@ export class DowngradeComponentAdapter {
     var attrs = this.attrs;
     var outputs = this.info.outputs || [];
     for (var j = 0; j < outputs.length; j++) {
-      var output = outputs[j];
+      var output = new PropertyBinding(outputs[j]);
       var expr: any /** TODO #9100 */ = null;
       var assignExpr = false;
 
@@ -154,7 +156,7 @@ export class DowngradeComponentAdapter {
                      getter(this.scope, {$event: v}))(getter)
           });
         } else {
-          throw new Error(`Missing emitter '${output.prop}' on component '${this.info.selector}'!`);
+          throw new Error(`Missing emitter '${output.prop}' on component '${this.info.component}'!`);
         }
       }
     }
