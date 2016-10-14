@@ -302,7 +302,7 @@ export function main() {
         });
       }));
 
-      it('should fallback to the root ng2.injector when compiled outside the dom', async(() => {
+      it('should work when compiled outside the dom (by fallback to the root ng2.injector)', async(() => {
 
         @Component({selector: 'ng2', template: 'test'})
         class Ng2Component {}
@@ -326,6 +326,9 @@ export function main() {
                     $scope: angular.IScope,
                     $element: angular.IAugmentedJQuery,
                     $attrs: angular.IAttributes) {
+                  // here we compile some HTML that contains a downgraded component
+                  // since it is not currently in the DOM it is not able to "require"
+                  // an ng2 injector so it should use the `moduleInjector` instead.
                   const compiled = $compile('<ng2></ng2>');
                   const template = compiled($scope);
                   $element.append(template);
@@ -342,6 +345,9 @@ export function main() {
         platformBrowserDynamic().bootstrapModule(Ng2Module).then((ref) => {
           const adapter = ref.injector.get(Ng1Adapter) as Ng1Adapter;
           adapter.bootstrapNg1(element, [ng1Module.name]);
+          // the fact that the body contains the correct text means that the
+          // downgraded component was able to access the moduleInjector
+          // (since there is no other injector in this system)
           expect(multiTrim(document.body.textContent)).toEqual('test');
         });
       }));
