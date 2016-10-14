@@ -8,7 +8,7 @@ import * as angular from '../angular_js';
 // >   Consider replacing the function or lambda with a reference to an exported function
 
 /**
- * The Ng1Module contains providers for all the core Angular 1 services
+ * The Ng1Module contains providers for the Ng1Adapter and all the core Angular 1 services
  */
 @NgModule({
   providers: [
