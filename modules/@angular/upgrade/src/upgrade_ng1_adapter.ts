@@ -248,7 +248,7 @@ class UpgradeNg1ComponentAdapter implements OnInit, OnChanges, DoCheck {
       this.element.removeChild(childNode);
       childNodes.push(childNode);
     }
-    this.linkFn(this.componentScope, (clonedElement: Node[], scope: angular.IScope) => {
+    this.linkFn(this.componentScope, (clonedElement, scope) => {
       for (var i = 0, ii = clonedElement.length; i < ii; i++) {
         this.element.appendChild(clonedElement[i]);
       }

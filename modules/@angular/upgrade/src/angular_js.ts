@@ -29,7 +29,7 @@ export interface ICompileService {
   (element: Element|NodeList|string, transclude?: Function): ILinkFn;
 }
 export interface ILinkFn {
-  (scope: IScope, cloneAttachFn?: Function, options?: ILinkFnOptions): IAugmentedJQuery;
+  (scope: IScope, cloneAttachFn?: ICloneAttachFunction, options?: ILinkFnOptions): IAugmentedJQuery;
 }
 export interface ILinkFnOptions {
   parentBoundTranscludeFn?: Function;
@@ -56,7 +56,7 @@ export interface IAngularBootstrapConfig {
 }
 export interface IDirective {
   compile?: IDirectiveCompileFn;
-  controller?: string | IInjectable;
+  controller?: IController;
   controllerAs?: string;
   bindToController?: boolean | { [key: string]: string };
   link?: IDirectiveLinkFn|IDirectivePrePost;
@@ -137,8 +137,9 @@ export interface ICacheObject {
   get(key: string): any;
 }
 export interface ITemplateCacheService extends ICacheObject {}
+export type IController = string | IInjectable;
 export interface IControllerService {
-  (controllerConstructor: Function, locals?: any, later?: any, ident?: any): any;
+  (controllerConstructor: IController, locals?: any, later?: any, ident?: any): any;
   (controllerName: string, locals?: any): any;
 }
 
