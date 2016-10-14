@@ -7,8 +7,9 @@
  */
 
 import {
-  Injector, Class, Component, OnChanges, OnDestroy, SimpleChanges, EventEmitter, NO_ERRORS_SCHEMA,
-  NgModule, NgModuleRef, OpaqueToken, Testability, destroyPlatform, forwardRef
+  Injector, Class, Component, Directive, ElementRef, Input, Output, OnChanges, OnDestroy,
+  SimpleChanges, EventEmitter, NO_ERRORS_SCHEMA, NgModule, NgModuleRef, OpaqueToken, Testability,
+  destroyPlatform, forwardRef
 } from '@angular/core';
 import { async, fakeAsync, tick } from '@angular/core/testing';
 import { BrowserModule, platformBrowser } from '@angular/platform-browser';
@@ -353,633 +354,658 @@ export function main() {
       }));
     });
 
-    // describe('upgrade ng1 component', () => {
-    //   it('should bind properties, events', async(() => {
-    //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-    //        const ng1Module = angular.module('ng1', []);
-
-    //        const ng1 = () => {
-    //          return {
-    //            template: 'Hello {{fullName}}; A: {{dataA}}; B: {{dataB}}; C: {{modelC}}; | ',
-    //            scope: {fullName: '@', modelA: '=dataA', modelB: '=dataB', modelC: '=', event: '&'},
-    //            link: function(scope: any /** TODO #9100 */) {
-    //              scope.$watch('dataB', (v: any /** TODO #9100 */) => {
-    //                if (v == 'Savkin') {
-    //                  scope.dataB = 'SAVKIN';
-    //                  scope.event('WORKS');
-
-    //                  // Should not update because [model-a] is uni directional
-    //                  scope.dataA = 'VICTOR';
-    //                }
-    //              });
-    //            }
-    //          };
-    //        };
-    //        ng1Module.directive('ng1', ng1);
-    //        const Ng2 =
-    //            Component({
-    //              selector: 'ng2',
-    //              template:
-    //                  '<ng1 fullName="{{last}}, {{first}}, {{city}}" [modelA]="first" [(modelB)]="last" [modelC]="city" ' +
-    //                  '(event)="event=$event"></ng1>' +
-    //                  '<ng1 fullName="{{\'TEST\'}}" modelA="First" modelB="Last" modelC="City"></ng1>' +
-    //                  '{{event}}-{{last}}, {{first}}, {{city}}'
-    //            }).Class({
-    //              constructor: function() {
-    //                this.first = 'Victor';
-    //                this.last = 'Savkin';
-    //                this.city = 'SF';
-    //                this.event = '?';
-    //              }
-    //            });
-
-    //        const Ng2Module = NgModule({
-    //                            declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-    //                            imports: [BrowserModule],
-    //                            schemas: [NO_ERRORS_SCHEMA],
-    //                          }).Class({constructor: function() {}});
-
-    //        ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-    //        const element = html(`<div><ng2></ng2></div>`);
-    //        adapter.bootstrap(element, ['ng1']).ready((ref) => {
-    //          // we need to do setTimeout, because the EventEmitter uses setTimeout to schedule
-    //          // events, and so without this we would not see the events processed.
-    //          setTimeout(() => {
-    //            expect(multiTrim(document.body.textContent))
-    //                .toEqual(
-    //                    'Hello SAVKIN, Victor, SF; A: VICTOR; B: SAVKIN; C: SF; | Hello TEST; A: First; B: Last; C: City; | WORKS-SAVKIN, Victor, SF');
-    //            ref.dispose();
-    //          }, 0);
-    //        });
-    //      }));
-
-    //   it('should bind optional properties', async(() => {
-    //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-    //        const ng1Module = angular.module('ng1', []);
-
-    //        const ng1 = () => {
-    //          return {
-    //            template: 'Hello; A: {{dataA}}; B: {{modelB}}; | ',
-    //            scope: {modelA: '=?dataA', modelB: '=?'}
-    //          };
-    //        };
-    //        ng1Module.directive('ng1', ng1);
-    //        const Ng2 = Component({
-    //                      selector: 'ng2',
-    //                      template: '<ng1 [modelA]="first" [modelB]="last"></ng1>' +
-    //                          '<ng1 modelA="First" modelB="Last"></ng1>' +
-    //                          '<ng1></ng1>' +
-    //                          '<ng1></ng1>'
-    //                    }).Class({
-    //          constructor: function() {
-    //            this.first = 'Victor';
-    //            this.last = 'Savkin';
-    //          }
-    //        });
-
-    //        const Ng2Module = NgModule({
-    //                            declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-    //                            imports: [BrowserModule],
-    //                            schemas: [NO_ERRORS_SCHEMA],
-    //                          }).Class({constructor: function() {}});
-
-    //        ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-    //        const element = html(`<div><ng2></ng2></div>`);
-    //        adapter.bootstrap(element, ['ng1']).ready((ref) => {
-    //          // we need to do setTimeout, because the EventEmitter uses setTimeout to schedule
-    //          // events, and so without this we would not see the events processed.
-    //          setTimeout(() => {
-    //            expect(multiTrim(document.body.textContent))
-    //                .toEqual(
-    //                    'Hello; A: Victor; B: Savkin; | Hello; A: First; B: Last; | Hello; A: ; B: ; | Hello; A: ; B: ; |');
-    //            ref.dispose();
-    //          }, 0);
-    //        });
-    //      }));
-
-    //   it('should bind properties, events in controller when bindToController is not used',
-    //      async(() => {
-    //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-    //        const ng1Module = angular.module('ng1', []);
-
-    //        const ng1 = () => {
-    //          return {
-    //            restrict: 'E',
-    //            template: '{{someText}} - Length: {{data.length}}',
-    //            scope: {data: '='},
-    //            controller: function($scope: any /** TODO #9100 */) {
-    //              $scope.someText = 'ng1 - Data: ' + $scope.data;
-    //            }
-    //          };
-    //        };
-
-    //        ng1Module.directive('ng1', ng1);
-    //        const Ng2 =
-    //            Component({
-    //              selector: 'ng2',
-    //              template:
-    //                  '{{someText}} - Length: {{dataList.length}} | <ng1 [(data)]="dataList"></ng1>'
-    //            }).Class({
-
-    //              constructor: function() {
-    //                this.dataList = [1, 2, 3];
-    //                this.someText = 'ng2';
-    //              }
-    //            });
-
-    //        const Ng2Module = NgModule({
-    //                            declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-    //                            imports: [BrowserModule],
-    //                            schemas: [NO_ERRORS_SCHEMA],
-    //                          }).Class({constructor: function() {}});
-
-    //        ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-    //        const element = html(`<div><ng2></ng2></div>`);
-    //        adapter.bootstrap(element, ['ng1']).ready((ref) => {
-    //          // we need to do setTimeout, because the EventEmitter uses setTimeout to schedule
-    //          // events, and so without this we would not see the events processed.
-    //          setTimeout(() => {
-    //            expect(multiTrim(document.body.textContent))
-    //                .toEqual('ng2 - Length: 3 | ng1 - Data: 1,2,3 - Length: 3');
-    //            ref.dispose();
-    //          }, 0);
-    //        });
-    //      }));
-
-    //   it('should bind properties, events in link function', async(() => {
-    //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-    //        const ng1Module = angular.module('ng1', []);
-
-    //        const ng1 = () => {
-    //          return {
-    //            restrict: 'E',
-    //            template: '{{someText}} - Length: {{data.length}}',
-    //            scope: {data: '='},
-    //            link: function($scope: any /** TODO #9100 */) {
-    //              $scope.someText = 'ng1 - Data: ' + $scope.data;
-    //            }
-    //          };
-    //        };
-
-    //        ng1Module.directive('ng1', ng1);
-    //        const Ng2 =
-    //            Component({
-    //              selector: 'ng2',
-    //              template:
-    //                  '{{someText}} - Length: {{dataList.length}} | <ng1 [(data)]="dataList"></ng1>'
-    //            }).Class({
-
-    //              constructor: function() {
-    //                this.dataList = [1, 2, 3];
-    //                this.someText = 'ng2';
-    //              }
-    //            });
-
-    //        const Ng2Module = NgModule({
-    //                            declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-    //                            imports: [BrowserModule],
-    //                            schemas: [NO_ERRORS_SCHEMA],
-    //                          }).Class({constructor: function() {}});
-
-    //        ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-    //        const element = html(`<div><ng2></ng2></div>`);
-    //        adapter.bootstrap(element, ['ng1']).ready((ref) => {
-    //          // we need to do setTimeout, because the EventEmitter uses setTimeout to schedule
-    //          // events, and so without this we would not see the events processed.
-    //          setTimeout(() => {
-    //            expect(multiTrim(document.body.textContent))
-    //                .toEqual('ng2 - Length: 3 | ng1 - Data: 1,2,3 - Length: 3');
-    //            ref.dispose();
-    //          }, 0);
-    //        });
-    //      }));
-
-    //   it('should support templateUrl fetched from $httpBackend', async(() => {
-    //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-    //        const ng1Module = angular.module('ng1', []);
-    //        ng1Module.value(
-    //            '$httpBackend', (method: any /** TODO #9100 */, url: any /** TODO #9100 */,
-    //                             post: any /** TODO #9100 */,
-    //                             cbFn: any /** TODO #9100 */) => { cbFn(200, `${method}:${url}`); });
-
-    //        const ng1 = () => { return {templateUrl: 'url.html'}; };
-    //        ng1Module.directive('ng1', ng1);
-    //        const Ng2 = Component({selector: 'ng2', template: '<ng1></ng1>'}).Class({
-    //          constructor: function() {}
-    //        });
-
-    //        const Ng2Module = NgModule({
-    //                            declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-    //                            imports: [BrowserModule],
-    //                            schemas: [NO_ERRORS_SCHEMA],
-    //                          }).Class({constructor: function() {}});
-
-    //        ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-    //        const element = html(`<div><ng2></ng2></div>`);
-    //        adapter.bootstrap(element, ['ng1']).ready((ref) => {
-    //          expect(multiTrim(document.body.textContent)).toEqual('GET:url.html');
-    //          ref.dispose();
-    //        });
-    //      }));
-
-    //   it('should support templateUrl as a function', async(() => {
-    //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-    //        const ng1Module = angular.module('ng1', []);
-    //        ng1Module.value(
-    //            '$httpBackend', (method: any /** TODO #9100 */, url: any /** TODO #9100 */,
-    //                             post: any /** TODO #9100 */,
-    //                             cbFn: any /** TODO #9100 */) => { cbFn(200, `${method}:${url}`); });
-
-    //        const ng1 = () => { return {templateUrl() { return 'url.html'; }}; };
-    //        ng1Module.directive('ng1', ng1);
-    //        const Ng2 = Component({selector: 'ng2', template: '<ng1></ng1>'}).Class({
-    //          constructor: function() {}
-    //        });
-
-    //        const Ng2Module = NgModule({
-    //                            declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-    //                            imports: [BrowserModule],
-    //                            schemas: [NO_ERRORS_SCHEMA],
-    //                          }).Class({constructor: function() {}});
-
-    //        ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-    //        const element = html(`<div><ng2></ng2></div>`);
-    //        adapter.bootstrap(element, ['ng1']).ready((ref) => {
-    //          expect(multiTrim(document.body.textContent)).toEqual('GET:url.html');
-    //          ref.dispose();
-    //        });
-    //      }));
-
-    //   it('should support empty template', async(() => {
-    //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-    //        const ng1Module = angular.module('ng1', []);
-
-    //        const ng1 = () => { return {template: ''}; };
-    //        ng1Module.directive('ng1', ng1);
-
-    //        const Ng2 = Component({selector: 'ng2', template: '<ng1></ng1>'}).Class({
-    //          constructor: function() {}
-    //        });
-
-    //        const Ng2Module = NgModule({
-    //                            declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-    //                            imports: [BrowserModule],
-    //                            schemas: [NO_ERRORS_SCHEMA],
-    //                          }).Class({constructor: function() {}});
-
-    //        ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-    //        const element = html(`<div><ng2></ng2></div>`);
-    //        adapter.bootstrap(element, ['ng1']).ready((ref) => {
-    //          expect(multiTrim(document.body.textContent)).toEqual('');
-    //          ref.dispose();
-    //        });
-    //      }));
-
-    //   it('should support template as a function', async(() => {
-    //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-    //        const ng1Module = angular.module('ng1', []);
-
-    //        const ng1 = () => { return {template() { return ''; }}; };
-    //        ng1Module.directive('ng1', ng1);
-
-    //        const Ng2 = Component({selector: 'ng2', template: '<ng1></ng1>'}).Class({
-    //          constructor: function() {}
-    //        });
-
-    //        const Ng2Module = NgModule({
-    //                            declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-    //                            imports: [BrowserModule],
-    //                            schemas: [NO_ERRORS_SCHEMA],
-    //                          }).Class({constructor: function() {}});
-
-    //        ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-    //        const element = html(`<div><ng2></ng2></div>`);
-    //        adapter.bootstrap(element, ['ng1']).ready((ref) => {
-    //          expect(multiTrim(document.body.textContent)).toEqual('');
-    //          ref.dispose();
-    //        });
-    //      }));
-
-    //   it('should support templateUrl fetched from $templateCache', async(() => {
-    //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-    //        const ng1Module = angular.module('ng1', []);
-    //        ng1Module.run(
-    //            ($templateCache: any /** TODO #9100 */) => $templateCache.put('url.html', 'WORKS'));
-
-    //        const ng1 = () => { return {templateUrl: 'url.html'}; };
-    //        ng1Module.directive('ng1', ng1);
-
-    //        const Ng2 = Component({selector: 'ng2', template: '<ng1></ng1>'}).Class({
-    //          constructor: function() {}
-    //        });
-
-    //        const Ng2Module = NgModule({
-    //                            declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-    //                            imports: [BrowserModule],
-    //                            schemas: [NO_ERRORS_SCHEMA],
-    //                          }).Class({constructor: function() {}});
-
-    //        ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-    //        const element = html(`<div><ng2></ng2></div>`);
-    //        adapter.bootstrap(element, ['ng1']).ready((ref) => {
-    //          expect(multiTrim(document.body.textContent)).toEqual('WORKS');
-    //          ref.dispose();
-    //        });
-    //      }));
-
-    //   it('should support controller with controllerAs', async(() => {
-    //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-    //        const ng1Module = angular.module('ng1', []);
-
-    //        const ng1 = () => {
-    //          return {
-    //            scope: true,
-    //            template:
-    //                '{{ctl.scope}}; {{ctl.isClass}}; {{ctl.hasElement}}; {{ctl.isPublished()}}',
-    //            controllerAs: 'ctl',
-    //            controller: Class({
-    //              constructor: function(
-    //                  $scope: any /** TODO #9100 */, $element: any /** TODO #9100 */) {
-    //                (<any>this).verifyIAmAClass();
-    //                this.scope = $scope.$parent.$parent == $scope.$root ? 'scope' : 'wrong-scope';
-    //                this.hasElement = $element[0].nodeName;
-    //                this.$element = $element;
-    //              },
-    //              verifyIAmAClass: function() { this.isClass = 'isClass'; },
-    //              isPublished: function() {
-    //                return this.$element.controller('ng1') == this ? 'published' : 'not-published';
-    //              }
-    //            })
-    //          };
-    //        };
-    //        ng1Module.directive('ng1', ng1);
-
-    //        const Ng2 = Component({selector: 'ng2', template: '<ng1></ng1>'}).Class({
-    //          constructor: function() {}
-    //        });
-
-    //        const Ng2Module = NgModule({
-    //                            declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-    //                            imports: [BrowserModule],
-    //                            schemas: [NO_ERRORS_SCHEMA],
-    //                          }).Class({constructor: function() {}});
-
-    //        ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-    //        const element = html(`<div><ng2></ng2></div>`);
-    //        adapter.bootstrap(element, ['ng1']).ready((ref) => {
-    //          expect(multiTrim(document.body.textContent)).toEqual('scope; isClass; NG1; published');
-    //          ref.dispose();
-    //        });
-    //      }));
-
-    //   it('should support bindToController', async(() => {
-    //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-    //        const ng1Module = angular.module('ng1', []);
-
-    //        const ng1 = () => {
-    //          return {
-    //            scope: {title: '@'},
-    //            bindToController: true,
-    //            template: '{{ctl.title}}',
-    //            controllerAs: 'ctl',
-    //            controller: Class({constructor: function() {}})
-    //          };
-    //        };
-    //        ng1Module.directive('ng1', ng1);
-
-    //        const Ng2 = Component({selector: 'ng2', template: '<ng1 title="WORKS"></ng1>'}).Class({
-    //          constructor: function() {}
-    //        });
-
-    //        const Ng2Module = NgModule({
-    //                            declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-    //                            imports: [BrowserModule],
-    //                            schemas: [NO_ERRORS_SCHEMA],
-    //                          }).Class({constructor: function() {}});
-
-    //        ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-    //        const element = html(`<div><ng2></ng2></div>`);
-    //        adapter.bootstrap(element, ['ng1']).ready((ref) => {
-    //          expect(multiTrim(document.body.textContent)).toEqual('WORKS');
-    //          ref.dispose();
-    //        });
-    //      }));
-
-    //   it('should support bindToController with bindings', async(() => {
-    //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-    //        const ng1Module = angular.module('ng1', []);
-
-    //        const ng1 = () => {
-    //          return {
-    //            scope: {},
-    //            bindToController: {title: '@'},
-    //            template: '{{ctl.title}}',
-    //            controllerAs: 'ctl',
-    //            controller: Class({constructor: function() {}})
-    //          };
-    //        };
-    //        ng1Module.directive('ng1', ng1);
-
-    //        const Ng2 = Component({selector: 'ng2', template: '<ng1 title="WORKS"></ng1>'}).Class({
-    //          constructor: function() {}
-    //        });
-
-    //        const Ng2Module = NgModule({
-    //                            declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-    //                            imports: [BrowserModule],
-    //                            schemas: [NO_ERRORS_SCHEMA],
-    //                          }).Class({constructor: function() {}});
-
-    //        ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-    //        const element = html(`<div><ng2></ng2></div>`);
-    //        adapter.bootstrap(element, ['ng1']).ready((ref) => {
-    //          expect(multiTrim(document.body.textContent)).toEqual('WORKS');
-    //          ref.dispose();
-    //        });
-    //      }));
-
-    //   it('should support single require in linking fn', async(() => {
-    //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-    //        const ng1Module = angular.module('ng1', []);
-
-    //        const ng1 = ($rootScope: any /** TODO #9100 */) => {
-    //          return {
-    //            scope: {title: '@'},
-    //            bindToController: true,
-    //            template: '{{ctl.status}}',
-    //            require: 'ng1',
-    //            controllerAs: 'ctrl',
-    //            controller: Class({constructor: function() { this.status = 'WORKS'; }}),
-    //            link: function(
-    //                scope: any /** TODO #9100 */, element: any /** TODO #9100 */,
-    //                attrs: any /** TODO #9100 */, linkController: any /** TODO #9100 */) {
-    //              expect(scope.$root).toEqual($rootScope);
-    //              expect(element[0].nodeName).toEqual('NG1');
-    //              expect(linkController.status).toEqual('WORKS');
-    //              scope.ctl = linkController;
-    //            }
-    //          };
-    //        };
-    //        ng1Module.directive('ng1', ng1);
-
-    //        const Ng2 = Component({selector: 'ng2', template: '<ng1></ng1>'}).Class({
-    //          constructor: function() {}
-    //        });
-
-    //        const Ng2Module = NgModule({
-    //                            declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-    //                            imports: [BrowserModule],
-    //                            schemas: [NO_ERRORS_SCHEMA],
-    //                          }).Class({constructor: function() {}});
-
-    //        ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-    //        const element = html(`<div><ng2></ng2></div>`);
-    //        adapter.bootstrap(element, ['ng1']).ready((ref) => {
-    //          expect(multiTrim(document.body.textContent)).toEqual('WORKS');
-    //          ref.dispose();
-    //        });
-    //      }));
-
-    //   it('should support array require in linking fn', async(() => {
-    //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-    //        const ng1Module = angular.module('ng1', []);
-
-    //        const parent = () => {
-    //          return {controller: Class({constructor: function() { this.parent = 'PARENT'; }})};
-    //        };
-    //        const ng1 = () => {
-    //          return {
-    //            scope: {title: '@'},
-    //            bindToController: true,
-    //            template: '{{parent.parent}}:{{ng1.status}}',
-    //            require: ['ng1', '^parent', '?^^notFound'],
-    //            controllerAs: 'ctrl',
-    //            controller: Class({constructor: function() { this.status = 'WORKS'; }}),
-    //            link: function(
-    //                scope: any /** TODO #9100 */, element: any /** TODO #9100 */,
-    //                attrs: any /** TODO #9100 */, linkControllers: any /** TODO #9100 */) {
-    //              expect(linkControllers[0].status).toEqual('WORKS');
-    //              expect(linkControllers[1].parent).toEqual('PARENT');
-    //              expect(linkControllers[2]).toBe(undefined);
-    //              scope.ng1 = linkControllers[0];
-    //              scope.parent = linkControllers[1];
-    //            }
-    //          };
-    //        };
-    //        ng1Module.directive('parent', parent);
-    //        ng1Module.directive('ng1', ng1);
-
-    //        const Ng2 = Component({selector: 'ng2', template: '<ng1></ng1>'}).Class({
-    //          constructor: function() {}
-    //        });
-
-    //        const Ng2Module = NgModule({
-    //                            declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-    //                            imports: [BrowserModule],
-    //                            schemas: [NO_ERRORS_SCHEMA],
-    //                          }).Class({constructor: function() {}});
-
-    //        ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-    //        const element = html(`<div><parent><ng2></ng2></parent></div>`);
-    //        adapter.bootstrap(element, ['ng1']).ready((ref) => {
-    //          expect(multiTrim(document.body.textContent)).toEqual('PARENT:WORKS');
-    //          ref.dispose();
-    //        });
-    //      }));
-
-    //   it('should call $onInit of components', async(() => {
-    //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-    //        const ng1Module = angular.module('ng1', []);
-    //        const valueToFind = '$onInit';
-
-    //        const ng1 = {
-    //          bindings: {},
-    //          template: '{{$ctrl.value}}',
-    //          controller: Class(
-    //              {constructor: function() {}, $onInit: function() { this.value = valueToFind; }})
-    //        };
-    //        ng1Module.component('ng1', ng1);
-
-    //        const Ng2 = Component({selector: 'ng2', template: '<ng1></ng1>'}).Class({
-    //          constructor: function() {}
-    //        });
-
-    //        const Ng2Module = NgModule({
-    //                            declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-    //                            imports: [BrowserModule],
-    //                            schemas: [NO_ERRORS_SCHEMA],
-    //                          }).Class({constructor: function() {}});
-
-    //        ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-
-    //        const element = html(`<div><ng2></ng2></div>`);
-    //        adapter.bootstrap(element, ['ng1']).ready((ref) => {
-    //          expect(multiTrim(document.body.textContent)).toEqual(valueToFind);
-    //          ref.dispose();
-    //        });
-    //      }));
-
-    //   it('should bind input properties (<) of components', async(() => {
-    //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-    //        const ng1Module = angular.module('ng1', []);
-
-    //        const ng1 = {
-    //          bindings: {personProfile: '<'},
-    //          template: 'Hello {{$ctrl.personProfile.firstName}} {{$ctrl.personProfile.lastName}}',
-    //          controller: Class({constructor: function() {}})
-    //        };
-    //        ng1Module.component('ng1', ng1);
-
-    //        const Ng2 =
-    //            Component({selector: 'ng2', template: '<ng1 [personProfile]="goku"></ng1>'}).Class({
-    //              constructor: function() { this.goku = {firstName: 'GOKU', lastName: 'SAN'}; }
-    //            });
-
-    //        const Ng2Module = NgModule({
-    //                            declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-    //                            imports: [BrowserModule],
-    //                            schemas: [NO_ERRORS_SCHEMA],
-    //                          }).Class({constructor: function() {}});
-
-    //        ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-
-    //        const element = html(`<div><ng2></ng2></div>`);
-    //        adapter.bootstrap(element, ['ng1']).ready((ref) => {
-    //          expect(multiTrim(document.body.textContent)).toEqual(`Hello GOKU SAN`);
-    //          ref.dispose();
-    //        });
-    //      }));
-
-    //   it('should support ng2 > ng1 > ng2', async(() => {
-    //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-    //        const ng1Module = angular.module('ng1', []);
-
-    //        const ng1 = {
-    //          template: 'ng1(<ng2b></ng2b>)',
-    //        };
-    //        ng1Module.component('ng1', ng1);
-
-    //        const Ng2a = Component({selector: 'ng2a', template: 'ng2a(<ng1></ng1>)'}).Class({
-    //          constructor: function() {}
-    //        });
-    //        ng1Module.directive('ng2a', adapter.downgradeNg2Component(Ng2a));
-
-    //        const Ng2b =
-    //            Component({selector: 'ng2b', template: 'ng2b'}).Class({constructor: function() {}});
-    //        ng1Module.directive('ng2b', adapter.downgradeNg2Component(Ng2b));
-
-    //        const Ng2Module = NgModule({
-    //                            declarations: [adapter.upgradeNg1Component('ng1'), Ng2a, Ng2b],
-    //                            imports: [BrowserModule],
-    //                            schemas: [NO_ERRORS_SCHEMA],
-    //                          }).Class({constructor: function() {}});
-
-    //        const element = html(`<div><ng2a></ng2a></div>`);
-    //        adapter.bootstrap(element, ['ng1']).ready((ref) => {
-    //          expect(multiTrim(document.body.textContent)).toEqual('ng2a(ng1(ng2b))');
-    //        });
-    //      }));
-    // });
+    fdescribe('upgrade ng1 component', () => {
+      fit('should bind properties, events', async(() => {
+        console.log(angular.version);
+        const ng1 = {
+          template: 'Hello {{fullName}}; A: {{dataA}}; B: {{dataB}}; C: {{modelC}}; | ',
+          bindings: {fullName: '@', modelA: '=dataA', modelB: '=dataB', modelC: '=', event: '&'},
+          controller: function($scope: angular.IScope) {
+            $scope.$watch('$ctrl.dataB', (v: any /** TODO #9100 */) => {
+              if (v === 'Savkin') {
+                this.dataB = 'SAVKIN';
+                this.event('WORKS');
+
+                // Should not update because [model-a] is uni directional
+                this.dataA = 'VICTOR';
+              }
+            });
+          }
+        };
+
+        const ng1Module = angular.module('ng1Component', []).component('ng1', ng1);
+
+        @Directive({
+          selector: 'ng1'
+        })
+        class Ng1 extends UpgradeComponent {
+          constructor(elementRef: ElementRef) {
+            super('ng1', elementRef);
+          }
+
+          @Input() set fullName(value: string) { this.setInput('fullName', value); }
+
+          @Input() set modeA(value: any) { this.setInput('modelA', value); }
+          @Output() get modeAChange() { return this.getOutput('modelAChange'); }
+
+          @Input() set modeB(value: any) { this.setInput('modelB', value); }
+          @Output() get modeBChange() { return this.getOutput('modelBChange'); }
+
+          @Output() get eventChange() { return this.getOutput('eventChange'); }
+        }
+
+        @Component({
+          selector: 'ng2',
+          template:
+              '<ng1 fullName="{{last}}, {{first}}, {{city}}" [modelA]="first" [(modelB)]="last" [modelC]="city" ' +
+              '(event)="event=$event"></ng1>' +
+              '<ng1 fullName="{{\'TEST\'}}" modelA="First" modelB="Last" modelC="City"></ng1>' +
+              '{{event}}-{{last}}, {{first}}, {{city}}'
+        })
+        class Ng2 {
+          first = 'Victor';
+          last = 'Savkin';
+          city = 'SF';
+          event = '?';
+        }
+
+        @NgModule({
+          declarations: [Ng1, Ng2],
+          entryComponents: [Ng2],
+          imports: [BrowserModule, UpgradeModule],
+          // schemas: [NO_ERRORS_SCHEMA]
+        })
+        class Ng2Module extends UpgradeModule {
+          constructor(injector: Injector) {
+            super(injector);
+          }
+        }
+
+        const element = html(`<ng2></ng2>`);
+        platformBrowserDynamic().bootstrapModule(Ng2Module).then(ref => {
+          // // we need to do setTimeout, because the EventEmitter uses setTimeout to schedule
+          // // events, and so without this we would not see the events processed.
+          // setTimeout(() => {
+          //   expect(multiTrim(document.body.textContent))
+          //       .toEqual(
+          //           'Hello SAVKIN, Victor, SF; A: VICTOR; B: SAVKIN; C: SF; | Hello TEST; A: First; B: Last; C: City; | WORKS-SAVKIN, Victor, SF');
+          //   ref.dispose();
+          // }, 0);
+
+          expect(multiTrim(document.body.textContent)).toBe(
+              'Hello SAVKIN, Victor, SF; A: VICTOR; B: SAVKIN; C: SF; | ' +
+              'Hello TEST; A: First; B: Last; C: City; | WORKS-SAVKIN, Victor, SF');
+        });
+      }));
+
+      // it('should bind optional properties', async(() => {
+      //   const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
+      //   const ng1Module = angular.module('ng1', []);
+
+      //   const ng1 = () => {
+      //     return {
+      //       template: 'Hello; A: {{dataA}}; B: {{modelB}}; | ',
+      //       scope: {modelA: '=?dataA', modelB: '=?'}
+      //     };
+      //   };
+      //   ng1Module.directive('ng1', ng1);
+      //   const Ng2 = Component({
+      //                 selector: 'ng2',
+      //                 template: '<ng1 [modelA]="first" [modelB]="last"></ng1>' +
+      //                     '<ng1 modelA="First" modelB="Last"></ng1>' +
+      //                     '<ng1></ng1>' +
+      //                     '<ng1></ng1>'
+      //               }).Class({
+      //     constructor: function() {
+      //       this.first = 'Victor';
+      //       this.last = 'Savkin';
+      //     }
+      //   });
+
+      //   const Ng2Module = NgModule({
+      //                       declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
+      //                       imports: [BrowserModule],
+      //                       schemas: [NO_ERRORS_SCHEMA],
+      //                     }).Class({constructor: function() {}});
+
+      //   ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
+      //   const element = html(`<div><ng2></ng2></div>`);
+      //   adapter.bootstrap(element, ['ng1']).ready((ref) => {
+      //     // we need to do setTimeout, because the EventEmitter uses setTimeout to schedule
+      //     // events, and so without this we would not see the events processed.
+      //     setTimeout(() => {
+      //       expect(multiTrim(document.body.textContent))
+      //           .toEqual(
+      //               'Hello; A: Victor; B: Savkin; | Hello; A: First; B: Last; | Hello; A: ; B: ; | Hello; A: ; B: ; |');
+      //       ref.dispose();
+      //     }, 0);
+      //   });
+      // }));
+
+      // it('should bind properties, events in controller when bindToController is not used',
+      //   async(() => {
+      //     const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
+      //     const ng1Module = angular.module('ng1', []);
+
+      //     const ng1 = () => {
+      //       return {
+      //         restrict: 'E',
+      //         template: '{{someText}} - Length: {{data.length}}',
+      //         scope: {data: '='},
+      //         controller: function($scope: any /** TODO #9100 */) {
+      //           $scope.someText = 'ng1 - Data: ' + $scope.data;
+      //         }
+      //       };
+      //     };
+
+      //     ng1Module.directive('ng1', ng1);
+      //     const Ng2 =
+      //         Component({
+      //           selector: 'ng2',
+      //           template:
+      //               '{{someText}} - Length: {{dataList.length}} | <ng1 [(data)]="dataList"></ng1>'
+      //         }).Class({
+
+      //           constructor: function() {
+      //             this.dataList = [1, 2, 3];
+      //             this.someText = 'ng2';
+      //           }
+      //         });
+
+      //     const Ng2Module = NgModule({
+      //                         declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
+      //                         imports: [BrowserModule],
+      //                         schemas: [NO_ERRORS_SCHEMA],
+      //                       }).Class({constructor: function() {}});
+
+      //     ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
+      //     const element = html(`<div><ng2></ng2></div>`);
+      //     adapter.bootstrap(element, ['ng1']).ready((ref) => {
+      //       // we need to do setTimeout, because the EventEmitter uses setTimeout to schedule
+      //       // events, and so without this we would not see the events processed.
+      //       setTimeout(() => {
+      //         expect(multiTrim(document.body.textContent))
+      //             .toEqual('ng2 - Length: 3 | ng1 - Data: 1,2,3 - Length: 3');
+      //         ref.dispose();
+      //       }, 0);
+      //     });
+      //   })
+      // );
+
+      // it('should bind properties, events in link function', async(() => {
+      //   const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
+      //   const ng1Module = angular.module('ng1', []);
+
+      //   const ng1 = () => {
+      //     return {
+      //       restrict: 'E',
+      //       template: '{{someText}} - Length: {{data.length}}',
+      //       scope: {data: '='},
+      //       link: function($scope: any /** TODO #9100 */) {
+      //         $scope.someText = 'ng1 - Data: ' + $scope.data;
+      //       }
+      //     };
+      //   };
+
+      //   ng1Module.directive('ng1', ng1);
+      //   const Ng2 =
+      //       Component({
+      //         selector: 'ng2',
+      //         template:
+      //             '{{someText}} - Length: {{dataList.length}} | <ng1 [(data)]="dataList"></ng1>'
+      //       }).Class({
+
+      //         constructor: function() {
+      //           this.dataList = [1, 2, 3];
+      //           this.someText = 'ng2';
+      //         }
+      //       });
+
+      //   const Ng2Module = NgModule({
+      //                       declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
+      //                       imports: [BrowserModule],
+      //                       schemas: [NO_ERRORS_SCHEMA],
+      //                     }).Class({constructor: function() {}});
+
+      //   ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
+      //   const element = html(`<div><ng2></ng2></div>`);
+      //   adapter.bootstrap(element, ['ng1']).ready((ref) => {
+      //     // we need to do setTimeout, because the EventEmitter uses setTimeout to schedule
+      //     // events, and so without this we would not see the events processed.
+      //     setTimeout(() => {
+      //       expect(multiTrim(document.body.textContent))
+      //           .toEqual('ng2 - Length: 3 | ng1 - Data: 1,2,3 - Length: 3');
+      //       ref.dispose();
+      //     }, 0);
+      //   });
+      // }));
+
+      // it('should support templateUrl fetched from $httpBackend', async(() => {
+      //   const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
+      //   const ng1Module = angular.module('ng1', []);
+      //   ng1Module.value(
+      //       '$httpBackend', (method: any /** TODO #9100 */, url: any /** TODO #9100 */,
+      //                       post: any /** TODO #9100 */,
+      //                       cbFn: any /** TODO #9100 */) => { cbFn(200, `${method}:${url}`); });
+
+      //   const ng1 = () => { return {templateUrl: 'url.html'}; };
+      //   ng1Module.directive('ng1', ng1);
+      //   const Ng2 = Component({selector: 'ng2', template: '<ng1></ng1>'}).Class({
+      //     constructor: function() {}
+      //   });
+
+      //   const Ng2Module = NgModule({
+      //                       declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
+      //                       imports: [BrowserModule],
+      //                       schemas: [NO_ERRORS_SCHEMA],
+      //                     }).Class({constructor: function() {}});
+
+      //   ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
+      //   const element = html(`<div><ng2></ng2></div>`);
+      //   adapter.bootstrap(element, ['ng1']).ready((ref) => {
+      //     expect(multiTrim(document.body.textContent)).toEqual('GET:url.html');
+      //     ref.dispose();
+      //   });
+      // }));
+
+      // it('should support templateUrl as a function', async(() => {
+      //   const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
+      //   const ng1Module = angular.module('ng1', []);
+      //   ng1Module.value(
+      //       '$httpBackend', (method: any /** TODO #9100 */, url: any /** TODO #9100 */,
+      //                       post: any /** TODO #9100 */,
+      //                       cbFn: any /** TODO #9100 */) => { cbFn(200, `${method}:${url}`); });
+
+      //   const ng1 = () => { return {templateUrl() { return 'url.html'; }}; };
+      //   ng1Module.directive('ng1', ng1);
+      //   const Ng2 = Component({selector: 'ng2', template: '<ng1></ng1>'}).Class({
+      //     constructor: function() {}
+      //   });
+
+      //   const Ng2Module = NgModule({
+      //                       declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
+      //                       imports: [BrowserModule],
+      //                       schemas: [NO_ERRORS_SCHEMA],
+      //                     }).Class({constructor: function() {}});
+
+      //   ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
+      //   const element = html(`<div><ng2></ng2></div>`);
+      //   adapter.bootstrap(element, ['ng1']).ready((ref) => {
+      //     expect(multiTrim(document.body.textContent)).toEqual('GET:url.html');
+      //     ref.dispose();
+      //   });
+      // }));
+
+      // it('should support empty template', async(() => {
+      //   const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
+      //   const ng1Module = angular.module('ng1', []);
+
+      //   const ng1 = () => { return {template: ''}; };
+      //   ng1Module.directive('ng1', ng1);
+
+      //   const Ng2 = Component({selector: 'ng2', template: '<ng1></ng1>'}).Class({
+      //     constructor: function() {}
+      //   });
+
+      //   const Ng2Module = NgModule({
+      //                       declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
+      //                       imports: [BrowserModule],
+      //                       schemas: [NO_ERRORS_SCHEMA],
+      //                     }).Class({constructor: function() {}});
+
+      //   ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
+      //   const element = html(`<div><ng2></ng2></div>`);
+      //   adapter.bootstrap(element, ['ng1']).ready((ref) => {
+      //     expect(multiTrim(document.body.textContent)).toEqual('');
+      //     ref.dispose();
+      //   });
+      // }));
+
+      // it('should support template as a function', async(() => {
+      //   const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
+      //   const ng1Module = angular.module('ng1', []);
+
+      //   const ng1 = () => { return {template() { return ''; }}; };
+      //   ng1Module.directive('ng1', ng1);
+
+      //   const Ng2 = Component({selector: 'ng2', template: '<ng1></ng1>'}).Class({
+      //     constructor: function() {}
+      //   });
+
+      //   const Ng2Module = NgModule({
+      //                       declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
+      //                       imports: [BrowserModule],
+      //                       schemas: [NO_ERRORS_SCHEMA],
+      //                     }).Class({constructor: function() {}});
+
+      //   ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
+      //   const element = html(`<div><ng2></ng2></div>`);
+      //   adapter.bootstrap(element, ['ng1']).ready((ref) => {
+      //     expect(multiTrim(document.body.textContent)).toEqual('');
+      //     ref.dispose();
+      //   });
+      // }));
+
+      // it('should support templateUrl fetched from $templateCache', async(() => {
+      //   const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
+      //   const ng1Module = angular.module('ng1', []);
+      //   ng1Module.run(
+      //       ($templateCache: any /** TODO #9100 */) => $templateCache.put('url.html', 'WORKS'));
+
+      //   const ng1 = () => { return {templateUrl: 'url.html'}; };
+      //   ng1Module.directive('ng1', ng1);
+
+      //   const Ng2 = Component({selector: 'ng2', template: '<ng1></ng1>'}).Class({
+      //     constructor: function() {}
+      //   });
+
+      //   const Ng2Module = NgModule({
+      //                       declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
+      //                       imports: [BrowserModule],
+      //                       schemas: [NO_ERRORS_SCHEMA],
+      //                     }).Class({constructor: function() {}});
+
+      //   ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
+      //   const element = html(`<div><ng2></ng2></div>`);
+      //   adapter.bootstrap(element, ['ng1']).ready((ref) => {
+      //     expect(multiTrim(document.body.textContent)).toEqual('WORKS');
+      //     ref.dispose();
+      //   });
+      // }));
+
+      // it('should support controller with controllerAs', async(() => {
+      //   const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
+      //   const ng1Module = angular.module('ng1', []);
+
+      //   const ng1 = () => {
+      //     return {
+      //       scope: true,
+      //       template:
+      //           '{{ctl.scope}}; {{ctl.isClass}}; {{ctl.hasElement}}; {{ctl.isPublished()}}',
+      //       controllerAs: 'ctl',
+      //       controller: Class({
+      //         constructor: function(
+      //             $scope: any /** TODO #9100 */, $element: any /** TODO #9100 */) {
+      //           (<any>this).verifyIAmAClass();
+      //           this.scope = $scope.$parent.$parent == $scope.$root ? 'scope' : 'wrong-scope';
+      //           this.hasElement = $element[0].nodeName;
+      //           this.$element = $element;
+      //         },
+      //         verifyIAmAClass: function() { this.isClass = 'isClass'; },
+      //         isPublished: function() {
+      //           return this.$element.controller('ng1') == this ? 'published' : 'not-published';
+      //         }
+      //       })
+      //     };
+      //   };
+      //   ng1Module.directive('ng1', ng1);
+
+      //   const Ng2 = Component({selector: 'ng2', template: '<ng1></ng1>'}).Class({
+      //     constructor: function() {}
+      //   });
+
+      //   const Ng2Module = NgModule({
+      //                       declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
+      //                       imports: [BrowserModule],
+      //                       schemas: [NO_ERRORS_SCHEMA],
+      //                     }).Class({constructor: function() {}});
+
+      //   ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
+      //   const element = html(`<div><ng2></ng2></div>`);
+      //   adapter.bootstrap(element, ['ng1']).ready((ref) => {
+      //     expect(multiTrim(document.body.textContent)).toEqual('scope; isClass; NG1; published');
+      //     ref.dispose();
+      //   });
+      // }));
+
+      // it('should support bindToController', async(() => {
+      //   const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
+      //   const ng1Module = angular.module('ng1', []);
+
+      //   const ng1 = () => {
+      //     return {
+      //       scope: {title: '@'},
+      //       bindToController: true,
+      //       template: '{{ctl.title}}',
+      //       controllerAs: 'ctl',
+      //       controller: Class({constructor: function() {}})
+      //     };
+      //   };
+      //   ng1Module.directive('ng1', ng1);
+
+      //   const Ng2 = Component({selector: 'ng2', template: '<ng1 title="WORKS"></ng1>'}).Class({
+      //     constructor: function() {}
+      //   });
+
+      //   const Ng2Module = NgModule({
+      //                       declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
+      //                       imports: [BrowserModule],
+      //                       schemas: [NO_ERRORS_SCHEMA],
+      //                     }).Class({constructor: function() {}});
+
+      //   ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
+      //   const element = html(`<div><ng2></ng2></div>`);
+      //   adapter.bootstrap(element, ['ng1']).ready((ref) => {
+      //     expect(multiTrim(document.body.textContent)).toEqual('WORKS');
+      //     ref.dispose();
+      //   });
+      // }));
+
+      // it('should support bindToController with bindings', async(() => {
+      //   const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
+      //   const ng1Module = angular.module('ng1', []);
+
+      //   const ng1 = () => {
+      //     return {
+      //       scope: {},
+      //       bindToController: {title: '@'},
+      //       template: '{{ctl.title}}',
+      //       controllerAs: 'ctl',
+      //       controller: Class({constructor: function() {}})
+      //     };
+      //   };
+      //   ng1Module.directive('ng1', ng1);
+
+      //   const Ng2 = Component({selector: 'ng2', template: '<ng1 title="WORKS"></ng1>'}).Class({
+      //     constructor: function() {}
+      //   });
+
+      //   const Ng2Module = NgModule({
+      //                       declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
+      //                       imports: [BrowserModule],
+      //                       schemas: [NO_ERRORS_SCHEMA],
+      //                     }).Class({constructor: function() {}});
+
+      //   ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
+      //   const element = html(`<div><ng2></ng2></div>`);
+      //   adapter.bootstrap(element, ['ng1']).ready((ref) => {
+      //     expect(multiTrim(document.body.textContent)).toEqual('WORKS');
+      //     ref.dispose();
+      //   });
+      // }));
+
+      // it('should support single require in linking fn', async(() => {
+      //   const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
+      //   const ng1Module = angular.module('ng1', []);
+
+      //   const ng1 = ($rootScope: any /** TODO #9100 */) => {
+      //     return {
+      //       scope: {title: '@'},
+      //       bindToController: true,
+      //       template: '{{ctl.status}}',
+      //       require: 'ng1',
+      //       controllerAs: 'ctrl',
+      //       controller: Class({constructor: function() { this.status = 'WORKS'; }}),
+      //       link: function(
+      //           scope: any /** TODO #9100 */, element: any /** TODO #9100 */,
+      //           attrs: any /** TODO #9100 */, linkController: any /** TODO #9100 */) {
+      //         expect(scope.$root).toEqual($rootScope);
+      //         expect(element[0].nodeName).toEqual('NG1');
+      //         expect(linkController.status).toEqual('WORKS');
+      //         scope.ctl = linkController;
+      //       }
+      //     };
+      //   };
+      //   ng1Module.directive('ng1', ng1);
+
+      //   const Ng2 = Component({selector: 'ng2', template: '<ng1></ng1>'}).Class({
+      //     constructor: function() {}
+      //   });
+
+      //   const Ng2Module = NgModule({
+      //                       declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
+      //                       imports: [BrowserModule],
+      //                       schemas: [NO_ERRORS_SCHEMA],
+      //                     }).Class({constructor: function() {}});
+
+      //   ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
+      //   const element = html(`<div><ng2></ng2></div>`);
+      //   adapter.bootstrap(element, ['ng1']).ready((ref) => {
+      //     expect(multiTrim(document.body.textContent)).toEqual('WORKS');
+      //     ref.dispose();
+      //   });
+      // }));
+
+      // it('should support array require in linking fn', async(() => {
+      //   const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
+      //   const ng1Module = angular.module('ng1', []);
+
+      //   const parent = () => {
+      //     return {controller: Class({constructor: function() { this.parent = 'PARENT'; }})};
+      //   };
+      //   const ng1 = () => {
+      //     return {
+      //       scope: {title: '@'},
+      //       bindToController: true,
+      //       template: '{{parent.parent}}:{{ng1.status}}',
+      //       require: ['ng1', '^parent', '?^^notFound'],
+      //       controllerAs: 'ctrl',
+      //       controller: Class({constructor: function() { this.status = 'WORKS'; }}),
+      //       link: function(
+      //           scope: any /** TODO #9100 */, element: any /** TODO #9100 */,
+      //           attrs: any /** TODO #9100 */, linkControllers: any /** TODO #9100 */) {
+      //         expect(linkControllers[0].status).toEqual('WORKS');
+      //         expect(linkControllers[1].parent).toEqual('PARENT');
+      //         expect(linkControllers[2]).toBe(undefined);
+      //         scope.ng1 = linkControllers[0];
+      //         scope.parent = linkControllers[1];
+      //       }
+      //     };
+      //   };
+      //   ng1Module.directive('parent', parent);
+      //   ng1Module.directive('ng1', ng1);
+
+      //   const Ng2 = Component({selector: 'ng2', template: '<ng1></ng1>'}).Class({
+      //     constructor: function() {}
+      //   });
+
+      //   const Ng2Module = NgModule({
+      //                       declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
+      //                       imports: [BrowserModule],
+      //                       schemas: [NO_ERRORS_SCHEMA],
+      //                     }).Class({constructor: function() {}});
+
+      //   ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
+      //   const element = html(`<div><parent><ng2></ng2></parent></div>`);
+      //   adapter.bootstrap(element, ['ng1']).ready((ref) => {
+      //     expect(multiTrim(document.body.textContent)).toEqual('PARENT:WORKS');
+      //     ref.dispose();
+      //   });
+      // }));
+
+      // it('should call $onInit of components', async(() => {
+      //   const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
+      //   const ng1Module = angular.module('ng1', []);
+      //   const valueToFind = '$onInit';
+
+      //   const ng1 = {
+      //     bindings: {},
+      //     template: '{{$ctrl.value}}',
+      //     controller: Class(
+      //         {constructor: function() {}, $onInit: function() { this.value = valueToFind; }})
+      //   };
+      //   ng1Module.component('ng1', ng1);
+
+      //   const Ng2 = Component({selector: 'ng2', template: '<ng1></ng1>'}).Class({
+      //     constructor: function() {}
+      //   });
+
+      //   const Ng2Module = NgModule({
+      //                       declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
+      //                       imports: [BrowserModule],
+      //                       schemas: [NO_ERRORS_SCHEMA],
+      //                     }).Class({constructor: function() {}});
+
+      //   ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
+
+      //   const element = html(`<div><ng2></ng2></div>`);
+      //   adapter.bootstrap(element, ['ng1']).ready((ref) => {
+      //     expect(multiTrim(document.body.textContent)).toEqual(valueToFind);
+      //     ref.dispose();
+      //   });
+      // }));
+
+      // it('should bind input properties (<) of components', async(() => {
+      //   const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
+      //   const ng1Module = angular.module('ng1', []);
+
+      //   const ng1 = {
+      //     bindings: {personProfile: '<'},
+      //     template: 'Hello {{$ctrl.personProfile.firstName}} {{$ctrl.personProfile.lastName}}',
+      //     controller: Class({constructor: function() {}})
+      //   };
+      //   ng1Module.component('ng1', ng1);
+
+      //   const Ng2 =
+      //       Component({selector: 'ng2', template: '<ng1 [personProfile]="goku"></ng1>'}).Class({
+      //         constructor: function() { this.goku = {firstName: 'GOKU', lastName: 'SAN'}; }
+      //       });
+
+      //   const Ng2Module = NgModule({
+      //                       declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
+      //                       imports: [BrowserModule],
+      //                       schemas: [NO_ERRORS_SCHEMA],
+      //                     }).Class({constructor: function() {}});
+
+      //   ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
+
+      //   const element = html(`<div><ng2></ng2></div>`);
+      //   adapter.bootstrap(element, ['ng1']).ready((ref) => {
+      //     expect(multiTrim(document.body.textContent)).toEqual(`Hello GOKU SAN`);
+      //     ref.dispose();
+      //   });
+      // }));
+
+      // it('should support ng2 > ng1 > ng2', async(() => {
+      //   const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
+      //   const ng1Module = angular.module('ng1', []);
+
+      //   const ng1 = {
+      //     template: 'ng1(<ng2b></ng2b>)',
+      //   };
+      //   ng1Module.component('ng1', ng1);
+
+      //   const Ng2a = Component({selector: 'ng2a', template: 'ng2a(<ng1></ng1>)'}).Class({
+      //     constructor: function() {}
+      //   });
+      //   ng1Module.directive('ng2a', adapter.downgradeNg2Component(Ng2a));
+
+      //   const Ng2b =
+      //       Component({selector: 'ng2b', template: 'ng2b'}).Class({constructor: function() {}});
+      //   ng1Module.directive('ng2b', adapter.downgradeNg2Component(Ng2b));
+
+      //   const Ng2Module = NgModule({
+      //                       declarations: [adapter.upgradeNg1Component('ng1'), Ng2a, Ng2b],
+      //                       imports: [BrowserModule],
+      //                       schemas: [NO_ERRORS_SCHEMA],
+      //                     }).Class({constructor: function() {}});
+
+      //   const element = html(`<div><ng2a></ng2a></div>`);
+      //   adapter.bootstrap(element, ['ng1']).ready((ref) => {
+      //     expect(multiTrim(document.body.textContent)).toEqual('ng2a(ng1(ng2b))');
+      //   });
+      // }));
+    });
 
     describe('injection', () => {
 
