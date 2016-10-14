@@ -55,7 +55,7 @@ export function main() {
 
         platformBrowserDynamic().bootstrapModule(Ng2Module).then((ref) => {
           const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
-          adapter.bootstrapNg1(element, [ng1Module.name]);
+          adapter.bootstrap(element, [ng1Module.name]);
           expect(document.body.textContent).toEqual('ng1[NG2(~ng-content~)]');
         });
       }));
@@ -250,7 +250,7 @@ export function main() {
           </div>`);
         platformBrowserDynamic().bootstrapModule(Ng2Module).then((ref) => {
           const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
-          adapter.bootstrapNg1(element, [ng1Module.name]);
+          adapter.bootstrap(element, [ng1Module.name]);
           expect(multiTrim(document.body.textContent))
               .toEqual(
                   'ignore: -; ' +
@@ -287,7 +287,7 @@ export function main() {
         const element = html('<ng1></ng1>');
         platformBrowserDynamic().bootstrapModule(Ng2Module).then((ref) => {
           const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
-          adapter.bootstrapNg1(element, [ng1Module.name]);
+          adapter.bootstrap(element, [ng1Module.name]);
           expect(element.textContent).toContain('test');
           expect(destroyed).toBe(false);
 
@@ -337,7 +337,7 @@ export function main() {
         const element = html('<ng1></ng1>');
         platformBrowserDynamic().bootstrapModule(Ng2Module).then((ref) => {
           const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
-          adapter.bootstrapNg1(element, [ng1Module.name]);
+          adapter.bootstrap(element, [ng1Module.name]);
           // the fact that the body contains the correct text means that the
           // downgraded component was able to access the moduleInjector
           // (since there is no other injector in this system)
@@ -413,7 +413,7 @@ export function main() {
         const element = html(`<ng2></ng2>`);
         platformBrowserDynamic().bootstrapModule(Ng2Module).then(ref => {
           var adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
-          adapter.bootstrapNg1(element, [ng1Module.name]);
+          adapter.bootstrap(element, [ng1Module.name]);
 
           // we need to do setTimeout, because the EventEmitter uses setTimeout to schedule
           // events, and so without this we would not see the events processed.
@@ -1050,7 +1050,7 @@ export function main() {
       it('should export ng2 instance to ng1', async(() => {
         platformBrowserDynamic().bootstrapModule(MyNg2Module).then((ref) => {
           const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
-          adapter.bootstrapNg1(html('<div>'), [ng1Module.name]);
+          adapter.bootstrap(html('<div>'), [ng1Module.name]);
           const ng1Injector = adapter.$injector;
           expect(ng1Injector.get('ng2Service')).toBe('ng2 service value');
         });
@@ -1059,7 +1059,7 @@ export function main() {
       it('should export ng1 instance to ng2', async(() => {
         platformBrowserDynamic().bootstrapModule(MyNg2Module).then((ref) => {
           const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
-          adapter.bootstrapNg1(html('<div>'), [ng1Module.name]);
+          adapter.bootstrap(html('<div>'), [ng1Module.name]);
           var ng2Injector = adapter.injector;
           expect(ng2Injector.get(Ng1Service)).toBe('ng1 service value');
         });
@@ -1086,7 +1086,7 @@ export function main() {
 
         platformBrowserDynamic().bootstrapModule(MyNg2Module).then((ref) => {
           const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
-          adapter.bootstrapNg1(element, [ng1Module.name]);
+          adapter.bootstrap(element, [ng1Module.name]);
         });
 
         setTimeout(() => {
@@ -1104,7 +1104,7 @@ export function main() {
 
         platformBrowserDynamic().bootstrapModule(MyNg2Module).then((ref) => {
         const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
-          adapter.bootstrapNg1(element, [ng1Module.name]);
+          adapter.bootstrap(element, [ng1Module.name]);
 
           const ng2Testability: Testability = adapter.injector.get(Testability);
           ng2Testability.increasePendingRequestCount();
@@ -1168,7 +1168,7 @@ export function main() {
 
         platformBrowserDynamic().bootstrapModule(Ng2Module).then(ref => {
           var adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
-          adapter.bootstrapNg1(document.body.firstElementChild, [ng1Module.name]);
+          adapter.bootstrap(document.body.firstElementChild, [ng1Module.name]);
 
           expect(multiTrim(document.body.textContent))
               .toEqual('ng2[ng1[Hello World!](transclude)](project)');
