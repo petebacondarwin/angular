@@ -1,5 +1,5 @@
 import { Injector, ComponentFactory, ComponentFactoryResolver } from '@angular/core';
-import { NG2_INJECTOR } from '../constants';
+import { UPGRADE_MODULE_INJECTOR } from '../constants';
 import { ComponentInfo } from '../metadata';
 import { DowngradeNg2ComponentAdapter } from '../downgrade_ng2_adapter';
 import * as angular from '../angular_js';
@@ -16,7 +16,7 @@ export function downgradeNg2Component(info: ComponentInfo) : Function {
 
     return {
       restrict: 'E',
-      require: '?^' + NG2_INJECTOR,
+      require: '?^' + UPGRADE_MODULE_INJECTOR,
       link: (scope: angular.IScope,
             element: angular.IAugmentedJQuery,
             attrs: angular.IAttributes,
@@ -24,7 +24,7 @@ export function downgradeNg2Component(info: ComponentInfo) : Function {
             transclude: angular.ITranscludeFunction) => {
 
         if (parentInjector === null) {
-          parentInjector = ng1Injector.get(NG2_INJECTOR);
+          parentInjector = ng1Injector.get(UPGRADE_MODULE_INJECTOR);
         }
 
         const componentFactoryResolver : ComponentFactoryResolver = parentInjector.get(ComponentFactoryResolver);

@@ -1,6 +1,7 @@
 import {NgModule, Injector, NgZone, FactoryProvider, ComponentFactory, ComponentFactoryResolver, Testability} from '@angular/core';
 import { ng1Providers, setNg1Injector } from './ng1_providers';
-import { NG2_INJECTOR, NG1_INJECTOR, NG1_PROVIDE, NG1_TESTABILITY } from '../constants';
+import { UPGRADE_MODULE_INJECTOR, NG1_INJECTOR, NG1_PROVIDE, NG1_TESTABILITY } from '../constants';
+import { controllerKey } from '../util';
 import * as angular from '../angular_js';
 
 const NG1_UPGRADE_MODULE_NAME = 'angular1UpgradeModule';
@@ -10,23 +11,21 @@ const NG1_UPGRADE_MODULE_NAME = 'angular1UpgradeModule';
  * information about what Angular providers and component are to be bridged
  * between Angular 1 and Angular 2+
  *
- * TODO: Add more detailed information here with examples
+ * NOTE: the Angular 1 injector is `this.ng1Injector`;
+ *       the Angular 2+ injector is `this.injector`
+ *
+ * TODO: Add more detailed information here with runnable examples
  */
 @NgModule({ providers: [ng1Providers] })
 export class UpgradeModule {
 
-  public ng2Injector: Injector;
   public ng1Injector: angular.IInjectorService;
-  public ngZone: NgZone;
 
-  constructor(ng2Injector: Injector) {
-    this.ng2Injector = ng2Injector;
-    this.ngZone = ng2Injector.get(NgZone);
-  }
+  constructor(public injector: Injector, public ngZone: NgZone) {}
 
   /**
-   * This method prevents the bootstrapping code from complaining about a
-   * lack of `bootstrap` component in the metadata.
+   * This method prevents the Angular bootstrapper from complaining about a
+   * lack of `bootstrap` component in the `@NgModule` metadata.
    * @internal
    */
   ngDoBootstrap() {}
@@ -43,17 +42,27 @@ export class UpgradeModule {
   {
     // Create an ng1 module to bootstrap
     const upgradeModule = angular.module(NG1_UPGRADE_MODULE_NAME, modules)
-      .value(NG2_INJECTOR, this.ng2Injector)
-      .run([NG1_INJECTOR, (ng1Injector: angular.IInjectorService) => {
-        // store the ng1 injector so that our ng2 injector provider can access it
-        setNg1Injector(this.ng1Injector = ng1Injector);
-        // force the reading of the value from the ng2 injector provider.
-        this.ng2Injector.get(NG1_INJECTOR);
 
-        // Wire up the ng1 rootScope to the zone
+      .value(UPGRADE_MODULE_INJECTOR, this.injector)
+
+      .run([NG1_INJECTOR, (ng1Injector: angular.IInjectorService) => {
+        // We have to do a little dance to get the ng1 injector into the module injector.
+        // We store the ng1 injector so that the provider in the module injector can access it
+        // Then we "get" the ng1 injector from the module injector, which triggers the provider to read
+        // the stored injector and release the reference to it.
+        setNg1Injector(this.ng1Injector = ng1Injector);
+        this.injector.get(NG1_INJECTOR);
+
+
+        // Put the injector on the DOM, so that it can be "required"
+        angular.element(element).data(
+                          controllerKey(UPGRADE_MODULE_INJECTOR), this.injector);
+
+        // Wire up the ng1 rootScope to run a digest cycle whenever the zone settles
         var $rootScope = ng1Injector.get('$rootScope');
-        this.ngZone.onMicrotaskEmpty.subscribe((_: any) => $rootScope.$evalAsync());
+        this.ngZone.onMicrotaskEmpty.subscribe(() => this.ngZone.runOutsideAngular(() => $rootScope.$evalAsync()));
       }])
+
       .config([
         NG1_INJECTOR, NG1_PROVIDE,
         ($injector: angular.IInjectorService, $provide: angular.IProvideService) => {
@@ -80,8 +89,9 @@ export class UpgradeModule {
           }
       }]);
 
-    // Bootstrap the angular 1 application
-    angular.bootstrap(element, [upgradeModule.name], config);
+    // Bootstrap the angular 1 application inside our zone
+   this.ngZone.run(() => {
+      angular.bootstrap(element, [upgradeModule.name], config);
+   });
   }
-
 }

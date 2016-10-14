@@ -10,7 +10,7 @@ import {Compiler, ComponentFactory, Injector, NgModule, NgModuleRef, NgZone, Pro
 import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
 
 import * as angular from './angular_js';
-import {NG1_COMPILE, NG1_INJECTOR, NG1_PARSE, NG1_ROOT_SCOPE, NG1_TESTABILITY, NG2_COMPILER, NG2_COMPONENT_FACTORY_REF_MAP, NG2_INJECTOR, NG2_ZONE, REQUIRE_INJECTOR} from './constants';
+import {NG1_COMPILE, NG1_INJECTOR, NG1_PARSE, NG1_ROOT_SCOPE, NG1_TESTABILITY, NG2_COMPILER, NG2_COMPONENT_FACTORY_REF_MAP, UPGRADE_MODULE_INJECTOR, NG2_ZONE, REQUIRE_INJECTOR} from './constants';
 import {DowngradeNg2ComponentAdapter} from './downgrade_ng2_adapter';
 import {ComponentInfo, getComponentInfo} from './metadata';
 import {UpgradeNg1ComponentAdapterBuilder} from './upgrade_ng1_adapter';
@@ -327,7 +327,7 @@ export class UpgradeAdapter {
     var ng1Module = angular.module(this.idPrefix, modules);
     var ng1BootstrapPromise: Promise<any>;
     var ng1compilePromise: Promise<any>;
-    ng1Module.factory(NG2_INJECTOR, () => moduleRef.injector.get(Injector))
+    ng1Module.factory(UPGRADE_MODULE_INJECTOR, () => moduleRef.injector.get(Injector))
         .value(NG2_ZONE, ngZone)
         .factory(NG2_COMPILER, () => moduleRef.injector.get(Compiler))
         .value(NG2_COMPONENT_FACTORY_REF_MAP, componentFactoryRefMap)
@@ -412,7 +412,7 @@ export class UpgradeAdapter {
                     .then((ref: NgModuleRef<any>) => {
                       moduleRef = ref;
                       angular.element(element).data(
-                          controllerKey(NG2_INJECTOR), moduleRef.injector);
+                          controllerKey(UPGRADE_MODULE_INJECTOR), moduleRef.injector);
                       ngZone.onMicrotaskEmpty.subscribe({
                         next: (_: any) => ngZone.runOutsideAngular(() => rootScope.$evalAsync())
                       });
@@ -519,7 +519,7 @@ export class UpgradeAdapter {
    */
   public downgradeNg2Provider(token: any): Function {
     var factory = function(injector: Injector) { return injector.get(token); };
-    (<any>factory).$inject = [NG2_INJECTOR];
+    (<any>factory).$inject = [UPGRADE_MODULE_INJECTOR];
     return factory;
   }
 }
@@ -545,7 +545,7 @@ function ng1ComponentDirective(info: ComponentInfo, idPrefix: string): Function 
             throw new Error('Expecting ComponentFactory for: ' + info.selector);
 
           if (parentInjector === null) {
-            parentInjector = ng1Injector.get(NG2_INJECTOR);
+            parentInjector = ng1Injector.get(UPGRADE_MODULE_INJECTOR);
           }
           var facade = new DowngradeNg2ComponentAdapter(
               idPrefix + (idCount++), info, element, attrs, scope, <Injector>parentInjector, parse,
