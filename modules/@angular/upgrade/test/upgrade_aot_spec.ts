@@ -354,8 +354,8 @@ export function main() {
       }));
     });
 
-    fdescribe('upgrade ng1 component', () => {
-      fit('should bind properties, events', async(() => {
+    describe('upgrade ng1 component', () => {
+      it('should bind properties, events', async(() => {
         console.log(angular.version);
         const ng1 = {
           template: 'Hello {{fullName}}; A: {{dataA}}; B: {{dataB}}; C: {{modelC}}; | ',
