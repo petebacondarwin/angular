@@ -14,7 +14,7 @@ import {
 import { async, fakeAsync, tick } from '@angular/core/testing';
 import { BrowserModule, platformBrowser } from '@angular/platform-browser';
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
-import { Ng1Adapter, Ng1Module, downgradeInjectable, downgradeNg2Component } from '@angular/upgrade';
+import { Ng1Adapter, Ng1Module, downgradeInjectable, downgradeNg2Component, UpgradeComponent } from '@angular/upgrade';
 import { parseFields } from '@angular/upgrade/src/metadata';
 import * as angular from '@angular/upgrade/src/angular_js';
 
@@ -412,17 +412,18 @@ export function main() {
         @NgModule({
           declarations: [Ng1, Ng2],
           entryComponents: [Ng2],
-          imports: [BrowserModule, UpgradeModule],
+          imports: [BrowserModule, Ng1Module],
           // schemas: [NO_ERRORS_SCHEMA]
         })
-        class Ng2Module extends UpgradeModule {
-          constructor(injector: Injector) {
-            super(injector);
-          }
+        class Ng2Module {
+          ngDoBootstrap() {}
         }
 
         const element = html(`<ng2></ng2>`);
         platformBrowserDynamic().bootstrapModule(Ng2Module).then(ref => {
+          var adapter = ref.injector.get(Ng1Adapter) as Ng1Adapter;
+          adapter.bootstrapNg1(element, [ng1Module.name]);
+
           // // we need to do setTimeout, because the EventEmitter uses setTimeout to schedule
           // // events, and so without this we would not see the events processed.
           // setTimeout(() => {
