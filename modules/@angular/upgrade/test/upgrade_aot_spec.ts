@@ -237,8 +237,8 @@ export function main() {
           schemas: [NO_ERRORS_SCHEMA],
         })
         class Ng2Module {
-        ngDoBootstrap() {}
-      }
+          ngDoBootstrap() {}
+        }
 
         const element = html(`<div>
           <ng2 literal="Text" interpolate="Hello {{'world'}}"
@@ -274,8 +274,8 @@ export function main() {
           schemas: [NO_ERRORS_SCHEMA]
         })
         class Ng2Module {
-        ngDoBootstrap() {}
-      }
+          ngDoBootstrap() {}
+        }
 
         const ng1Module = angular.module('ng1', [])
           .directive('ng1', () => {
@@ -314,8 +314,8 @@ export function main() {
           schemas: [NO_ERRORS_SCHEMA]
         })
         class Ng2Module {
-        ngDoBootstrap() {}
-      }
+          ngDoBootstrap() {}
+        }
 
         const ng1Module = angular.module('ng1', [])
           .directive('ng1', [
