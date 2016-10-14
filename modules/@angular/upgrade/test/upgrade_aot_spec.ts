@@ -14,7 +14,7 @@ import {
 import { async, fakeAsync, tick } from '@angular/core/testing';
 import { BrowserModule, platformBrowser } from '@angular/platform-browser';
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
-import { Ng1Adapter, Ng1Module, downgradeInjectable, downgradeNg2Component, UpgradeComponent } from '@angular/upgrade';
+import { Ng1Adapter, Ng1Module, downgradeInjectable, downgradeComponent, UpgradeComponent } from '@angular/upgrade';
 import { parseFields } from '@angular/upgrade/src/metadata';
 import * as angular from '@angular/upgrade/src/angular_js';
 
@@ -47,7 +47,7 @@ export function main() {
       // the ng1 app module that will consume the downgraded component
       const ng1Module = angular.module('ng1', [])
         // create an ng1 facade of the ng2 component
-        .directive('ng2', downgradeNg2Component({ selector: 'ng2', type: Ng2Component }));
+        .directive('ng2', downgradeComponent({ selector: 'ng2', type: Ng2Component }));
 
       const element =
           html('<div>{{ \'ng1[\' }}<ng2>~{{ \'ng-content\' }}~</ng2>{{ \']\' }}</div>');
@@ -219,7 +219,7 @@ export function main() {
           };
         }
 
-        ng1Module.directive('ng2', downgradeNg2Component({
+        ng1Module.directive('ng2', downgradeComponent({
           type: Ng2Component,
           selector: 'ng2',
           inputs: parseFields([
@@ -284,7 +284,7 @@ export function main() {
               template: '<div ng-if="!destroyIt"><ng2></ng2></div>'
             };
           })
-          .directive('ng2', downgradeNg2Component({
+          .directive('ng2', downgradeComponent({
             type: Ng2Component,
             selector: 'ng2'
           }));
@@ -337,7 +337,7 @@ export function main() {
               };
             }
           ])
-          .directive('ng2', downgradeNg2Component({
+          .directive('ng2', downgradeComponent({
             type: Ng2Component,
             selector: 'ng2'
           }));
@@ -1006,6 +1006,31 @@ export function main() {
       //     expect(multiTrim(document.body.textContent)).toEqual('ng2a(ng1(ng2b))');
       //   });
       // }));
+
+      //   it('should allow attribute selectors for components in ng2', async(() => {
+      //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => MyNg2Module));
+      //        const ng1Module = angular.module('myExample', []);
+
+      //        @Component({selector: '[works]', template: 'works!'})
+      //        class WorksComponent {
+      //        }
+
+      //        @Component({selector: 'root-component', template: 'It <div works></div>'})
+      //        class RootComponent {
+      //        }
+
+      //        @NgModule({imports: [BrowserModule], declarations: [RootComponent, WorksComponent]})
+      //        class MyNg2Module {
+      //        }
+
+      //        ng1Module.directive('rootComponent', adapter.downgradeNg2Component(RootComponent));
+
+      //        document.body.innerHTML = '<root-component></root-component>';
+      //        adapter.bootstrap(document.body.firstElementChild, ['myExample']).ready((ref) => {
+      //          expect(multiTrim(document.body.textContent)).toEqual('It works!');
+      //          ref.dispose();
+      //        });
+      //      }));
     });
 
     describe('injection', () => {
@@ -1115,69 +1140,54 @@ export function main() {
         }));
       });
 
-  //   it('should allow attribute selectors for components in ng2', async(() => {
-  //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => MyNg2Module));
-  //        const ng1Module = angular.module('myExample', []);
 
-  //        @Component({selector: '[works]', template: 'works!'})
-  //        class WorksComponent {
-  //        }
 
-  //        @Component({selector: 'root-component', template: 'It <div works></div>'})
-  //        class RootComponent {
-  //        }
+    describe('examples', () => {
+      it('should verify UpgradeAdapter example', async(() => {
 
-  //        @NgModule({imports: [BrowserModule], declarations: [RootComponent, WorksComponent]})
-  //        class MyNg2Module {
-  //        }
 
-  //        ng1Module.directive('rootComponent', adapter.downgradeNg2Component(RootComponent));
+        @Directive({
+          selector: 'ng1'
+        })
+        class Ng1Component extends UpgradeComponent {}
 
-  //        document.body.innerHTML = '<root-component></root-component>';
-  //        adapter.bootstrap(document.body.firstElementChild, ['myExample']).ready((ref) => {
-  //          expect(multiTrim(document.body.textContent)).toEqual('It works!');
-  //          ref.dispose();
-  //        });
-  //      }));
+        @Component({
+          selector: 'ng2',
+          inputs: ['name'],
+          template: 'ng2[<ng1 [title]="name">transclude</ng1>](<ng-content></ng-content>)'
+        })
+        class Ng2Component {}
 
-  //   describe('examples', () => {
-  //     it('should verify UpgradeAdapter example', async(() => {
-  //          const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-  //          const module = angular.module('myExample', []);
+        @NgModule({
+          declarations: [Ng1Component, Ng2Component],
+          imports: [BrowserModule],
+          schemas: [NO_ERRORS_SCHEMA],
+        })
+        class Ng2Module {
+          ngDoBootstrap() {}
+        }
 
-  //          const ng1 = () => {
-  //            return {
-  //              scope: {title: '='},
-  //              transclude: true,
-  //              template: 'ng1[Hello {{title}}!](<span ng-transclude></span>)'
-  //            };
-  //          };
-  //          module.directive('ng1', ng1);
+        const ng1Module = angular.module('myExample', [])
+          .directive('ng1', () => {
+            return {
+              scope: {title: '='},
+              transclude: true,
+              template: 'ng1[Hello {{title}}!](<span ng-transclude></span>)'
+            };
+          })
+          .directive('ng2', downgradeComponent({ type: Ng2Component, selector: 'ng2' }));
 
-  //          const Ng2 =
-  //              Component({
-  //                selector: 'ng2',
-  //                inputs: ['name'],
-  //                template: 'ng2[<ng1 [title]="name">transclude</ng1>](<ng-content></ng-content>)'
-  //              }).Class({constructor: function() {}});
+        document.body.innerHTML = '<ng2 name="World">project</ng2>';
 
-  //          const Ng2Module = NgModule({
-  //                              declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-  //                              imports: [BrowserModule],
-  //                              schemas: [NO_ERRORS_SCHEMA],
-  //                            }).Class({constructor: function() {}});
+        platformBrowserDynamic().bootstrapModule(Ng2Module).then(ref => {
+          var adapter = ref.injector.get(Ng1Adapter) as Ng1Adapter;
+          adapter.bootstrapNg1(document.body.firstElementChild, [ng1Module.name]);
 
-  //          module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-
-  //          document.body.innerHTML = '<ng2 name="World">project</ng2>';
-
-  //          adapter.bootstrap(document.body.firstElementChild, ['myExample']).ready((ref) => {
-  //            expect(multiTrim(document.body.textContent))
-  //                .toEqual('ng2[ng1[Hello World!](transclude)](project)');
-  //            ref.dispose();
-  //          });
-  //        }));
-  //   });
+          expect(multiTrim(document.body.textContent))
+              .toEqual('ng2[ng1[Hello World!](transclude)](project)');
+        });
+      }));
+    });
   });
 }
 
