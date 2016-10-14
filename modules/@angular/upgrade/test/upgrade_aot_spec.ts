@@ -1084,7 +1084,7 @@ export function main() {
         expect(applicationRunning).toEqual(true);
       }));
 
-      xit('should wait for ng2 testability', fakeAsync(() => {
+      it('should wait for ng2 testability', fakeAsync(() => {
           const ng1Module = angular.module('ng1', [])
           const element = html('<div></div>');
 
