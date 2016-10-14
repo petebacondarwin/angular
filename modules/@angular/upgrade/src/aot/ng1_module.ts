@@ -1,5 +1,5 @@
 import { Provider, NgModule } from '@angular/core';
-import { Ng1Adapter } from './upgrade_module';
+import { Ng1Adapter } from './ng1_adapter';
 import * as angular from '../angular_js';
 
 // We must use exported named functions for the ng2 factories to keep the compiler happy:
