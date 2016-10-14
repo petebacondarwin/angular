@@ -1,5 +1,5 @@
 import { Injector } from '@angular/core';
-import { UPGRADE_MODULE_INJECTOR } from '../constants';
+import { INJECTOR_KEY } from './constants';
 
 /**
  * Create an Angular 1 factory that will return an Angular 2 injectable thing
@@ -12,5 +12,5 @@ import { UPGRADE_MODULE_INJECTOR } from '../constants';
  * ```
  */
 export function downgradeInjectable(token: any) {
-  return [UPGRADE_MODULE_INJECTOR, (i: Injector) => i.get(token)];
+  return [INJECTOR_KEY, (i: Injector) => i.get(token)];
 }

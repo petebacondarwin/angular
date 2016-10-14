@@ -1,7 +1,7 @@
 import { Injector, ComponentFactory, ComponentFactoryResolver } from '@angular/core';
-import { UPGRADE_MODULE_INJECTOR } from '../constants';
+import { INJECTOR_KEY, $INJECTOR, $PARSE } from './constants';
 import { ComponentInfo } from '../metadata';
-import { DowngradeNg2ComponentAdapter } from '../downgrade_ng2_adapter';
+import { DowngradeComponentAdapter } from './downgrade_component_adapter';
 import * as angular from '../angular_js';
 
 let downgradeCount = 0;
@@ -12,11 +12,11 @@ export function downgradeComponent(info: ComponentInfo) : Function {
   let idCount = 0;
 
   const directiveFactory: angular.IAnnotatedFunction =
-    function (ng1Injector: angular.IInjectorService, parse: angular.IParseService) : angular.IDirective {
+    function ($injector: angular.IInjectorService, $parse: angular.IParseService) : angular.IDirective {
 
     return {
       restrict: 'E',
-      require: '?^' + UPGRADE_MODULE_INJECTOR,
+      require: '?^' + INJECTOR_KEY,
       link: (scope: angular.IScope,
             element: angular.IAugmentedJQuery,
             attrs: angular.IAttributes,
@@ -24,7 +24,7 @@ export function downgradeComponent(info: ComponentInfo) : Function {
             transclude: angular.ITranscludeFunction) => {
 
         if (parentInjector === null) {
-          parentInjector = ng1Injector.get(UPGRADE_MODULE_INJECTOR);
+          parentInjector = $injector.get(INJECTOR_KEY);
         }
 
         const componentFactoryResolver : ComponentFactoryResolver = parentInjector.get(ComponentFactoryResolver);
@@ -34,11 +34,10 @@ export function downgradeComponent(info: ComponentInfo) : Function {
           throw new Error('Expecting ComponentFactory for: ' + info.type);
         }
 
-        const facade = new DowngradeNg2ComponentAdapter(
-            idPrefix + (idCount++), info, element, attrs, scope, <Injector>parentInjector, parse,
-            componentFactory);
+        const facade = new DowngradeComponentAdapter(
+            idPrefix + (idCount++), info, element, attrs, scope, parentInjector, $parse, componentFactory);
         facade.setupInputs();
-        facade.bootstrapNg2();
+        facade.createComponent();
         facade.projectContent();
         facade.setupOutputs();
         facade.registerCleanup();
@@ -46,6 +45,6 @@ export function downgradeComponent(info: ComponentInfo) : Function {
     };
   };
 
-  directiveFactory.$inject = ['$injector', '$parse'];
+  directiveFactory.$inject = [$INJECTOR, $PARSE];
   return directiveFactory;
 }
