@@ -1,5 +1,5 @@
 import { Injector } from '@angular/core';
-import { UPGRADE_MODULE_INJECTOR } from '@angular/upgrade/src/constants';
+import { UPGRADE_MODULE_INJECTOR } from '../constants';
 
 /**
  * Create an Angular 1 factory that will return an Angular 2 injectable thing
