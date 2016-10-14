@@ -1132,12 +1132,11 @@ export function main() {
     describe('examples', () => {
       it('should verify UpgradeAdapter example', async(() => {
 
-
-        @Directive({
-          selector: 'ng1'
-        })
+        // This is wrapping (upgrading) an Angular 1 component to be used in an Angular 2 component
+        @Directive({ selector: 'ng1' })
         class Ng1Component extends UpgradeComponent {}
 
+        // This is an Angular 2 component that will be downgraded
         @Component({
           selector: 'ng2',
           inputs: ['name'],
@@ -1145,6 +1144,7 @@ export function main() {
         })
         class Ng2Component {}
 
+        // This module represents the Angular 2 pieces of the application
         @NgModule({
           declarations: [Ng1Component, Ng2Component],
           entryComponents: [Ng2Component],
@@ -1154,7 +1154,9 @@ export function main() {
           ngDoBootstrap() { /* this is a placeholder to stop the boostrapper from complaining */}
         }
 
+        // This module represents the Angular 1 pieces of the application
         const ng1Module = angular.module('myExample', [])
+          // This is an Angular 1 component that will be upgraded
           .directive('ng1', () => {
             return {
               scope: {title: '='},
@@ -1162,10 +1164,15 @@ export function main() {
               template: 'ng1[Hello {{title}}!](<span ng-transclude></span>)'
             };
           })
+          // This is wrapping (downgrading) an Angular 2 component to be used in Angular 1
           .directive('ng2', downgradeComponent({ component: Ng2Component }));
 
+        // This is the (Angular 1) application bootstrap element
+        // Notice that it is actually a downgraded Angular 2 component
         document.body.innerHTML = '<ng2 name="World">project</ng2>';
 
+        // We bootstrap the Angular 2 module first; then when it is ready (async)
+        // We bootstrap the Angular 1 module on the bootstrap element
         platformBrowserDynamic().bootstrapModule(Ng2Module).then(ref => {
           var adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
           adapter.bootstrap(document.body.firstElementChild, [ng1Module.name]);
