@@ -45,6 +45,7 @@ export interface IRootScopeService {
   $apply(exp: string): any;
   $apply(exp: Function): any;
   $evalAsync(): any;
+  $on(event: string, fn?: (event?: any, ...args: any[]) => void): Function;
   $$childTail: IScope;
   $$childHead: IScope;
   $$nextSibling: IScope;
@@ -111,6 +112,7 @@ export type IAugmentedJQuery = Node[] & {
   inheritedData?: (name: string, value?: any) => any;
   contents?: () => IAugmentedJQuery;
   parent?: () => IAugmentedJQuery;
+  empty?: () => void;
   append?: (content: IAugmentedJQuery|string) => IAugmentedJQuery;
 };
 export interface IProvider {
@@ -159,7 +161,7 @@ function noNg() {
 }
 
 var angular: {
-  bootstrap: (e: Element, modules: string[], config: IAngularBootstrapConfig) => void,
+  bootstrap: (e: Element, modules: (string|IInjectable)[], config: IAngularBootstrapConfig) => void,
   module: (prefix: string, dependencies?: string[]) => IModule,
   element: (e: Element) => IAugmentedJQuery,
   version: {major: number}, resumeBootstrap?: () => void,
