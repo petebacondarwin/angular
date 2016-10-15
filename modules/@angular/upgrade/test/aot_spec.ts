@@ -60,33 +60,46 @@ export function main() {
         });
       }));
 
-      // it('should instantiate ng1 in ng2 template and project content', async(() => {
-      //      const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-      //      const ng1Module = angular.module('ng1', []);
+      fit('should instantiate ng1 in ng2 template and project content', async(() => {
 
-      //      const Ng2 = Component({
-      //                    selector: 'ng2',
-      //                    template: `{{ 'ng2(' }}<ng1>{{'transclude'}}</ng1>{{ ')' }}`,
-      //                  }).Class({constructor: function Ng2() {}});
+        @Component({
+          selector: 'ng2',
+          template: `{{ 'ng2(' }}<ng1>{{'transclude'}}</ng1>{{ ')' }}`,
+        })
+        class Ng2Component {}
 
-      //      const Ng2Module = NgModule({
-      //                          declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-      //                          imports: [BrowserModule],
-      //                          schemas: [NO_ERRORS_SCHEMA],
-      //                        }).Class({constructor: function Ng2Module() {}});
 
-      //      ng1Module.directive('ng1', () => {
-      //        return {transclude: true, template: '{{ "ng1" }}(<ng-transclude></ng-transclude>)'};
-      //      });
-      //      ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
+        @Directive({ selector: 'ng1' })
+        class Ng1WrapperComponent extends UpgradeComponent {
+          constructor(elementRef: ElementRef, injector: Injector) {
+            super('ng1', elementRef, injector);
+          }
+        }
 
-      //      const element = html('<div>{{\'ng1(\'}}<ng2></ng2>{{\')\'}}</div>');
+        @NgModule({
+          declarations: [Ng1WrapperComponent, Ng2Component],
+          entryComponents: [Ng2Component],
+          imports: [BrowserModule, UpgradeModule]
+        })
+        class Ng2Module {
+          ngDoBootstrap() {}
+        }
 
-      //      adapter.bootstrap(element, ['ng1']).ready((ref) => {
-      //        expect(document.body.textContent).toEqual('ng1(ng2(ng1(transclude)))');
-      //        ref.dispose();
-      //      });
-      //    }));
+        const ng1Module = angular.module('ng1', [])
+          .directive('ng1', () => {
+            return {transclude: true, template: '{{ "ng1" }}(<ng-transclude></ng-transclude>)'};
+          })
+          .directive('ng2', downgradeComponent({ component: Ng2Component }));
+
+        const element = html('<div>{{\'ng1(\'}}<ng2></ng2>{{\')\'}}</div>');
+
+        platformBrowserDynamic().bootstrapModule(Ng2Module).then((ref) => {
+          const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
+          adapter.bootstrap(element, [ng1Module.name]);
+          expect(document.body.textContent).toEqual('ng1(ng2(ng1(transclude)))');
+        });
+      }));
+
       // describe('scope/component change-detection', () => {
       //   it('should interleave scope and component expressions', async(() => {
       //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
@@ -371,8 +384,8 @@ export function main() {
           selector: 'ng1'
         })
         class Ng1 extends UpgradeComponent {
-          constructor(elementRef: ElementRef, upgradeModule: UpgradeModule) {
-            super('ng1', elementRef, upgradeModule);
+          constructor(elementRef: ElementRef, injector: Injector) {
+            super('ng1', elementRef, injector);
           }
 
           @Input() set fullName(value: string) { this.setInput('fullName', value); }
@@ -1130,13 +1143,13 @@ export function main() {
     });
 
     describe('examples', () => {
-      fit('should verify UpgradeAdapter example', async(() => {
+      it('should verify UpgradeAdapter example', async(() => {
 
         // This is wrapping (upgrading) an Angular 1 component to be used in an Angular 2 component
         @Directive({ selector: 'ng1' })
         class Ng1Component extends UpgradeComponent {
-          constructor(elementRef: ElementRef, upgradeModule: UpgradeModule) {
-            super('ng1', elementRef, upgradeModule);
+          constructor(elementRef: ElementRef, injector: Injector) {
+            super('ng1', elementRef, injector);
           }
         }
 
