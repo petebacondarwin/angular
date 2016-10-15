@@ -459,19 +459,21 @@ export function main() {
           var adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
           adapter.bootstrap(element, [ng1Module.name]);
 
-          console.log('booted', document.body.outerHTML);
+          // Before outputs are triggered
+          expect(multiTrim(document.body.textContent)).toBe(
+              'Hello Savkin, Victor, SF; A: VICTOR; B: SAVKIN; C: SF; | ' +
+              'Hello TEST; A: First; B: Last; C: City; | ?-Savkin, Victor, SF');
 
           // we need to do setTimeout, because the EventEmitter uses setTimeout to schedule
           // events, and so without this we would not see the events processed.
           setTimeout(() => {
+            // After outputs are triggered
             expect(multiTrim(document.body.textContent))
                 .toEqual(
-                    'Hello SAVKIN, Victor, SF; A: VICTOR; B: SAVKIN; C: SF; | Hello TEST; A: First; B: Last; C: City; | WORKS-SAVKIN, Victor, SF');
+                    'Hello Savkin, Victor, SF; A: VICTOR; B: SAVKIN; C: SF; | ' +
+                    'Hello TEST; A: First; B: Last; C: City; | WORKS-SAVKIN, Victor, SF');
           }, 0);
 
-          expect(multiTrim(document.body.textContent)).toBe(
-              'Hello SAVKIN, Victor, SF; A: VICTOR; B: SAVKIN; C: SF; | ' +
-              'Hello TEST; A: First; B: Last; C: City; | WORKS-SAVKIN, Victor, SF');
         });
       }));
 
