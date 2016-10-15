@@ -105,16 +105,14 @@ export interface ICloneAttachFunction {
   // Let's hint but not force cloneAttachFn's signature
   (clonedElement?: IAugmentedJQuery, scope?: IScope): any;
 }
-export interface IAugmentedJQuery {
-  bind(name: string, fn: () => void): void;
-  data(name: string, value?: any): any;
-  inheritedData(name: string, value?: any): any;
-  contents(): IAugmentedJQuery;
-  parent(): IAugmentedJQuery;
-  append(content: IAugmentedJQuery|string): IAugmentedJQuery;
-  length: number;
-  [index: number]: Node;
-}
+export type IAugmentedJQuery = Node[] & {
+  bind?: (name: string, fn: () => void) => void;
+  data?: (name: string, value?: any) => any;
+  inheritedData?: (name: string, value?: any) => any;
+  contents?: () => IAugmentedJQuery;
+  parent?: () => IAugmentedJQuery;
+  append?: (content: IAugmentedJQuery|string) => IAugmentedJQuery;
+};
 export interface IProvider {
   $get: IInjectable
 }

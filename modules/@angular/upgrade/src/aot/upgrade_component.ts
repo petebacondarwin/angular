@@ -1,7 +1,7 @@
 import * as angular from '../angular_js';
-import { ElementRef, EventEmitter, OnInit, OnChanges, DoCheck } from '@angular/core';
+import { ElementRef, Injector, EventEmitter, OnInit, OnChanges, DoCheck } from '@angular/core';
 import { UpgradeModule } from './upgrade_module';
-import { $COMPILE, $TEMPLATE_CACHE, $HTTP_BACKEND, $CONTROLLER, $SCOPE } from './constants';
+import { $INJECTOR, $COMPILE, $TEMPLATE_CACHE, $HTTP_BACKEND, $CONTROLLER, $SCOPE } from './constants';
 import { controllerKey } from '../util';
 
 const NOT_SUPPORTED: any = 'NOT_SUPPORTED';
@@ -39,8 +39,8 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
   private bindingDestination: IBindingDestination = null;
   private checkLastValues: any[] = [];
 
-  constructor(private name: string, private elementRef: ElementRef, private upgradeModule: UpgradeModule) {
-    this.$injector = upgradeModule.$injector;
+  constructor(private name: string, private elementRef: ElementRef, private injector: Injector) {
+    this.$injector = injector.get($INJECTOR);
     this.$compile = this.$injector.get($COMPILE);
     this.$templateCache = this.$injector.get($TEMPLATE_CACHE);
     this.$httpBackend = this.$injector.get($HTTP_BACKEND);
@@ -51,13 +51,11 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
 
     this.directive = this.getDirective(name);
     this.bindings = this.extractBindings(this.directive);
-    this.compileTemplate(this.directive).then((linkFn) => {
-      this.linkFn = linkFn;
-    });
+    this.linkFn = this.compileTemplate(this.directive);
 
     // We ask for the Angular 1 scope from the Angular 2 injector, since
     // we will put the new component scope onto the new injector for each component
-    const $parentScope = upgradeModule.injector.get($SCOPE);
+    const $parentScope = injector.get($SCOPE);
     this.$componentScope = $parentScope.$new(!!this.directive.scope);
 
     const controllerType = this.directive.controller;
@@ -85,30 +83,34 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
       this.buildController(this.directive.controller, this.$componentScope,
                            this.$element, this.directive.controllerAs);
     }
-    let link = this.directive.link;
-    if (typeof link == 'object') link = (link as angular.IDirectivePrePost).pre;
-    if (link) {
-      const attrs: angular.IAttributes = NOT_SUPPORTED;
-      const transcludeFn: angular.ITranscludeFunction = NOT_SUPPORTED;
-      const linkController = this.resolveRequired(this.$element, this.directive.require);
-      (<angular.IDirectiveLinkFn>this.directive.link)(
-          this.$componentScope, this.$element, attrs, linkController, transcludeFn);
+    const attrs: angular.IAttributes = NOT_SUPPORTED;
+    const transcludeFn: angular.ITranscludeFunction = NOT_SUPPORTED;
+    const linkController = this.resolveRequired(this.$element, this.directive.require);
+
+    const link = this.directive.link;
+    const preLink = (typeof link == 'object') && (link as angular.IDirectivePrePost).pre;
+    const postLink = (typeof link == 'object') ? (link as angular.IDirectivePrePost).post : link;
+    if (preLink) {
+        preLink(this.$componentScope, this.$element, attrs, linkController, transcludeFn);
     }
 
     var childNodes: Node[] = [];
-    var childNode: any /** TODO #9100 */;
+    var childNode: Node;
     while (childNode = this.element.firstChild) {
       this.element.removeChild(childNode);
       childNodes.push(childNode);
     }
-    this.linkFn(this.$componentScope, (clonedElement, scope) => {
-      for (var i = 0, ii = clonedElement.length; i < ii; i++) {
-        this.element.appendChild(clonedElement[i]);
-      }
-    }, {
-      parentBoundTranscludeFn: (scope: any /** TODO #9100 */,
-                                cloneAttach: any /** TODO #9100 */) => { cloneAttach(childNodes); }
-    });
+
+    const attachElement: angular.ICloneAttachFunction = (clonedElements, scope) => {
+      this.$element.append(clonedElements);
+    };
+    const attachChildNodes: angular.ILinkFn = (scope, cloneAttach) => cloneAttach(childNodes);
+
+    this.linkFn(this.$componentScope, attachElement, { parentBoundTranscludeFn: attachChildNodes });
+
+    if (postLink) {
+      postLink(this.$componentScope, this.$element, attrs, linkController, transcludeFn);
+    }
 
     if (this.bindingDestination.$onInit) {
       this.bindingDestination.$onInit();
@@ -200,24 +202,25 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
     return bindings;
   }
 
-  private compileTemplate(directive: angular.IDirective): Promise<angular.ILinkFn> {
+  private compileTemplate(directive: angular.IDirective): angular.ILinkFn {
     if (this.directive.template !== undefined) {
-      return Promise.resolve(this.compileHtml(getOrCall(this.directive.template)));
+      return this.compileHtml(getOrCall(this.directive.template));
     } else if (this.directive.templateUrl) {
       var url = getOrCall(this.directive.templateUrl);
       var html = this.$templateCache.get(url) as string;
       if (html !== undefined) {
-        return Promise.resolve(this.compileHtml(html));
+        return this.compileHtml(html);
       } else {
-        return new Promise((resolve, reject) => {
-          this.$httpBackend('GET', url, null, (status: number, response: string) => {
-            if (status == 200) {
-              resolve(this.compileHtml(this.$templateCache.put(url, response)));
-            } else {
-              reject(`GET component template from '${url}' returned '${status}: ${response}'`);
-            }
-          });
-        });
+        throw new Error('loading directive templates asynchronously is not supported');
+        // return new Promise((resolve, reject) => {
+        //   this.$httpBackend('GET', url, null, (status: number, response: string) => {
+        //     if (status == 200) {
+        //       resolve(this.compileHtml(this.$templateCache.put(url, response)));
+        //     } else {
+        //       reject(`GET component template from '${url}' returned '${status}: ${response}'`);
+        //     }
+        //   });
+        // });
       }
     } else {
       throw new Error(`Directive '${this.name}' is not a component, it is missing template.`);
