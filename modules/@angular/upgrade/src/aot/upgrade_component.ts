@@ -58,6 +58,7 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
     // We ask for the Angular 1 scope from the Angular 2 injector, since
     // we will put the new component scope onto the new injector for each component
     const $parentScope = injector.get($SCOPE);
+    // QUESTION: should we create an isolated scope if the scope is only true
     this.$componentScope = $parentScope.$new(!!this.directive.scope);
 
     const controllerType = this.directive.controller;
@@ -81,6 +82,7 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
   }
 
   ngOnInit() {
+    // QUESTION: why not just use $compile instead of reproducing parts of it
     if (!this.directive.bindToController && this.directive.controller) {
       this.buildController(this.directive.controller, this.$componentScope,
                            this.$element, this.directive.controllerAs);
@@ -114,6 +116,7 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
       postLink(this.$componentScope, this.$element, attrs, linkController, transcludeFn);
     }
 
+    // QUESTION: in Angular 1 we only call $onInit if the bindingDestination is the controller
     if (this.bindingDestination.$onInit) {
       this.bindingDestination.$onInit();
     }
@@ -168,6 +171,7 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
     if (directive.terminal) this.notSupported('terminal');
     if (directive.compile) this.notSupported('compile');
     const link = directive.link;
+    // QUESTION: why not support link.post?
     if (typeof link == 'object') {
       if ((<angular.IDirectivePrePost>link).post) this.notSupported('link.post');
     }
