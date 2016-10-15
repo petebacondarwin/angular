@@ -114,6 +114,7 @@ export type IAugmentedJQuery = Node[] & {
   parent?: () => IAugmentedJQuery;
   empty?: () => void;
   append?: (content: IAugmentedJQuery|string) => IAugmentedJQuery;
+  controller?: (name: string) => any;
 };
 export interface IProvider {
   $get: IInjectable

@@ -1,5 +1,6 @@
 import * as angular from '../angular_js';
 import { ElementRef, Injector, EventEmitter, OnInit, OnChanges, SimpleChange, SimpleChanges, DoCheck } from '@angular/core';
+import { looseIdentical } from '@angular/facade/src/lang';
 import { UpgradeModule } from './upgrade_module';
 import { $INJECTOR, $COMPILE, $TEMPLATE_CACHE, $HTTP_BACKEND, $CONTROLLER, $SCOPE } from './constants';
 import { controllerKey } from '../util';
@@ -8,13 +9,12 @@ const NOT_SUPPORTED: any = 'NOT_SUPPORTED';
 const INITIAL_VALUE = { __UNINITIALIZED__: true };
 
 class Bindings {
-  inputs: string[] = [];
-  inputsRename: string[] = [];
-  outputs: string[] = [];
-  outputsRename: string[] = [];
-  propertyOutputs: string[] = [];
-  checkProperties: string[] = [];
-  propertyMap: {[name: string]: string} = {};
+  twoWayBoundProperties: string[] = [];
+  twoWayBoundLastValues: any[] = [];
+
+  expressionBoundProperties: string[] = [];
+
+  propertyToOutputMap: {[propName: string]: string} = {};
 }
 
 interface IBindingDestination {
@@ -39,7 +39,6 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
   private linkFn: angular.ILinkFn;
 
   private bindingDestination: IBindingDestination = null;
-  private checkLastValues: any[] = [];
 
   constructor(private name: string, private elementRef: ElementRef, private injector: Injector) {
     this.$injector = injector.get($INJECTOR);
@@ -52,7 +51,7 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
     this.$element = angular.element(this.element);
 
     this.directive = this.getDirective(name);
-    this.bindings = this.extractBindings(this.directive);
+    this.bindings = this.initializeBindings(this.directive);
     this.linkFn = this.compileTemplate(this.directive);
 
     // We ask for the Angular 1 scope from the Angular 2 injector, since
@@ -71,14 +70,7 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
       this.bindingDestination = this.$componentScope;
     }
 
-    this.setupBindings();
-  }
-
-  setInput(name: string, value: any) {
-  }
-
-  getOutput<T>(name: string): EventEmitter<T> {
-    return new EventEmitter<T>();
+    this.setupOutputs();
   }
 
   ngOnInit() {
@@ -123,42 +115,33 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    const localChanges: SimpleChanges = {};
-    for (var name in changes) {
-      if ((changes as Object).hasOwnProperty(name)) {
-        const localName = this.bindings.propertyMap['input_' + name];
-        this.bindingDestination[localName] = localChanges[localName] = changes[name].currentValue;
-      }
-    }
+    // Forward input changes to `bindingDestination`
+    Object.keys(changes).forEach(propName => {
+      this.bindingDestination[propName] = changes[propName].currentValue;
+    });
+
     if (this.bindingDestination.$onChanges) {
-      this.bindingDestination.$onChanges(localChanges);
+      this.bindingDestination.$onChanges(changes);
     }
-    console.log('onChanges');
   }
 
   ngDoCheck() {
-    const count = 0;
-    const destination = this.bindingDestination;
-    const lastValues = this.checkLastValues;
-    const checkProperties = this.bindings.checkProperties;
-    for (let i = 0; i < checkProperties.length; i++) {
-      const value = destination[checkProperties[i]];
-      const last = lastValues[i];
-      if (value !== last) {
-        if (typeof value == 'number' && isNaN(value) && typeof last == 'number' && isNaN(last)) {
-          // ignore because NaN != NaN
-        } else {
-          const eventEmitter: EventEmitter<any> = (this as any)[this.bindings.propertyOutputs[i]];
-          eventEmitter.emit(lastValues[i] = value);
-        }
-      }
-    }
-    return count;
-  }
+    const twoWayBoundProperties = this.bindings.twoWayBoundProperties;
+    const twoWayBoundLastValues = this.bindings.twoWayBoundLastValues;
+    const propertyToOutputMap = this.bindings.propertyToOutputMap;
 
-  protected setDestinationProperty(name: string, value: any) {
-    const property = this.bindings.propertyMap[name];
-    this.bindingDestination[property] = value;
+    twoWayBoundProperties.forEach((propName, idx) => {
+      const newValue = this.bindingDestination[propName];
+      const oldValue = twoWayBoundLastValues[idx];
+
+      if (!looseIdentical(newValue, oldValue)) {
+        const outputName = propertyToOutputMap[propName];
+        const eventEmitter: EventEmitter<any> = (this as any)[outputName];
+
+        eventEmitter.emit(newValue);
+        twoWayBoundLastValues[idx] = newValue;
+      }
+    });
   }
 
   private getDirective(name: string): angular.IDirective {
@@ -178,7 +161,7 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
     return directive;
   }
 
-  private extractBindings(directive: angular.IDirective) {
+  private initializeBindings(directive: angular.IDirective) {
     const btcIsObject = typeof directive.bindToController === 'object';
     if (btcIsObject && Object.keys(directive.scope).length) {
       throw new Error(
@@ -189,50 +172,34 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
     const bindings = new Bindings();
 
     if (typeof context == 'object') {
-      for (let name in context) {
-        if ((context as Object).hasOwnProperty(name)) {
-          let localName = context[name];
-          const type = localName.charAt(0);
-          const typeOptions = localName.charAt(1);
-          localName = typeOptions === '?' ? localName.substr(2) : localName.substr(1);
-          localName = localName || name;
+      Object.keys(context).forEach(propName => {
+        const definition = context[propName];
+        const bindingType = definition.charAt(0);
 
-          const outputName = 'output_' + name;
-          const outputNameRename = outputName + ': ' + name;
-          const outputNameRenameChange = outputName + ': ' + name + 'Change';
-          const inputName = 'input_' + name;
-          const inputNameRename = inputName + ': ' + name;
-          switch (type) {
-            case '=':
-              bindings.propertyOutputs.push(outputName);
-              bindings.checkProperties.push(localName);
-              bindings.outputs.push(outputName);
-              bindings.outputsRename.push(outputNameRenameChange);
-              bindings.propertyMap[outputName] = localName;
-              bindings.inputs.push(inputName);
-              bindings.inputsRename.push(inputNameRename);
-              bindings.propertyMap[inputName] = localName;
-              break;
-            case '@':
-            // handle the '<' binding of angular 1.5 components
-            case '<':
-              bindings.inputs.push(inputName);
-              bindings.inputsRename.push(inputNameRename);
-              bindings.propertyMap[inputName] = localName;
-              break;
-            case '&':
-              bindings.outputs.push(outputName);
-              bindings.outputsRename.push(outputNameRename);
-              bindings.propertyMap[outputName] = localName;
-              break;
-            default:
-              var json = JSON.stringify(context);
-              throw new Error(
-                  `Unexpected mapping '${type}' in '${json}' in '${this.name}' directive.`);
-          }
+        switch (bindingType) {
+          case '@':
+          case '<':
+            // We don't need to do anything special. They will be defined as inputs on the
+            // upgraded component facade and the change propagation will be handled by
+            // `ngOnChanges()`.
+            break;
+          case '=':
+            bindings.twoWayBoundProperties.push(propName);
+            bindings.twoWayBoundLastValues.push(INITIAL_VALUE);
+            bindings.propertyToOutputMap[propName] = propName + 'Change';
+            break;
+          case '&':
+            bindings.expressionBoundProperties.push(propName);
+            bindings.propertyToOutputMap[propName] = propName;
+            break;
+          default:
+            var json = JSON.stringify(context);
+            throw new Error(
+                `Unexpected mapping '${bindingType}' in '${json}' in '${this.name}' directive.`);
         }
-      }
+      });
     }
+
     return bindings;
   }
 
@@ -273,31 +240,22 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
     // TODO
   }
 
-  private setupBindings() {
-    // null out the input properties on the component
-    // QUESTION: do we need to do this if we explicitly define inputs via `@Input()`?
-    const inputs = this.bindings.inputs;
-    for (var i = 0; i < inputs.length; i++) {
-      (this as any)[inputs[i]] = null;
-    }
+  private setupOutputs() {
+    // Set up the outputs for `=` bindings
+    this.bindings.twoWayBoundProperties.forEach(propName => {
+      const outputName = this.bindings.propertyToOutputMap[propName];
+      (this as any)[outputName] = new EventEmitter();
+    });
 
-    // Create event emitters for each output
-    // QUESTION: do we need to do this if we explicitly define inputs via `@Output()`?
-    const outputs = this.bindings.outputs;
-    for (var j = 0; j < outputs.length; j++) {
-      const emitter = (this as any)[outputs[j]] = new EventEmitter();
-      const emitFunction = (emitter: EventEmitter<any>) => (value: any) => emitter.emit(value);
-      this.setDestinationProperty(outputs[j], emitFunction(emitter));
-    }
+    // Set up the outputs for `&` bindings
+    this.bindings.expressionBoundProperties.forEach(propName => {
+      const outputName = this.bindings.propertyToOutputMap[propName];
+      const emitter = (this as any)[outputName] = new EventEmitter();
 
-    // Initialze the outputs
-    // QUESTION: what is the difference between outputs and propertyOutputs??
-    const propertyOutputs = this.bindings.propertyOutputs;
-    for (var k = 0; k < propertyOutputs.length; k++) {
-      (this as any)[propertyOutputs[k]] = new EventEmitter();
-      this.checkLastValues.push(INITIAL_VALUE);
-    }
-
+      // QUESTION: Do we want the ng1 component to call the function with `<value>` or with
+      //           `{$event: <value>}`. The former is closer to ng2, the latter to ng1.
+      this.bindingDestination[propName] = (value: any) => emitter.emit(value);
+    });
   }
 
   private notSupported(feature: string) {
