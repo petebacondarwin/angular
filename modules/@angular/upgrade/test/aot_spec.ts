@@ -60,7 +60,7 @@ export function main() {
         });
       }));
 
-      fit('should instantiate ng1 in ng2 template and project content', async(() => {
+      it('should instantiate ng1 in ng2 template and project content', async(() => {
 
         @Component({
           selector: 'ng2',
@@ -99,50 +99,67 @@ export function main() {
           expect(document.body.textContent).toEqual('ng1(ng2(ng1(transclude)))');
         });
       }));
+    });
 
-      // describe('scope/component change-detection', () => {
-      //   it('should interleave scope and component expressions', async(() => {
-      //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-      //        const ng1Module = angular.module('ng1', []);
-      //        const log: any[] /** TODO #9100 */ = [];
-      //        const l = (value: any /** TODO #9100 */) => {
-      //          log.push(value);
-      //          return value + ';';
-      //        };
+    describe('scope/component change-detection', () => {
+      it('should interleave scope and component expressions', async(() => {
+        const log: any[] /** TODO #9100 */ = [];
+        const l = (value: any /** TODO #9100 */) => {
+          log.push(value);
+          return value + ';';
+        };
 
-      //        ng1Module.directive('ng1a', () => ({template: '{{ l(\'ng1a\') }}'}));
-      //        ng1Module.directive('ng1b', () => ({template: '{{ l(\'ng1b\') }}'}));
-      //        ng1Module.run(($rootScope: any /** TODO #9100 */) => {
-      //          $rootScope.l = l;
-      //          $rootScope.reset = () => log.length = 0;
-      //        });
+        @Directive({ selector: 'ng1a' })
+        class Ng1aComponent extends UpgradeComponent {
+          constructor(elementRef: ElementRef, injector: Injector) {
+            super('ng1a', elementRef, injector);
+          }
+        }
 
-      //        const Ng2 = Component({
-      //                      selector: 'ng2',
-      //                      template: `{{l('2A')}}<ng1a></ng1a>{{l('2B')}}<ng1b></ng1b>{{l('2C')}}`
-      //                    }).Class({constructor: function() { this.l = l; }});
+        @Directive({ selector: 'ng1b' })
+        class Ng1bComponent extends UpgradeComponent {
+          constructor(elementRef: ElementRef, injector: Injector) {
+            super('ng1b', elementRef, injector);
+          }
+        }
 
-      //        const Ng2Module =
-      //            NgModule({
-      //              declarations: [
-      //                adapter.upgradeNg1Component('ng1a'), adapter.upgradeNg1Component('ng1b'), Ng2
-      //              ],
-      //              imports: [BrowserModule],
-      //              schemas: [NO_ERRORS_SCHEMA],
-      //            }).Class({constructor: function() {}});
+        @Component({
+          selector: 'ng2',
+          template: `{{l('2A')}}<ng1a></ng1a>{{l('2B')}}<ng1b></ng1b>{{l('2C')}}`
+        })
+        class Ng2Component {
+          l: (value: any) => string;
+          constructor() { this.l = l; }
+        }
 
-      //        ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
+        @NgModule({
+          declarations: [Ng1aComponent, Ng1bComponent, Ng2Component],
+          entryComponents: [Ng2Component],
+          imports: [BrowserModule, UpgradeModule]
+        })
+        class Ng2Module {
+          ngDoBootstrap() {}
+        }
 
-      //        const element =
-      //            html('<div>{{reset(); l(\'1A\');}}<ng2>{{l(\'1B\')}}</ng2>{{l(\'1C\')}}</div>');
-      //        adapter.bootstrap(element, ['ng1']).ready((ref) => {
-      //          expect(document.body.textContent).toEqual('1A;2A;ng1a;2B;ng1b;2C;1C;');
-      //          // https://github.com/angular/angular.js/issues/12983
-      //          expect(log).toEqual(['1A', '1B', '1C', '2A', '2B', '2C', 'ng1a', 'ng1b']);
-      //          ref.dispose();
-      //        });
-      //      }));
-      // });
+        const ng1Module = angular.module('ng1', [])
+          .directive('ng1a', () => ({template: '{{ l(\'ng1a\') }}'}))
+          .directive('ng1b', () => ({template: '{{ l(\'ng1b\') }}'}))
+          .directive('ng2', downgradeComponent({ component: Ng2Component }))
+          .run(($rootScope: any /** TODO #9100 */) => {
+            $rootScope.l = l;
+            $rootScope.reset = () => log.length = 0;
+          });
+
+        const element =
+            html('<div>{{reset(); l(\'1A\');}}<ng2>{{l(\'1B\')}}</ng2>{{l(\'1C\')}}</div>');
+        platformBrowserDynamic().bootstrapModule(Ng2Module).then((ref) => {
+          const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
+          adapter.bootstrap(element, [ng1Module.name]);
+          expect(document.body.textContent).toEqual('1A;2A;ng1a;2B;ng1b;2C;1C;');
+          // https://github.com/angular/angular.js/issues/12983
+          expect(log).toEqual(['1A', '1B', '1C', '2A', '2B', '2C', 'ng1a', 'ng1b']);
+        });
+      }));
     });
 
     describe('downgrade ng2 component', () => {
