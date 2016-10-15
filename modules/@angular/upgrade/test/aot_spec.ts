@@ -387,43 +387,23 @@ export function main() {
     });
 
     describe('upgrade ng1 component', () => {
-      it('should bind properties, events', async(() => {
-
-        const ng1 = {
-          template: 'Hello {{fullName}}; A: {{dataA}}; B: {{dataB}}; C: {{modelC}}; | ',
-          bindings: {fullName: '@', modelA: '=dataA', modelB: '=dataB', modelC: '=', event: '&'},
-          controller: function($scope: angular.IScope) {
-            $scope.$watch('$ctrl.dataB', (v: any /** TODO #9100 */) => {
-              if (v === 'Savkin') {
-                this.dataB = 'SAVKIN';
-                this.event('WORKS');
-
-                // Should not update because [model-a] is uni directional
-                this.dataA = 'VICTOR';
-              }
-            });
-          }
-        };
-
-        const ng1Module = angular.module('ng1Component', []).component('ng1', ng1);
+      fit('should bind properties, events', async(() => {
 
         @Directive({
           selector: 'ng1'
         })
-        class Ng1 extends UpgradeComponent {
+        class Ng1ComponentFacade extends UpgradeComponent {
+          @Input() fullName: string;
+          @Input() modelA: string;
+          @Input() modelB: string;
+          @Output() modelBChange = new EventEmitter();
+          @Input() modelC: string;
+          @Output() modelCChange = new EventEmitter();
+          @Output() eventChange = new EventEmitter();
+
           constructor(elementRef: ElementRef, injector: Injector) {
             super('ng1', elementRef, injector);
           }
-
-          @Input() set fullName(value: string) { this.setInput('fullName', value); }
-
-          @Input() set modeA(value: any) { this.setInput('modelA', value); }
-          @Output() get modeAChange() { return this.getOutput('modelAChange'); }
-
-          @Input() set modeB(value: any) { this.setInput('modelB', value); }
-          @Output() get modeBChange() { return this.getOutput('modelBChange'); }
-
-          @Output() get eventChange() { return this.getOutput('eventChange'); }
         }
 
         @Component({
@@ -434,7 +414,7 @@ export function main() {
               '<ng1 fullName="{{\'TEST\'}}" modelA="First" modelB="Last" modelC="City"></ng1>' +
               '{{event}}-{{last}}, {{first}}, {{city}}'
         })
-        class Ng2 {
+        class Ng2Component {
           first = 'Victor';
           last = 'Savkin';
           city = 'SF';
@@ -442,18 +422,44 @@ export function main() {
         }
 
         @NgModule({
-          declarations: [Ng1, Ng2],
-          entryComponents: [Ng2],
+          declarations: [Ng1ComponentFacade, Ng2Component],
+          entryComponents: [Ng2Component],
           imports: [BrowserModule, UpgradeModule]
         })
         class Ng2Module {
           ngDoBootstrap() {}
         }
 
+        const ng1Module = angular.module('ng1Component', [])
+          .component('ng1', {
+            template: 'Hello {{$ctrl.fullName}}; A: {{$ctrl.dataA}}; B: {{$ctrl.dataB}}; C: {{$ctrl.modelC}}; | ',
+            bindings: {
+              fullName: '@',
+              modelA: '<dataA',
+              modelB: '=dataB',
+              modelC: '=',
+              event: '&'
+            },
+            controller: function($scope: angular.IScope) {
+              $scope.$watch('$ctrl.dataB', (v: any /** TODO #9100 */) => {
+                if (v === 'Savkin') {
+                  this.dataB = 'SAVKIN';
+                  this.event('WORKS');
+                  // Should not update because [model-a] is uni directional
+                  this.dataA = 'VICTOR';
+                }
+              });
+            }
+          })
+          .directive('ng2', downgradeComponent({ component: Ng2Component }));
+
         const element = html(`<ng2></ng2>`);
+
         platformBrowserDynamic().bootstrapModule(Ng2Module).then(ref => {
           var adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
           adapter.bootstrap(element, [ng1Module.name]);
+
+          console.log('booted', document.body.outerHTML);
 
           // we need to do setTimeout, because the EventEmitter uses setTimeout to schedule
           // events, and so without this we would not see the events processed.
@@ -1178,15 +1184,17 @@ export function main() {
           constructor(elementRef: ElementRef, injector: Injector) {
             super('ng1', elementRef, injector);
           }
+          @Input() title: string;
         }
 
         // This is an Angular 2 component that will be downgraded
         @Component({
           selector: 'ng2',
-          inputs: ['name'],
           template: 'ng2[<ng1 [title]="name">transclude</ng1>](<ng-content></ng-content>)'
         })
-        class Ng2Component {}
+        class Ng2Component {
+          @Input('name') nameProp: string;
+        }
 
         // This module represents the Angular 2 pieces of the application
         @NgModule({
@@ -1209,7 +1217,7 @@ export function main() {
             };
           })
           // This is wrapping (downgrading) an Angular 2 component to be used in Angular 1
-          .directive('ng2', downgradeComponent({ component: Ng2Component }));
+          .directive('ng2', downgradeComponent({ component: Ng2Component, inputs: ['name'] }));
 
         // This is the (Angular 1) application bootstrap element
         // Notice that it is actually a downgraded Angular 2 component

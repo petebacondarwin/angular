@@ -1,10 +1,11 @@
 import * as angular from '../angular_js';
-import { ElementRef, Injector, EventEmitter, OnInit, OnChanges, DoCheck } from '@angular/core';
+import { ElementRef, Injector, EventEmitter, OnInit, OnChanges, SimpleChange, SimpleChanges, DoCheck } from '@angular/core';
 import { UpgradeModule } from './upgrade_module';
 import { $INJECTOR, $COMPILE, $TEMPLATE_CACHE, $HTTP_BACKEND, $CONTROLLER, $SCOPE } from './constants';
 import { controllerKey } from '../util';
 
 const NOT_SUPPORTED: any = 'NOT_SUPPORTED';
+const INITIAL_VALUE = { __UNINITIALIZED__: true };
 
 class Bindings {
   inputs: string[] = [];
@@ -17,8 +18,9 @@ class Bindings {
 }
 
 interface IBindingDestination {
-  [key: string]: any
-  $onInit?: () => any
+  [key: string]: any;
+  $onInit?: () => void;
+  $onChanges?: (changes: SimpleChanges) => void;
 }
 
 export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
@@ -68,7 +70,7 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
       this.bindingDestination = this.$componentScope;
     }
 
-    // TODO: do stuff about inputs and outputs...
+    this.setupBindings();
   }
 
   setInput(name: string, value: any) {
@@ -117,13 +119,41 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
     }
   }
 
-  ngOnChanges() {
+  ngOnChanges(changes: SimpleChanges) {
+    const localChanges: SimpleChanges = {};
+    for (var name in changes) {
+      if ((changes as Object).hasOwnProperty(name)) {
+        const localName = this.bindings.propertyMap['input_' + name];
+        this.bindingDestination[localName] = localChanges[localName] = changes[name].currentValue;
+      }
+    }
+    if (this.bindingDestination.$onChanges) {
+      this.bindingDestination.$onChanges(localChanges);
+    }
+    console.log('onChanges');
   }
 
   ngDoCheck() {
+    const count = 0;
+    const destination = this.bindingDestination;
+    const lastValues = this.checkLastValues;
+    const checkProperties = this.bindings.checkProperties;
+    for (let i = 0; i < checkProperties.length; i++) {
+      const value = destination[checkProperties[i]];
+      const last = lastValues[i];
+      if (value !== last) {
+        if (typeof value == 'number' && isNaN(value) && typeof last == 'number' && isNaN(last)) {
+          // ignore because NaN != NaN
+        } else {
+          const eventEmitter: EventEmitter<any> = (this as any)[this.bindings.propertyOutputs[i]];
+          eventEmitter.emit(lastValues[i] = value);
+        }
+      }
+    }
+    return count;
   }
 
-  setComponentProperty(name: string, value: any) {
+  protected setDestinationProperty(name: string, value: any) {
     const property = this.bindings.propertyMap[name];
     this.bindingDestination[property] = value;
   }
@@ -237,6 +267,33 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
 
   private resolveRequired($element: angular.IAugmentedJQuery, require: angular.DirectiveRequireProperty) {
     // TODO
+  }
+
+  private setupBindings() {
+    // null out the input properties on the component
+    // QUESTION: do we need to do this if we explicitly define inputs via `@Input()`?
+    const inputs = this.bindings.inputs;
+    for (var i = 0; i < inputs.length; i++) {
+      (this as any)[inputs[i]] = null;
+    }
+
+    // Create event emitters for each output
+    // QUESTION: do we need to do this if we explicitly define inputs via `@Output()`?
+    const outputs = this.bindings.outputs;
+    for (var j = 0; j < outputs.length; j++) {
+      const emitter = (this as any)[outputs[j]] = new EventEmitter();
+      const emitFunction = (emitter: EventEmitter<any>) => (value: any) => emitter.emit(value);
+      this.setDestinationProperty(outputs[j], emitFunction(emitter));
+    }
+
+    // Initialze the outputs
+    // QUESTION: what is the difference between outputs and propertyOutputs??
+    const propertyOutputs = this.bindings.propertyOutputs;
+    for (var k = 0; k < propertyOutputs.length; k++) {
+      (this as any)[propertyOutputs[k]] = new EventEmitter();
+      this.checkLastValues.push(INITIAL_VALUE);
+    }
+
   }
 
   private notSupported(feature: string) {
