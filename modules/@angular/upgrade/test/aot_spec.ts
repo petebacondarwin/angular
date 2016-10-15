@@ -9,7 +9,7 @@
 import {
   Injector, Class, Component, Directive, ElementRef, Input, Output, OnChanges, OnDestroy,
   SimpleChanges, EventEmitter, NgModule, NgModuleRef, OpaqueToken, Testability,
-  destroyPlatform, forwardRef
+  destroyPlatform, forwardRef, PlatformRef, Type
 } from '@angular/core';
 import { async, fakeAsync, tick } from '@angular/core/testing';
 import { BrowserModule, platformBrowser } from '@angular/platform-browser';
@@ -17,6 +17,16 @@ import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
 import { UpgradeModule, downgradeInjectable, downgradeComponent, UpgradeComponent } from '@angular/upgrade';
 import { parseFields } from '@angular/upgrade/src/metadata';
 import * as angular from '@angular/upgrade/src/angular_js';
+
+function bootstrap(platform: PlatformRef, Ng2Module: Type<{}>, element: Element, ng1Module: angular.IModule) {
+  // We bootstrap the Angular 2 module first; then when it is ready (async)
+  // We bootstrap the Angular 1 module on the bootstrap element
+  return platform.bootstrapModule(Ng2Module).then(ref => {
+    var upgrade = ref.injector.get(UpgradeModule) as UpgradeModule;
+    upgrade.bootstrap(element, [ng1Module.name]);
+    return upgrade;
+  });
+}
 
 export function main() {
   fdescribe('adapter: ng1 to ng2', () => {
@@ -1205,12 +1215,9 @@ export function main() {
         // Notice that it is actually a downgraded Angular 2 component
         document.body.innerHTML = '<ng2 name="World">project</ng2>';
 
-        // We bootstrap the Angular 2 module first; then when it is ready (async)
-        // We bootstrap the Angular 1 module on the bootstrap element
-        platformBrowserDynamic().bootstrapModule(Ng2Module).then(ref => {
-          var adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
-          adapter.bootstrap(document.body.firstElementChild, [ng1Module.name]);
-
+        // Let's use a helper function to make this simpler
+        bootstrap(platformBrowserDynamic(), Ng2Module,
+                  document.body.firstElementChild, ng1Module).then(upgrade => {
           expect(multiTrim(document.body.textContent))
               .toEqual('ng2[ng1[Hello World!](transclude)](project)');
         });
