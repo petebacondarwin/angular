@@ -57,7 +57,8 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
     // We ask for the Angular 1 scope from the Angular 2 injector, since
     // we will put the new component scope onto the new injector for each component
     const $parentScope = injector.get($SCOPE);
-    // QUESTION: should we create an isolated scope if the scope is only true
+    // QUESTION 1: Should we create an isolated scope if the scope is only true?
+    // QUESTION 2: Should we make the scope accessible through `$element.scope()/isolateScope()`?
     this.$componentScope = $parentScope.$new(!!this.directive.scope);
 
     const controllerType = this.directive.controller;
@@ -175,6 +176,8 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
       Object.keys(context).forEach(propName => {
         const definition = context[propName];
         const bindingType = definition.charAt(0);
+
+        // QUESTION: What about `=*`? Ignore? Throw? Support?
 
         switch (bindingType) {
           case '@':
