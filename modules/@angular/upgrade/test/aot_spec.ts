@@ -387,7 +387,303 @@ export function main() {
     });
 
     describe('upgrade ng1 component', () => {
-      fit('should bind properties, events', async(() => {
+      fit('should support `@` bindings', async(() => {
+        // Define `ng1Component`
+        const ng1Component: angular.IComponent = {
+          template: 'Inside: {{ $ctrl.inputA }}, {{ $ctrl.inputB }}',
+          bindings: {
+            inputA: '@inputAttrA',
+            inputB: '@'
+          }
+        };
+
+        // Define `Ng1ComponentFacade`
+        @Directive({
+          selector: 'ng1'
+        })
+        class Ng1ComponentFacade extends UpgradeComponent {
+          @Input('inputAttrA') inputA: string;
+          @Input() inputB: string;
+
+          constructor(elementRef: ElementRef, injector: Injector) {
+            super('ng1', elementRef, injector);
+          }
+        }
+
+        // Define `Ng2Component`
+        @Component({
+          selector: 'ng2',
+          template: `
+            <ng1 inputAttrA="{{ dataA }}" inputB="{{ dataB }}"></ng1>
+            | Outside: {{ dataA }}, {{ dataB }}
+          `
+        })
+        class Ng2Component {
+          dataA = 'foo';
+          dataB = 'bar';
+        }
+
+        // Define `ng1Module`
+        const ng1Module = angular.module('ng1Module', [])
+          .component('ng1', ng1Component)
+          .directive('ng2', downgradeComponent({component: Ng2Component}));
+
+        // Define `Ng2Module`
+        @NgModule({
+          declarations: [Ng1ComponentFacade, Ng2Component],
+          entryComponents: [Ng2Component],
+          imports: [BrowserModule, UpgradeModule]
+        })
+        class Ng2Module {
+          ngDoBootstrap() {}
+        }
+
+        // Bootstrap
+        const element = html(`<ng2></ng2>`);
+        platformBrowserDynamic().bootstrapModule(Ng2Module).then(ref => {
+          var adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
+          adapter.bootstrap(element, [ng1Module.name]);
+
+          var ng1 = element.querySelector('ng1');
+          var ng1Controller = angular.element(ng1).controller('ng1');
+
+          expect(multiTrim(element.textContent)).toBe('Inside: foo, bar | Outside: foo, bar');
+
+          ng1Controller.inputA = 'baz';
+          ng1Controller.inputB = 'qux';
+
+          // QUESTION: Can we avoid `setTimeout()` by triggering change detection? How?
+          setTimeout(() => {
+            expect(multiTrim(element.textContent)).toBe('Inside: baz, qux | Outside: foo, bar');
+          });
+
+          // TODO: Verify that changes in `<ng2>` propagate to `<ng1>`.
+        });
+      }));
+
+      fit('should support `<` bindings', async(() => {
+        // Define `ng1Component`
+        const ng1Component: angular.IComponent = {
+          template: 'Inside: {{ $ctrl.inputA.value }}, {{ $ctrl.inputB.value }}',
+          bindings: {
+            inputA: '<inputAttrA',
+            inputB: '<'
+          }
+        };
+
+        // Define `Ng1ComponentFacade`
+        @Directive({
+          selector: 'ng1'
+        })
+        class Ng1ComponentFacade extends UpgradeComponent {
+          @Input('inputAttrA') inputA: string;
+          @Input() inputB: string;
+
+          constructor(elementRef: ElementRef, injector: Injector) {
+            super('ng1', elementRef, injector);
+          }
+        }
+
+        // Define `Ng2Component`
+        @Component({
+          selector: 'ng2',
+          template: `
+            <ng1 [inputAttrA]="dataA" [inputB]="dataB"></ng1>
+            | Outside: {{ dataA.value }}, {{ dataB.value }}
+          `
+        })
+        class Ng2Component {
+          dataA = {value: 'foo'};
+          dataB = {value: 'bar'};
+        }
+
+        // Define `ng1Module`
+        const ng1Module = angular.module('ng1Module', [])
+          .component('ng1', ng1Component)
+          .directive('ng2', downgradeComponent({component: Ng2Component}));
+
+        // Define `Ng2Module`
+        @NgModule({
+          declarations: [Ng1ComponentFacade, Ng2Component],
+          entryComponents: [Ng2Component],
+          imports: [BrowserModule, UpgradeModule]
+        })
+        class Ng2Module {
+          ngDoBootstrap() {}
+        }
+
+        // Bootstrap
+        const element = html(`<ng2></ng2>`);
+        platformBrowserDynamic().bootstrapModule(Ng2Module).then(ref => {
+          var adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
+          adapter.bootstrap(element, [ng1Module.name]);
+
+          var ng1 = element.querySelector('ng1');
+          var ng1Controller = angular.element(ng1).controller('ng1');
+
+          expect(multiTrim(element.textContent)).toBe('Inside: foo, bar | Outside: foo, bar');
+
+          ng1Controller.inputA = {value: 'baz'};
+          ng1Controller.inputB = {value: 'qux'};
+
+          // QUESTION: Can we avoid `setTimeout()` by triggering change detection? How?
+          setTimeout(() => {
+            expect(multiTrim(element.textContent)).toBe('Inside: baz, qux | Outside: foo, bar');
+          });
+
+          // TODO: Verify that changes in `<ng2>` propagate to `<ng1>`.
+        });
+      }));
+
+      fit('should support `=` bindings', async(() => {
+        // Define `ng1Component`
+        const ng1Component: angular.IComponent = {
+          template: 'Inside: {{ $ctrl.inputA.value }}, {{ $ctrl.inputB.value }}',
+          bindings: {
+            inputA: '=inputAttrA',
+            inputB: '='
+          }
+        };
+
+        // Define `Ng1ComponentFacade`
+        @Directive({
+          selector: 'ng1'
+        })
+        class Ng1ComponentFacade extends UpgradeComponent {
+          @Input('inputAttrA') inputA: string;
+          @Output('inputAttrAChange') inputAChange: EventEmitter<any>;
+          @Input() inputB: string;
+          @Output() inputBChange: EventEmitter<any>;
+
+          constructor(elementRef: ElementRef, injector: Injector) {
+            super('ng1', elementRef, injector);
+          }
+        }
+
+        // Define `Ng2Component`
+        @Component({
+          selector: 'ng2',
+          template: `
+            <ng1 [(inputAttrA)]="dataA" [(inputB)]="dataB"></ng1>
+            | Outside: {{ dataA.value }}, {{ dataB.value }}
+          `
+        })
+        class Ng2Component {
+          dataA = {value: 'foo'};
+          dataB = {value: 'bar'};
+        }
+
+        // Define `ng1Module`
+        const ng1Module = angular.module('ng1Module', [])
+          .component('ng1', ng1Component)
+          .directive('ng2', downgradeComponent({component: Ng2Component}));
+
+        // Define `Ng2Module`
+        @NgModule({
+          declarations: [Ng1ComponentFacade, Ng2Component],
+          entryComponents: [Ng2Component],
+          imports: [BrowserModule, UpgradeModule]
+        })
+        class Ng2Module {
+          ngDoBootstrap() {}
+        }
+
+        // Bootstrap
+        const element = html(`<ng2></ng2>`);
+        platformBrowserDynamic().bootstrapModule(Ng2Module).then(ref => {
+          var adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
+          adapter.bootstrap(element, [ng1Module.name]);
+
+          var ng1 = element.querySelector('ng1');
+          var ng1Controller = angular.element(ng1).controller('ng1');
+
+          expect(multiTrim(element.textContent)).toBe('Inside: foo, bar | Outside: foo, bar');
+
+          ng1Controller.inputA = {value: 'baz'};
+          ng1Controller.inputB = {value: 'qux'};
+
+          // QUESTION: Can we avoid `setTimeout()` by triggering change detection? How?
+          setTimeout(() => {
+            expect(multiTrim(element.textContent)).toBe('Inside: baz, qux | Outside: baz, qux');
+          });
+
+          // TODO: Verify that changes in `<ng2>` propagate to `<ng1>`.
+        });
+      }));
+
+      fit('should support `&` bindings', async(() => {
+        // Define `ng1Component`
+        const ng1Component: angular.IComponent = {
+          template: 'Inside: -',
+          bindings: {
+            outputA: '&outputAttrA',
+            outputB: '&'
+          }
+        };
+
+        // Define `Ng1ComponentFacade`
+        @Directive({
+          selector: 'ng1'
+        })
+        class Ng1ComponentFacade extends UpgradeComponent {
+          @Output('outputAttrA') outputA: EventEmitter<any>;
+          @Output() outputB: EventEmitter<any>;
+
+          constructor(elementRef: ElementRef, injector: Injector) {
+            super('ng1', elementRef, injector);
+          }
+        }
+
+        // Define `Ng2Component`
+        @Component({
+          selector: 'ng2',
+          template: `
+            <ng1 (outputAttrA)="dataA = $event" (outputB)="dataB = $event"></ng1>
+            | Outside: {{ dataA }}, {{ dataB }}
+          `
+        })
+        class Ng2Component {
+          dataA = 'foo';
+          dataB = 'bar';
+        }
+
+        // Define `ng1Module`
+        const ng1Module = angular.module('ng1Module', [])
+          .component('ng1', ng1Component)
+          .directive('ng2', downgradeComponent({component: Ng2Component}));
+
+        // Define `Ng2Module`
+        @NgModule({
+          declarations: [Ng1ComponentFacade, Ng2Component],
+          entryComponents: [Ng2Component],
+          imports: [BrowserModule, UpgradeModule]
+        })
+        class Ng2Module {
+          ngDoBootstrap() {}
+        }
+
+        // Bootstrap
+        const element = html(`<ng2></ng2>`);
+        platformBrowserDynamic().bootstrapModule(Ng2Module).then(ref => {
+          var adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
+          adapter.bootstrap(element, [ng1Module.name]);
+
+          var ng1 = element.querySelector('ng1');
+          var ng1Controller = angular.element(ng1).controller('ng1');
+
+          expect(multiTrim(element.textContent)).toBe('Inside: - | Outside: foo, bar');
+
+          ng1Controller.outputA('baz');
+          ng1Controller.outputB('qux');
+
+          // QUESTION: Can we avoid `setTimeout()` by triggering change detection? How?
+          setTimeout(() => {
+            expect(multiTrim(element.textContent)).toBe('Inside: - | Outside: baz, qux');
+          });
+        });
+      }));
+
+      it('should bind properties, events', async(() => {
 
         @Directive({
           selector: 'ng1'
@@ -398,7 +694,6 @@ export function main() {
           @Input() modelB: string;
           @Output() modelBChange = new EventEmitter();
           @Input() modelC: string;
-          @Output() modelCChange = new EventEmitter();
           @Output() eventChange = new EventEmitter();
 
           constructor(elementRef: ElementRef, injector: Injector) {
@@ -435,8 +730,8 @@ export function main() {
             template: 'Hello {{$ctrl.fullName}}; A: {{$ctrl.dataA}}; B: {{$ctrl.dataB}}; C: {{$ctrl.modelC}}; | ',
             bindings: {
               fullName: '@',
-              modelA: '<dataA',
-              modelB: '=dataB',
+              dataA: '<modelA',
+              dataB: '=modelB',
               modelC: '=',
               event: '&'
             },
