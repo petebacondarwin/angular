@@ -1,6 +1,6 @@
 import * as angular from '../angular_js';
 import { ElementRef, Injector, EventEmitter, OnInit, OnChanges, SimpleChange, SimpleChanges, DoCheck } from '@angular/core';
-import { looseIdentical } from '@angular/facade/src/lang';
+import { looseIdentical } from '../facade/lang';
 import { UpgradeModule } from './upgrade_module';
 import { $INJECTOR, $COMPILE, $TEMPLATE_CACHE, $HTTP_BACKEND, $CONTROLLER, $SCOPE } from './constants';
 import { controllerKey } from '../util';
