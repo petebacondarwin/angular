@@ -1,15 +1,12 @@
-import { $injectorFactory } from '@angular/upgrade/src/aot/angular1_providers';
+import { injectorFactory, setTempInjectorRef } from '@angular/upgrade/src/aot/angular1_providers';
 
 export function main() {
   describe('$injectorFactory', () => {
-    it('should return and clear the injector value that was attached to it previously', () => {
+    it('should return the injector value that was previously set', () => {
       const mockInjector = { get: () => {}, has: () => false };
-      $injectorFactory.$injector = mockInjector;
-
-      const injector = $injectorFactory();
-
+      setTempInjectorRef(mockInjector);
+      const injector = injectorFactory();
       expect(injector).toBe(mockInjector);
-      expect($injectorFactory.$injector).toBe(null);
     });
   });
 }
