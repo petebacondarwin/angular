@@ -1865,7 +1865,8 @@ export function main() {
          }));
 
       it('should wait for ng2 testability', fakeAsync(() => {
-           const ng1Module = angular.module('ng1', []) const element = html('<div></div>');
+           const ng1Module = angular.module('ng1', []);
+           const element = html('<div></div>');
 
            platformBrowserDynamic().bootstrapModule(MyNg2Module).then((ref) => {
              const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
