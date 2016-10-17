@@ -2,7 +2,7 @@ import * as angular from '../angular_js';
 import { Provider, NgModule, Injector, NgZone } from '@angular/core';
 import { UPGRADE_MODULE_NAME, INJECTOR_KEY, $INJECTOR } from './constants';
 import { controllerKey } from '../util';
-import { angular1Providers, $injectorFactory } from './angular1_providers';
+import { angular1Providers, setTempInjectorRef } from './angular1_providers';
 
 /**
  * The Ng1Module contains providers for the Ng1Adapter and all the core Angular 1 services;
@@ -33,8 +33,10 @@ export class UpgradeModule {
       .value(INJECTOR_KEY, this.injector)
 
       .run([$INJECTOR, ($injector: angular.IInjectorService) => {
+        this.$injector = $injector;
+
         // Initialize the ng1 $injector provider
-        $injectorFactory.$injector = this.$injector = $injector;
+        setTempInjectorRef($injector);
         this.injector.get($INJECTOR);
 
         // Put the injector on the DOM, so that it can be "required"

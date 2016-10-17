@@ -4,22 +4,25 @@ import * as angular from '../angular_js';
 // We store the ng1 injector so that the provider in the module injector can access it
 // Then we "get" the ng1 injector from the module injector, which triggers the provider to read
 // the stored injector and release the reference to it.
-export type InjectorFactory = Function & { $injector?: angular.IInjectorService };
-export const $injectorFactory: InjectorFactory = () => {
-  const injector = $injectorFactory.$injector;
-  $injectorFactory.$injector = null; // clear the value to prevent memory leaks
+let tempInjectorRef: angular.IInjectorService;
+export function setTempInjectorRef(injector: angular.IInjectorService) {
+  tempInjectorRef = injector;
+}
+export function injectorFactory() {
+  const injector: angular.IInjectorService = tempInjectorRef;
+  tempInjectorRef = null; // clear the value to prevent memory leaks
   return injector;
 }
 
-export function $rootScopeFactory(i: angular.IInjectorService) {
+export function rootScopeFactory(i: angular.IInjectorService) {
   return i.get('$rootScope');
 }
 
-export function $compileFactory(i: angular.IInjectorService) {
+export function compileFactory(i: angular.IInjectorService) {
   return i.get('$compile');
 }
 
-export function $parseFactory(i: angular.IInjectorService) {
+export function parseFactory(i: angular.IInjectorService) {
   return i.get('$parse');
 }
 
@@ -28,8 +31,8 @@ export const angular1Providers = [
   // > Metadata collected contains an error that will be reported at runtime:
   // >   Function calls are not supported.
   // >   Consider replacing the function or lambda with a reference to an exported function
-  { provide: '$injector', useFactory: $injectorFactory },
-  { provide: '$rootScope', useFactory: $rootScopeFactory, deps: ['$injector']},
-  { provide: '$compile', useFactory: $compileFactory, deps: ['$injector']},
-  { provide: '$parse', useFactory: $parseFactory, deps: ['$injector']}
+  { provide: '$injector', useFactory: injectorFactory },
+  { provide: '$rootScope', useFactory: rootScopeFactory, deps: ['$injector']},
+  { provide: '$compile', useFactory: compileFactory, deps: ['$injector']},
+  { provide: '$parse', useFactory: parseFactory, deps: ['$injector']}
 ];
