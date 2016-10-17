@@ -6,7 +6,7 @@ import * as angular from '../angular_js';
 
 let downgradeCount = 0;
 
-export function downgradeComponent(info: ComponentInfo) : Function {
+export function downgradeComponent(info: ComponentInfo) : angular.IInjectable {
 
   const idPrefix = `NG2_UPGRADE_${downgradeCount++}_`;
   let idCount = 0;
