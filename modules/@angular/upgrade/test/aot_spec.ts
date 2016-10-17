@@ -29,7 +29,7 @@ function bootstrap(platform: PlatformRef, Ng2Module: Type<{}>, element: Element,
 }
 
 export function main() {
-  fdescribe('adapter: ng1 to ng2', () => {
+  describe('ngUpgrade (AOT)', () => {
     beforeEach(() => destroyPlatform());
     afterEach(() => destroyPlatform());
 
@@ -386,7 +386,7 @@ export function main() {
       }));
     });
 
-    fdescribe('upgrade ng1 component', () => {
+    describe('upgrade ng1 component', () => {
       describe('template/templateUrl', () => {
         it('should support `template` (string)', async(() => {
           // Define `ng1Component`
@@ -1356,6 +1356,8 @@ export function main() {
             var adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
             adapter.bootstrap(element, [ng1Module.name]);
 
+            const $rootScope = adapter.$injector.get('$rootScope') as angular.IRootScopeService;
+
             var ng1s = element.querySelectorAll('ng1');
             var ng1Controller0 = angular.element(ng1s[0]).controller('ng1');
             var ng1Controller1 = angular.element(ng1s[1]).controller('ng1');
@@ -1373,11 +1375,12 @@ export function main() {
 
             ng1Controller1.outputA({value: 'foo again'});
             ng1Controller2.outputB('bar again');
+            $rootScope.$apply();
             tick();
 
             // FIXME: These are failing and I have no idea why :(
             expect(ng1Controller0.inputA).toEqual({value: 'foo again'});
-            expect(ng1Controller0.inputB).toEqual({value: 'bar again'});
+            expect(ng1Controller0.inputB).toEqual('bar again');
             expect(multiTrim(element.textContent)).toBe(
                 'Inside: foo again, bar again | Inside: , Bar | Inside: , | Inside: , | ' +
                 'Outside: foo again, bar again');
@@ -1447,6 +1450,7 @@ export function main() {
             platformBrowserDynamic().bootstrapModule(Ng2Module).then(ref => {
               var adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
               adapter.bootstrap(element, [ng1Module.name]);
+              const $rootScope = adapter.$injector.get('$rootScope') as angular.IRootScopeService;
 
               var ng1 = element.querySelector('[ng1]');
               var ng1Controller = angular.element(ng1).controller('ng1');
@@ -1462,63 +1466,62 @@ export function main() {
 
               ng1Controller.$scope.outputA(6);
               tick();
+              $rootScope.$apply();
 
               expect(ng1Controller.$scope.inputA).toEqual([4, 5, 6]);
-              // FIXME: This is failing. The model is updated, but the change
-              // does not propagate to the view. Is this expected?
               expect(multiTrim(element.textContent)).toBe(
                   'ng1 - Data: [4,5,6] - Length: 3 | ng2 - Data: 4,5,6 - Length: 3');
             });
           })
         );
 
-        xit('should bind properties, events in link function', async(() => {
-          // const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-          // const ng1Module = angular.module('ng1', []);
+        // it('should bind properties, events in link function', async(() => {
+        //   const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
+        //   const ng1Module = angular.module('ng1', []);
 
-          // const ng1 = () => {
-          //   return {
-          //     restrict: 'E',
-          //     template: '{{someText}} - Length: {{data.length}}',
-          //     scope: {data: '='},
-          //     link: function($scope: any /** TODO #9100 */) {
-          //       $scope.someText = 'ng1 - Data: ' + $scope.data;
-          //     }
-          //   };
-          // };
+        //   const ng1 = () => {
+        //     return {
+        //       restrict: 'E',
+        //       template: '{{someText}} - Length: {{data.length}}',
+        //       scope: {data: '='},
+        //       link: function($scope: any /** TODO #9100 */) {
+        //         $scope.someText = 'ng1 - Data: ' + $scope.data;
+        //       }
+        //     };
+        //   };
 
-          // ng1Module.directive('ng1', ng1);
-          // const Ng2 =
-          //     Component({
-          //       selector: 'ng2',
-          //       template:
-          //           '{{someText}} - Length: {{dataList.length}} | <ng1 [(data)]="dataList"></ng1>'
-          //     }).Class({
+        //   ng1Module.directive('ng1', ng1);
+        //   const Ng2 =
+        //       Component({
+        //         selector: 'ng2',
+        //         template:
+        //             '{{someText}} - Length: {{dataList.length}} | <ng1 [(data)]="dataList"></ng1>'
+        //       }).Class({
 
-          //       constructor: function() {
-          //         this.dataList = [1, 2, 3];
-          //         this.someText = 'ng2';
-          //       }
-          //     });
+        //         constructor: function() {
+        //           this.dataList = [1, 2, 3];
+        //           this.someText = 'ng2';
+        //         }
+        //       });
 
-          // const Ng2Module = NgModule({
-          //                     declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-          //                     imports: [BrowserModule],
-          //                     schemas: [NO_ERRORS_SCHEMA],
-          //                   }).Class({constructor: function() {}});
+        //   const Ng2Module = NgModule({
+        //                       declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
+        //                       imports: [BrowserModule],
+        //                       schemas: [NO_ERRORS_SCHEMA],
+        //                     }).Class({constructor: function() {}});
 
-          // ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-          // const element = html(`<div><ng2></ng2></div>`);
-          // adapter.bootstrap(element, ['ng1']).ready((ref) => {
-          //   // we need to do setTimeout, because the EventEmitter uses setTimeout to schedule
-          //   // events, and so without this we would not see the events processed.
-          //   setTimeout(() => {
-          //     expect(multiTrim(document.body.textContent))
-          //         .toEqual('ng2 - Length: 3 | ng1 - Data: 1,2,3 - Length: 3');
-          //     ref.dispose();
-          //   }, 0);
-          // });
-        }));
+        //   ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
+        //   const element = html(`<div><ng2></ng2></div>`);
+        //   adapter.bootstrap(element, ['ng1']).ready((ref) => {
+        //     // we need to do setTimeout, because the EventEmitter uses setTimeout to schedule
+        //     // events, and so without this we would not see the events processed.
+        //     setTimeout(() => {
+        //       expect(multiTrim(document.body.textContent))
+        //           .toEqual('ng2 - Length: 3 | ng1 - Data: 1,2,3 - Length: 3');
+        //       ref.dispose();
+        //     }, 0);
+        //   });
+        // }));
       });
 
       // it('should support controller with controllerAs', async(() => {
@@ -1842,29 +1845,25 @@ export function main() {
 
     describe('injection', () => {
 
-      // Tokens used in ng2 to identify services
-      const Ng2Service = new OpaqueToken('ng2-service');
-      const Ng1Service = new OpaqueToken('ng1-service');
+      it('should downgrade ng2 service to ng1', async(() => {
+        // Tokens used in ng2 to identify services
+        const Ng2Service = new OpaqueToken('ng2-service');
 
-      // Sample ng1 NgModule for tests
-      @NgModule({
-        imports: [BrowserModule, UpgradeModule],
-        providers: [
-          {provide: Ng2Service, useValue: 'ng2 service value'},
-          // the following line is the "upgrade" of an Angular 1 service
-          {provide: Ng1Service, useFactory: (i: angular.IInjectorService) => i.get('ng1Service'), deps: ['$injector']}
-        ]
-      })
-      class MyNg2Module {
-        ngDoBootstrap() {}
-      }
+        // Sample ng1 NgModule for tests
+        @NgModule({
+          imports: [BrowserModule, UpgradeModule],
+          providers: [
+            {provide: Ng2Service, useValue: 'ng2 service value'},
+          ]
+        })
+        class MyNg2Module {
+          ngDoBootstrap() {}
+        }
 
-      // create the ng1 module that will import an ng2 service
-      const ng1Module = angular.module('ng1Module', [])
-        .factory('ng2Service', downgradeInjectable(Ng2Service))
-        .value('ng1Service', 'ng1 service value');
+        // create the ng1 module that will import an ng2 service
+        const ng1Module = angular.module('ng1Module', [])
+          .factory('ng2Service', downgradeInjectable(Ng2Service));
 
-      it('should export ng2 instance to ng1', async(() => {
         platformBrowserDynamic().bootstrapModule(MyNg2Module).then((ref) => {
           const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
           adapter.bootstrap(html('<div>'), [ng1Module.name]);
@@ -1873,7 +1872,26 @@ export function main() {
         });
       }));
 
-      it('should export ng1 instance to ng2', async(() => {
+      it('should upgrade ng1 service to ng2', async(() => {
+        // Tokens used in ng2 to identify services
+        const Ng1Service = new OpaqueToken('ng1-service');
+
+        // Sample ng1 NgModule for tests
+        @NgModule({
+          imports: [BrowserModule, UpgradeModule],
+          providers: [
+            // the following line is the "upgrade" of an Angular 1 service
+            {provide: Ng1Service, useFactory: (i: angular.IInjectorService) => i.get('ng1Service'), deps: ['$injector']}
+          ]
+        })
+        class MyNg2Module {
+          ngDoBootstrap() {}
+        }
+
+        // create the ng1 module that will import an ng2 service
+        const ng1Module = angular.module('ng1Module', [])
+          .value('ng1Service', 'ng1 service value');
+
         platformBrowserDynamic().bootstrapModule(MyNg2Module).then((ref) => {
           const adapter = ref.injector.get(UpgradeModule) as UpgradeModule;
           adapter.bootstrap(html('<div>'), [ng1Module.name]);
