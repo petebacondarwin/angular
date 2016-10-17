@@ -10,7 +10,7 @@ export function setTempInjectorRef(injector: angular.IInjectorService) {
 }
 export function injectorFactory() {
   const injector: angular.IInjectorService = tempInjectorRef;
-  tempInjectorRef = null; // clear the value to prevent memory leaks
+  tempInjectorRef = null;  // clear the value to prevent memory leaks
   return injector;
 }
 
@@ -31,8 +31,8 @@ export const angular1Providers = [
   // > Metadata collected contains an error that will be reported at runtime:
   // >   Function calls are not supported.
   // >   Consider replacing the function or lambda with a reference to an exported function
-  { provide: '$injector', useFactory: injectorFactory },
-  { provide: '$rootScope', useFactory: rootScopeFactory, deps: ['$injector']},
-  { provide: '$compile', useFactory: compileFactory, deps: ['$injector']},
-  { provide: '$parse', useFactory: parseFactory, deps: ['$injector']}
+  {provide: '$injector', useFactory: injectorFactory},
+  {provide: '$rootScope', useFactory: rootScopeFactory, deps: ['$injector']},
+  {provide: '$compile', useFactory: compileFactory, deps: ['$injector']},
+  {provide: '$parse', useFactory: parseFactory, deps: ['$injector']}
 ];

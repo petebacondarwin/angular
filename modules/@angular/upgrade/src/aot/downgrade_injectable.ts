@@ -1,5 +1,5 @@
-import { Injector } from '@angular/core';
-import { INJECTOR_KEY } from './constants';
+import {Injector} from '@angular/core';
+import {INJECTOR_KEY} from './constants';
 
 /**
  * Create an Angular 1 factory that will return an Angular 2 injectable thing

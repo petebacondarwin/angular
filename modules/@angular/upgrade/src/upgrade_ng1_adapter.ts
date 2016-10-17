@@ -302,7 +302,8 @@ class UpgradeNg1ComponentAdapter implements OnInit, OnChanges, DoCheck {
     return controller;
   }
 
-  private resolveRequired($element: angular.IAugmentedJQuery, require: angular.DirectiveRequireProperty): any {
+  private resolveRequired(
+      $element: angular.IAugmentedJQuery, require: angular.DirectiveRequireProperty): any {
     if (!require) {
       return undefined;
     } else if (typeof require == 'string') {

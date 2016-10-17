@@ -1,5 +1,5 @@
-import { downgradeInjectable } from '@angular/upgrade/src/aot/downgrade_injectable';
-import { INJECTOR_KEY } from '@angular/upgrade/src/aot/constants';
+import {INJECTOR_KEY} from '@angular/upgrade/src/aot/constants';
+import {downgradeInjectable} from '@angular/upgrade/src/aot/downgrade_injectable';
 
 export function main() {
   describe('downgradeInjectable', () => {
@@ -7,9 +7,7 @@ export function main() {
       const factory = downgradeInjectable('someToken');
       expect(factory[0]).toEqual(INJECTOR_KEY);
       expect(factory[1]).toEqual(jasmine.any(Function));
-      const injector = {
-        get: jasmine.createSpy('get').and.returnValue('service value')
-      };
+      const injector = {get: jasmine.createSpy('get').and.returnValue('service value')};
       const value = (factory as any)[1](injector);
       expect(injector.get).toHaveBeenCalledWith('someToken');
       expect(value).toEqual('service value');

@@ -1,18 +1,18 @@
+import {Injector, NgModule, NgZone, Provider} from '@angular/core';
+
 import * as angular from '../angular_js';
-import { Provider, NgModule, Injector, NgZone } from '@angular/core';
-import { UPGRADE_MODULE_NAME, INJECTOR_KEY, $INJECTOR } from './constants';
-import { controllerKey } from '../util';
-import { angular1Providers, setTempInjectorRef } from './angular1_providers';
+import {controllerKey} from '../util';
+
+import {angular1Providers, setTempInjectorRef} from './angular1_providers';
+import {$INJECTOR, INJECTOR_KEY, UPGRADE_MODULE_NAME} from './constants';
+
 
 /**
  * The Ng1Module contains providers for the Ng1Adapter and all the core Angular 1 services;
  * and also holds the `bootstrapNg1()` method fo bootstrapping an upgraded Angular 1 app.
  */
-@NgModule({
-  providers: angular1Providers
-})
+@NgModule({providers: angular1Providers})
 export class UpgradeModule {
-
   public $injector: angular.IInjectorService;
 
   constructor(public injector: Injector, public ngZone: NgZone) {}
@@ -23,35 +23,34 @@ export class UpgradeModule {
    * @param [modules] the Angular 1 modules to bootstrap for this application
    * @param [config] optional extra Angular 1 bootstrap configuration
    */
-  bootstrap(element: Element,
-            modules: string[] = [],
-            config?: angular.IAngularBootstrapConfig)
-  {
+  bootstrap(element: Element, modules: string[] = [], config?: angular.IAngularBootstrapConfig) {
     // Create an ng1 module to bootstrap
-    const upgradeModule = angular.module(UPGRADE_MODULE_NAME, modules)
+    const upgradeModule =
+        angular
+            .module(UPGRADE_MODULE_NAME, modules)
 
-      .value(INJECTOR_KEY, this.injector)
+            .value(INJECTOR_KEY, this.injector)
 
-      .run([$INJECTOR, ($injector: angular.IInjectorService) => {
-        this.$injector = $injector;
+            .run([
+              $INJECTOR,
+              ($injector: angular.IInjectorService) => {
+                this.$injector = $injector;
 
-        // Initialize the ng1 $injector provider
-        setTempInjectorRef($injector);
-        this.injector.get($INJECTOR);
+                // Initialize the ng1 $injector provider
+                setTempInjectorRef($injector);
+                this.injector.get($INJECTOR);
 
-        // Put the injector on the DOM, so that it can be "required"
-        angular.element(element).data(
-                          controllerKey(INJECTOR_KEY), this.injector);
+                // Put the injector on the DOM, so that it can be "required"
+                angular.element(element).data(controllerKey(INJECTOR_KEY), this.injector);
 
-        // Wire up the ng1 rootScope to run a digest cycle whenever the zone settles
-        var $rootScope = $injector.get('$rootScope');
-        this.ngZone.onMicrotaskEmpty.subscribe(() => this.ngZone.runOutsideAngular(() => $rootScope.$evalAsync()));
-      }]);
+                // Wire up the ng1 rootScope to run a digest cycle whenever the zone settles
+                var $rootScope = $injector.get('$rootScope');
+                this.ngZone.onMicrotaskEmpty.subscribe(
+                    () => this.ngZone.runOutsideAngular(() => $rootScope.$evalAsync()));
+              }
+            ]);
 
     // Bootstrap the angular 1 application inside our zone
-    this.ngZone.run(() => {
-      angular.bootstrap(element, [upgradeModule.name], config);
-    });
+    this.ngZone.run(() => { angular.bootstrap(element, [upgradeModule.name], config); });
   }
 }
-

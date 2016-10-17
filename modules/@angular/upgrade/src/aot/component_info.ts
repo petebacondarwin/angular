@@ -1,4 +1,4 @@
-import { Type } from '@angular/core';
+import {Type} from '@angular/core';
 
 export interface ComponentInfo {
   component: Type<any>;
@@ -16,9 +16,7 @@ export class PropertyBinding {
   bindAttr: string;
   bindonAttr: string;
 
-  constructor(public binding: string) {
-    this.parseBinding();
-  }
+  constructor(public binding: string) { this.parseBinding(); }
 
   private parseBinding() {
     const parts = this.binding.split(':');
@@ -32,5 +30,4 @@ export class PropertyBinding {
     this.bindAttr = `bind${capitalAttr}`;
     this.bindonAttr = `bindon${capitalAttr}`;
   }
-
 }

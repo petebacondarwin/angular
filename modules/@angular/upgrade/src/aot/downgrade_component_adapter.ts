@@ -6,9 +6,11 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import { Type, ChangeDetectorRef, ComponentFactory, ComponentRef, EventEmitter, Injector, OnChanges, ReflectiveInjector, SimpleChange, SimpleChanges} from '@angular/core';
-import { ComponentInfo, PropertyBinding } from './component_info';
+import {ChangeDetectorRef, ComponentFactory, ComponentRef, EventEmitter, Injector, OnChanges, ReflectiveInjector, SimpleChange, SimpleChanges, Type} from '@angular/core';
+
 import * as angular from '../angular_js';
+
+import {ComponentInfo, PropertyBinding} from './component_info';
 import {$SCOPE} from './constants';
 
 const INITIAL_VALUE = {
@@ -156,7 +158,8 @@ export class DowngradeComponentAdapter {
                      getter(this.scope, {$event: v}))(getter)
           });
         } else {
-          throw new Error(`Missing emitter '${output.prop}' on component '${this.info.component}'!`);
+          throw new Error(
+              `Missing emitter '${output.prop}' on component '${this.info.component}'!`);
         }
       }
     }

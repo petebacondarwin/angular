@@ -1,12 +1,16 @@
+import {DoCheck, ElementRef, EventEmitter, Injector, OnChanges, OnInit, SimpleChange, SimpleChanges} from '@angular/core';
+
 import * as angular from '../angular_js';
-import { ElementRef, Injector, EventEmitter, OnInit, OnChanges, SimpleChange, SimpleChanges, DoCheck } from '@angular/core';
-import { looseIdentical } from '../facade/lang';
-import { UpgradeModule } from './upgrade_module';
-import { $INJECTOR, $COMPILE, $TEMPLATE_CACHE, $HTTP_BACKEND, $CONTROLLER, $SCOPE } from './constants';
-import { controllerKey } from '../util';
+import {looseIdentical} from '../facade/lang';
+import {controllerKey} from '../util';
+
+import {$COMPILE, $CONTROLLER, $HTTP_BACKEND, $INJECTOR, $SCOPE, $TEMPLATE_CACHE} from './constants';
+import {UpgradeModule} from './upgrade_module';
 
 const NOT_SUPPORTED: any = 'NOT_SUPPORTED';
-const INITIAL_VALUE = { __UNINITIALIZED__: true };
+const INITIAL_VALUE = {
+  __UNINITIALIZED__: true
+};
 
 class Bindings {
   twoWayBoundProperties: string[] = [];
@@ -64,9 +68,8 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
     const controllerType = this.directive.controller;
     // QUESTION: shouldn't we be building the controller in any case?
     if (this.directive.bindToController && controllerType) {
-      this.bindingDestination =
-          this.buildController(controllerType, this.$componentScope,
-                               this.$element, this.directive.controllerAs);
+      this.bindingDestination = this.buildController(
+          controllerType, this.$componentScope, this.$element, this.directive.controllerAs);
     } else {
       this.bindingDestination = this.$componentScope;
     }
@@ -77,8 +80,9 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
   ngOnInit() {
     // QUESTION: why not just use $compile instead of reproducing parts of it
     if (!this.directive.bindToController && this.directive.controller) {
-      this.buildController(this.directive.controller, this.$componentScope,
-                           this.$element, this.directive.controllerAs);
+      this.buildController(
+          this.directive.controller, this.$componentScope, this.$element,
+          this.directive.controllerAs);
     }
     const attrs: angular.IAttributes = NOT_SUPPORTED;
     const transcludeFn: angular.ITranscludeFunction = NOT_SUPPORTED;
@@ -88,7 +92,7 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
     const preLink = (typeof link == 'object') && (link as angular.IDirectivePrePost).pre;
     const postLink = (typeof link == 'object') ? (link as angular.IDirectivePrePost).post : link;
     if (preLink) {
-        preLink(this.$componentScope, this.$element, attrs, linkController, transcludeFn);
+      preLink(this.$componentScope, this.$element, attrs, linkController, transcludeFn);
     }
 
     var childNodes: Node[] = [];
@@ -98,12 +102,11 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
       childNodes.push(childNode);
     }
 
-    const attachElement: angular.ICloneAttachFunction = (clonedElements, scope) => {
-      this.$element.append(clonedElements);
-    };
+    const attachElement: angular.ICloneAttachFunction =
+        (clonedElements, scope) => { this.$element.append(clonedElements); };
     const attachChildNodes: angular.ILinkFn = (scope, cloneAttach) => cloneAttach(childNodes);
 
-    this.linkFn(this.$componentScope, attachElement, { parentBoundTranscludeFn: attachChildNodes });
+    this.linkFn(this.$componentScope, attachElement, {parentBoundTranscludeFn: attachChildNodes});
 
     if (postLink) {
       postLink(this.$componentScope, this.$element, attrs, linkController, transcludeFn);
@@ -117,9 +120,8 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
 
   ngOnChanges(changes: SimpleChanges) {
     // Forward input changes to `bindingDestination`
-    Object.keys(changes).forEach(propName => {
-      this.bindingDestination[propName] = changes[propName].currentValue;
-    });
+    Object.keys(changes).forEach(
+        propName => { this.bindingDestination[propName] = changes[propName].currentValue; });
 
     if (this.bindingDestination.$onChanges) {
       this.bindingDestination.$onChanges(changes);
@@ -231,15 +233,17 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
     }
   }
 
-  private buildController(controllerType: angular.IController, $scope: angular.IScope,
-                          $element: angular.IAugmentedJQuery, controllerAs: string) {
+  private buildController(
+      controllerType: angular.IController, $scope: angular.IScope,
+      $element: angular.IAugmentedJQuery, controllerAs: string) {
     var locals = {$scope, $element};
     var controller = this.$controller(controllerType, locals, null, controllerAs);
     $element.data(controllerKey(this.directive.name), controller);
     return controller;
   }
 
-  private resolveRequired($element: angular.IAugmentedJQuery, require: angular.DirectiveRequireProperty) {
+  private resolveRequired(
+      $element: angular.IAugmentedJQuery, require: angular.DirectiveRequireProperty) {
     // TODO
   }
 
@@ -262,7 +266,8 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
   }
 
   private notSupported(feature: string) {
-    throw new Error(`Upgraded directive '${this.name}' contains unsupported feature: '${feature}'.`);
+    throw new Error(
+        `Upgraded directive '${this.name}' contains unsupported feature: '${feature}'.`);
   }
 
   private compileHtml(html: string): angular.ILinkFn {
