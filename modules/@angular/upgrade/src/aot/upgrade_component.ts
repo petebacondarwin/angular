@@ -27,6 +27,9 @@ interface IBindingDestination {
   $onChanges?: (changes: SimpleChanges) => void;
 }
 
+/**
+ * @experimental
+ */
 export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
   private $injector: angular.IInjectorService;
   private $compile: angular.ICompileService;

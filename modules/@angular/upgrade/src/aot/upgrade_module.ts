@@ -10,6 +10,7 @@ import {$INJECTOR, INJECTOR_KEY, UPGRADE_MODULE_NAME} from './constants';
 /**
  * The Ng1Module contains providers for the Ng1Adapter and all the core Angular 1 services;
  * and also holds the `bootstrapNg1()` method fo bootstrapping an upgraded Angular 1 app.
+ * @experimental
  */
 @NgModule({providers: angular1Providers})
 export class UpgradeModule {

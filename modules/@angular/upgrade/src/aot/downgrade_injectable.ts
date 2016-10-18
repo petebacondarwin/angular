@@ -10,6 +10,8 @@ import {INJECTOR_KEY} from './constants';
  * ```
  * angular1Module.factory('someService', downgradeInjectable(SomeService))
  * ```
+ *
+ * @experimental
  */
 export function downgradeInjectable(token: any) {
   return [INJECTOR_KEY, (i: Injector) => i.get(token)];

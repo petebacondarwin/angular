@@ -8,6 +8,9 @@ import {DowngradeComponentAdapter} from './downgrade_component_adapter';
 
 let downgradeCount = 0;
 
+/**
+ * @experimental
+ */
 export function downgradeComponent(info: ComponentInfo): angular.IInjectable {
   const idPrefix = `NG2_UPGRADE_${downgradeCount++}_`;
   let idCount = 0;
