@@ -86,7 +86,8 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
         this.bindingDestination = this.controllerInstance = this.buildController(
             controllerType, this.$componentScope, this.$element, this.directive.controllerAs);
       } else {
-        throw new Error(`Upgraded directive '${name}' specifies 'bindToController' but no controller.`);
+        throw new Error(
+            `Upgraded directive '${name}' specifies 'bindToController' but no controller.`);
       }
     } else {
       this.bindingDestination = this.$componentScope;

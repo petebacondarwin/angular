@@ -71,7 +71,9 @@ export function main() {
                        };
                      })
                  // This is wrapping (downgrading) an Angular 2 component to be used in Angular 1
-                 .directive('ng2', downgradeComponent({component: Ng2Component, inputs: ['nameProp: name']}));
+                 .directive(
+                     'ng2',
+                     downgradeComponent({component: Ng2Component, inputs: ['nameProp: name']}));
 
          // This is the (Angular 1) application bootstrap element
          // Notice that it is actually a downgraded Angular 2 component
