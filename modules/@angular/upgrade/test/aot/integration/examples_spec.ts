@@ -29,16 +29,17 @@ export function main() {
          // component
          @Directive({selector: 'ng1'})
          class Ng1Component extends UpgradeComponent {
+           @Input() title: string;
+
            constructor(elementRef: ElementRef, injector: Injector) {
              super('ng1', elementRef, injector);
            }
-           @Input() title: string;
          }
 
          // This is an Angular 2 component that will be downgraded
          @Component({
            selector: 'ng2',
-           template: 'ng2[<ng1 [title]="name">transclude</ng1>](<ng-content></ng-content>)'
+           template: 'ng2[<ng1 [title]="nameProp">transclude</ng1>](<ng-content></ng-content>)'
          })
          class Ng2Component {
            @Input('name') nameProp: string;
@@ -70,7 +71,7 @@ export function main() {
                        };
                      })
                  // This is wrapping (downgrading) an Angular 2 component to be used in Angular 1
-                 .directive('ng2', downgradeComponent({component: Ng2Component, inputs: ['name']}));
+                 .directive('ng2', downgradeComponent({component: Ng2Component, inputs: ['nameProp: name']}));
 
          // This is the (Angular 1) application bootstrap element
          // Notice that it is actually a downgraded Angular 2 component
@@ -79,7 +80,7 @@ export function main() {
          // Let's use a helper function to make this simpler
          bootstrap(platformBrowserDynamic(), Ng2Module, element, ng1Module).then(upgrade => {
            expect(multiTrim(element.textContent))
-               .toEqual('ng2[ng1[Hello World!](transclude)](project)');
+               .toBe('ng2[ng1[Hello World!](transclude)](project)');
          });
        }));
   });
