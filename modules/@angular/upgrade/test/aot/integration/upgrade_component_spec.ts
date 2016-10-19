@@ -1270,37 +1270,6 @@ export function main() {
     //   });
     // }));
 
-    // it('should bind input properties (<) of components', async(() => {
-    //   const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-    //   const ng1Module = angular.module('ng1', []);
-
-    //   const ng1 = {
-    //     bindings: {personProfile: '<'},
-    //     template: 'Hello {{$ctrl.personProfile.firstName}} {{$ctrl.personProfile.lastName}}',
-    //     controller: Class({constructor: function() {}})
-    //   };
-    //   ng1Module.component('ng1', ng1);
-
-    //   const Ng2 =
-    //       Component({selector: 'ng2', template: '<ng1 [personProfile]="goku"></ng1>'}).Class({
-    //         constructor: function() { this.goku = {firstName: 'GOKU', lastName: 'SAN'}; }
-    //       });
-
-    //   const Ng2Module = NgModule({
-    //                       declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-    //                       imports: [BrowserModule],
-    //                       schemas: [NO_ERRORS_SCHEMA],
-    //                     }).Class({constructor: function() {}});
-
-    //   ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-
-    //   const element = html(`<div><ng2></ng2></div>`);
-    //   adapter.bootstrap(element, ['ng1']).ready((ref) => {
-    //     expect(multiTrim(document.body.textContent)).toEqual(`Hello GOKU SAN`);
-    //     ref.dispose();
-    //   });
-    // }));
-
     // it('should support ng2 > ng1 > ng2', async(() => {
     //   const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
     //   const ng1Module = angular.module('ng1', []);
