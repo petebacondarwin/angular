@@ -228,32 +228,32 @@ export function main() {
          });
        }));
 
-    it('should allow attribute selectors for components in ng2', () => {
-      @Component({selector: '[itWorks]', template: 'It works'})
-      class WorksComponent {
-      }
+    it('should allow attribute selectors for components in ng2', async(() => {
+         @Component({selector: '[itWorks]', template: 'It works'})
+         class WorksComponent {
+         }
 
-      @Component({selector: 'root-component', template: '<span itWorks></span>!'})
-      class RootComponent {
-      }
+         @Component({selector: 'root-component', template: '<span itWorks></span>!'})
+         class RootComponent {
+         }
 
-      @NgModule({
-        declarations: [RootComponent, WorksComponent],
-        entryComponents: [RootComponent],
-        imports: [BrowserModule, UpgradeModule]
-      })
-      class Ng2Module {
-        ngDoBootstrap() {}
-      }
+         @NgModule({
+           declarations: [RootComponent, WorksComponent],
+           entryComponents: [RootComponent],
+           imports: [BrowserModule, UpgradeModule]
+         })
+         class Ng2Module {
+           ngDoBootstrap() {}
+         }
 
-      const ng1Module = angular.module('ng1', []).directive(
-          'rootComponent', downgradeComponent({component: RootComponent}));
+         const ng1Module = angular.module('ng1', []).directive(
+             'rootComponent', downgradeComponent({component: RootComponent}));
 
-      const element = html('<root-component></root-component>');
+         const element = html('<root-component></root-component>');
 
-      bootstrap(platformBrowserDynamic(), Ng2Module, element, ng1Module).then((upgrade) => {
-        expect(multiTrim(document.body.textContent)).toBe('It works!');
-      });
-    });
+         bootstrap(platformBrowserDynamic(), Ng2Module, element, ng1Module).then((upgrade) => {
+           expect(multiTrim(document.body.textContent)).toBe('It works!');
+         });
+       }));
   });
 }
