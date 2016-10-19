@@ -8,7 +8,7 @@
 
 export type Ng1Token = string;
 
-export interface IAnnotatedFunction extends Function { $inject?: Ng1Token[] }
+export interface IAnnotatedFunction extends Function { $inject?: Ng1Token[]; }
 
 export type IInjectable = (Ng1Token | Function)[] | IAnnotatedFunction;
 
@@ -114,7 +114,7 @@ export type IAugmentedJQuery = Node[] & {
   controller?: (name: string) => any;
   isolateScope?: () => IScope;
 };
-export interface IProvider { $get: IInjectable }
+export interface IProvider { $get: IInjectable; }
 export interface IProvideService {
   provider(token: Ng1Token, provider: IProvider): IProvider;
   factory(token: Ng1Token, factory: IInjectable): IProvider;
