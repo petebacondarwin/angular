@@ -123,13 +123,14 @@ export function main() {
            ngDoBootstrap() {}
          }
 
-         const element = html(`<div>
-        <ng2 literal="Text" interpolate="Hello {{'world'}}"
-              bind-one-way-a="dataA" [one-way-b]="dataB"
-              bindon-two-way-a="modelA" [(two-way-b)]="modelB"
-              on-event-a='eventA=$event' (event-b)="eventB=$event"></ng2>
-        | modelA: {{modelA}}; modelB: {{modelB}}; eventA: {{eventA}}; eventB: {{eventB}};
-        </div>`);
+         const element = html(`
+           <div>
+             <ng2 literal="Text" interpolate="Hello {{'world'}}"
+                 bind-one-way-a="dataA" [one-way-b]="dataB"
+                 bindon-two-way-a="modelA" [(two-way-b)]="modelB"
+                 on-event-a='eventA=$event' (event-b)="eventB=$event"></ng2>
+             | modelA: {{modelA}}; modelB: {{modelB}}; eventA: {{eventA}}; eventB: {{eventB}};
+           </div>`);
 
          bootstrap(platformBrowserDynamic(), Ng2Module, element, ng1Module).then((upgrade) => {
            expect(multiTrim(document.body.textContent))

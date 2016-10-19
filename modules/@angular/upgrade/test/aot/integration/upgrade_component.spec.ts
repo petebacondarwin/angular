@@ -440,11 +440,11 @@ export function main() {
            @Component({
              selector: 'ng2',
              template: `
-              <ng1A>Ignore this</ng1A>
-              <ng1B>Ignore this</ng1B>
-              <ng1C>Ignore this</ng1C>
-              <ng1D>Ignore this</ng1D>
-            `
+               <ng1A>Ignore this</ng1A>
+               <ng1B>Ignore this</ng1B>
+               <ng1C>Ignore this</ng1C>
+               <ng1D>Ignore this</ng1D>
+             `
            })
            class Ng2Component {
            }
@@ -509,9 +509,9 @@ export function main() {
            @Component({
              selector: 'ng2',
              template: `
-              <ng1 inputAttrA="{{ dataA }}" inputB="{{ dataB }}"></ng1>
-              | Outside: {{ dataA }}, {{ dataB }}
-            `
+               <ng1 inputAttrA="{{ dataA }}" inputB="{{ dataB }}"></ng1>
+               | Outside: {{ dataA }}, {{ dataB }}
+             `
            })
            class Ng2Component {
              dataA = 'foo';
@@ -577,9 +577,9 @@ export function main() {
            @Component({
              selector: 'ng2',
              template: `
-              <ng1 [inputAttrA]="dataA" [inputB]="dataB"></ng1>
-              | Outside: {{ dataA.value }}, {{ dataB.value }}
-            `
+               <ng1 [inputAttrA]="dataA" [inputB]="dataB"></ng1>
+               | Outside: {{ dataA.value }}, {{ dataB.value }}
+             `
            })
            class Ng2Component {
              dataA = {value: 'foo'};
@@ -647,9 +647,9 @@ export function main() {
            @Component({
              selector: 'ng2',
              template: `
-              <ng1 [(inputAttrA)]="dataA" [(inputB)]="dataB"></ng1>
-              | Outside: {{ dataA.value }}, {{ dataB.value }}
-            `
+               <ng1 [(inputAttrA)]="dataA" [(inputB)]="dataB"></ng1>
+               | Outside: {{ dataA.value }}, {{ dataB.value }}
+             `
            })
            class Ng2Component {
              dataA = {value: 'foo'};
@@ -715,9 +715,9 @@ export function main() {
            @Component({
              selector: 'ng2',
              template: `
-              <ng1 (outputAttrA)="dataA = $event" (outputB)="dataB = $event"></ng1>
-              | Outside: {{ dataA }}, {{ dataB }}
-            `
+               <ng1 (outputAttrA)="dataA = $event" (outputB)="dataB = $event"></ng1>
+               | Outside: {{ dataA }}, {{ dataB }}
+             `
            })
            class Ng2Component {
              dataA = 'foo';
@@ -763,11 +763,11 @@ export function main() {
            // Define `ng1Component`
            const ng1Component: angular.IComponent = {
              template: `
-              Hello {{ $ctrl.fullName }};
-              A: {{ $ctrl.modelA }};
-              B: {{ $ctrl.modelB }};
-              C: {{ $ctrl.modelC }}
-            `,
+               Hello {{ $ctrl.fullName }};
+               A: {{ $ctrl.modelA }};
+               B: {{ $ctrl.modelB }};
+               C: {{ $ctrl.modelC }}
+             `,
              bindings: {fullName: '@', modelA: '<dataA', modelB: '=dataB', modelC: '=', event: '&'},
              controller: function($scope: angular.IScope) {
                $scope.$watch('$ctrl.modelB', (v: string) => {
@@ -805,13 +805,13 @@ export function main() {
            @Component({
              selector: 'ng2',
              template: `
-              <ng1 fullName="{{ last }}, {{ first }}, {{ city }}"
-                  [(dataA)]="first" [(dataB)]="last" [modelC]="city"
-                  (event)="event = $event">
-              </ng1> |
-              <ng1 fullName="{{ 'TEST' }}" dataA="First" dataB="Last" modelC="City"></ng1> |
-              {{ event }} - {{ last }}, {{ first }}, {{ city }}
-            `
+               <ng1 fullName="{{ last }}, {{ first }}, {{ city }}"
+                   [(dataA)]="first" [(dataB)]="last" [modelC]="city"
+                   (event)="event = $event">
+               </ng1> |
+               <ng1 fullName="{{ 'TEST' }}" dataA="First" dataB="Last" modelC="City"></ng1> |
+               {{ event }} - {{ last }}, {{ first }}, {{ city }}
+             `
            })
            class Ng2Component {
              first = 'Victor';
@@ -886,12 +886,12 @@ export function main() {
            @Component({
              selector: 'ng2',
              template: `
-              <ng1 [(inputAttrA)]="dataA" [(inputB)]="dataB.value"></ng1> |
-              <ng1 inputB="Bar" (outputAttrA)="dataA = $event"></ng1> |
-              <ng1 (outputB)="updateDataB($event)"></ng1> |
-              <ng1></ng1> |
-              Outside: {{ dataA.value }}, {{ dataB.value }}
-            `
+               <ng1 [(inputAttrA)]="dataA" [(inputB)]="dataB.value"></ng1> |
+               <ng1 inputB="Bar" (outputAttrA)="dataA = $event"></ng1> |
+               <ng1 (outputB)="updateDataB($event)"></ng1> |
+               <ng1></ng1> |
+               Outside: {{ dataA.value }}, {{ dataB.value }}
+             `
            })
            class Ng2Component {
              dataA = {value: 'foo'};
@@ -946,7 +946,6 @@ export function main() {
              $rootScope.$apply();
              tick();
 
-             // FIXME: These are failing and I have no idea why :(
              expect(ng1Controller0.inputA).toEqual({value: 'foo again'});
              expect(ng1Controller0.inputB).toEqual('bar again');
              expect(multiTrim(element.textContent))
