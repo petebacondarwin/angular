@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {Injector, NgModule, NgZone, Provider} from '@angular/core';
+import {Injector, NgModule, NgZone} from '@angular/core';
 
 import * as angular from '../angular_js';
 import {controllerKey} from '../util';

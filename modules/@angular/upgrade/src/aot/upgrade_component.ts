@@ -6,14 +6,13 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {DoCheck, ElementRef, EventEmitter, Injector, OnChanges, OnInit, SimpleChange, SimpleChanges} from '@angular/core';
+import {DoCheck, ElementRef, EventEmitter, Injector, OnChanges, OnInit, SimpleChanges} from '@angular/core';
 
 import * as angular from '../angular_js';
 import {looseIdentical} from '../facade/lang';
 import {controllerKey} from '../util';
 
 import {$COMPILE, $CONTROLLER, $HTTP_BACKEND, $INJECTOR, $SCOPE, $TEMPLATE_CACHE} from './constants';
-import {UpgradeModule} from './upgrade_module';
 
 const NOT_SUPPORTED: any = 'NOT_SUPPORTED';
 const INITIAL_VALUE = {
