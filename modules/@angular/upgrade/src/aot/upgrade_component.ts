@@ -30,8 +30,11 @@ class Bindings {
 
 interface IBindingDestination {
   [key: string]: any;
-  $onInit?: () => void;
   $onChanges?: (changes: SimpleChanges) => void;
+}
+
+interface IControllerInstance extends IBindingDestination {
+  $onInit?: () => void;
 }
 
 /**
@@ -52,6 +55,7 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
   private bindings: Bindings;
   private linkFn: angular.ILinkFn;
 
+  private controllerInstance: IControllerInstance = null;
   private bindingDestination: IBindingDestination = null;
 
   constructor(private name: string, private elementRef: ElementRef, private injector: Injector) {
@@ -77,9 +81,13 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
 
     const controllerType = this.directive.controller;
     // QUESTION: shouldn't we be building the controller in any case?
-    if (this.directive.bindToController && controllerType) {
-      this.bindingDestination = this.buildController(
-          controllerType, this.$componentScope, this.$element, this.directive.controllerAs);
+    if (this.directive.bindToController) {
+      if (controllerType) {
+        this.bindingDestination = this.controllerInstance = this.buildController(
+            controllerType, this.$componentScope, this.$element, this.directive.controllerAs);
+      } else {
+        throw new Error(`Upgraded directive '${name}' specifies 'bindToController' but no controller.`);
+      }
     } else {
       this.bindingDestination = this.$componentScope;
     }
@@ -90,7 +98,7 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
   ngOnInit() {
     // QUESTION: why not just use $compile instead of reproducing parts of it
     if (!this.directive.bindToController && this.directive.controller) {
-      this.buildController(
+      this.controllerInstance = this.buildController(
           this.directive.controller, this.$componentScope, this.$element,
           this.directive.controllerAs);
     }
@@ -122,9 +130,8 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
       postLink(this.$componentScope, this.$element, attrs, linkController, transcludeFn);
     }
 
-    // QUESTION: in Angular 1 we only call $onInit if the bindingDestination is the controller
-    if (this.bindingDestination.$onInit) {
-      this.bindingDestination.$onInit();
+    if (this.controllerInstance && this.controllerInstance.$onInit) {
+      this.controllerInstance.$onInit();
     }
   }
 
@@ -178,7 +185,7 @@ export class UpgradeComponent implements OnInit, OnChanges, DoCheck {
     const btcIsObject = typeof directive.bindToController === 'object';
     if (btcIsObject && Object.keys(directive.scope).length) {
       throw new Error(
-          `Binding definitions on scope and controller at the same time are not supported.`);
+          `Binding definitions on scope and controller at the same time is not supported.`);
     }
 
     const context = (btcIsObject) ? directive.bindToController : directive.scope;
