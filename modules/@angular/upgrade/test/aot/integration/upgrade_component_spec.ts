@@ -1330,30 +1330,5 @@ export function main() {
     //     expect(multiTrim(document.body.textContent)).toEqual('ng2a(ng1(ng2b))');
     //   });
     // }));
-
-    //   it('should allow attribute selectors for components in ng2', async(() => {
-    //        const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => MyNg2Module));
-    //        const ng1Module = angular.module('myExample', []);
-
-    //        @Component({selector: '[works]', template: 'works!'})
-    //        class WorksComponent {
-    //        }
-
-    //        @Component({selector: 'root-component', template: 'It <div works></div>'})
-    //        class RootComponent {
-    //        }
-
-    //        @NgModule({imports: [BrowserModule], declarations: [RootComponent, WorksComponent]})
-    //        class MyNg2Module {
-    //        }
-
-    //        ng1Module.directive('rootComponent', adapter.downgradeNg2Component(RootComponent));
-
-    //        document.body.innerHTML = '<root-component></root-component>';
-    //        adapter.bootstrap(document.body.firstElementChild, ['myExample']).ready((ref) => {
-    //          expect(multiTrim(document.body.textContent)).toEqual('It works!');
-    //          ref.dispose();
-    //        });
-    //      }));
   });
 }
