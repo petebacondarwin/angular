@@ -37,6 +37,8 @@ export interface ILinkFnOptions {
 export interface IRootScopeService {
   $new(isolate?: boolean): IScope;
   $id: string;
+  $parent: IScope;
+  $root: IScope;
   $watch(expr: any, fn?: (a1?: any, a2?: any) => void): Function;
   $destroy(): any;
   $apply(): any;
