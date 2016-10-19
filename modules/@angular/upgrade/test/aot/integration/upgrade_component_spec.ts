@@ -1036,55 +1036,6 @@ export function main() {
                  .toBe('ng1 - Data: [4,5,6] - Length: 3 | ng2 - Data: 4,5,6 - Length: 3');
            });
          }));
-
-      // it('should bind properties, events in link function', async(() => {
-      //   const adapter: UpgradeAdapter = new UpgradeAdapter(forwardRef(() => Ng2Module));
-      //   const ng1Module = angular.module('ng1', []);
-
-      //   const ng1 = () => {
-      //     return {
-      //       restrict: 'E',
-      //       template: '{{someText}} - Length: {{data.length}}',
-      //       scope: {data: '='},
-      //       link: function($scope: any /** TODO #9100 */) {
-      //         $scope.someText = 'ng1 - Data: ' + $scope.data;
-      //       }
-      //     };
-      //   };
-
-      //   ng1Module.directive('ng1', ng1);
-      //   const Ng2 =
-      //       Component({
-      //         selector: 'ng2',
-      //         template:
-      //             '{{someText}} - Length: {{dataList.length}} | <ng1
-      //             [(data)]="dataList"></ng1>'
-      //       }).Class({
-
-      //         constructor: function() {
-      //           this.dataList = [1, 2, 3];
-      //           this.someText = 'ng2';
-      //         }
-      //       });
-
-      //   const Ng2Module = NgModule({
-      //                       declarations: [adapter.upgradeNg1Component('ng1'), Ng2],
-      //                       imports: [BrowserModule],
-      //                       schemas: [NO_ERRORS_SCHEMA],
-      //                     }).Class({constructor: function() {}});
-
-      //   ng1Module.directive('ng2', adapter.downgradeNg2Component(Ng2));
-      //   const element = html(`<div><ng2></ng2></div>`);
-      //   adapter.bootstrap(element, ['ng1']).ready((ref) => {
-      //     // we need to do setTimeout, because the EventEmitter uses setTimeout to schedule
-      //     // events, and so without this we would not see the events processed.
-      //     setTimeout(() => {
-      //       expect(multiTrim(document.body.textContent))
-      //           .toEqual('ng2 - Length: 3 | ng1 - Data: 1,2,3 - Length: 3');
-      //       ref.dispose();
-      //     }, 0);
-      //   });
-      // }));
     });
 
     // it('should support controller with controllerAs', async(() => {
