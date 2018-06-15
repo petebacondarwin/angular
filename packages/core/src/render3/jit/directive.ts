@@ -149,6 +149,9 @@ function directiveMetadata(type: Type<any>, metadata: Directive): R3DirectiveMet
 
   const host = extractHostBindings(metadata, propMetadata);
 
+  parseInputOutputs(metadata.inputs || [], inputs);
+  parseInputOutputs(metadata.outputs || [], outputs);
+
   for (let field in propMetadata) {
     propMetadata[field].forEach(ann => {
       if (isInput(ann)) {
@@ -212,4 +215,11 @@ function isHostBinding(value: any): value is HostBinding {
 
 function isHostListener(value: any): value is HostListener {
   return value.ngMetadataName === 'HostListener';
+}
+
+function parseInputOutputs(values: string[], map: {[field: string]: string}): void {
+  values.forEach(value => {
+    const [field, property] = value.split(',').map(piece => piece.trim());
+    map[field] = property || field;
+  });
 }
