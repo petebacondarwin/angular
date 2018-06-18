@@ -12,7 +12,7 @@ import {BehaviorSubject, Observable, Subject, Subscription, of } from 'rxjs';
 import {concatMap, map, mergeMap} from 'rxjs/operators';
 
 import {applyRedirects} from './apply_redirects';
-import {LoadedRouterConfig, QueryParamsHandling, Route, Routes, copyConfig, validateConfig} from './config';
+import {LoadedRouterConfig, QueryParamsHandling, Route, Routes, standardizeConfig, validateConfig} from './config';
 import {createRouterState} from './create_router_state';
 import {createUrlTree} from './create_url_tree';
 import {ActivationEnd, ChildActivationEnd, Event, GuardsCheckEnd, GuardsCheckStart, NavigationCancel, NavigationEnd, NavigationError, NavigationStart, NavigationTrigger, ResolveEnd, ResolveStart, RouteConfigLoadEnd, RouteConfigLoadStart, RoutesRecognized} from './events';
@@ -177,12 +177,24 @@ type NavigationParams = {
 /**
  * @internal
  */
-export type RouterHook = (snapshot: RouterStateSnapshot) => Observable<void>;
+export type RouterHook = (snapshot: RouterStateSnapshot, runExtras: {
+  appliedUrlTree: UrlTree,
+  rawUrlTree: UrlTree,
+  skipLocationChange: boolean,
+  replaceUrl: boolean,
+  navigationId: number
+}) => Observable<void>;
 
 /**
  * @internal
  */
-function defaultRouterHook(snapshot: RouterStateSnapshot): Observable<void> {
+function defaultRouterHook(snapshot: RouterStateSnapshot, runExtras: {
+  appliedUrlTree: UrlTree,
+  rawUrlTree: UrlTree,
+  skipLocationChange: boolean,
+  replaceUrl: boolean,
+  navigationId: number
+}): Observable<void> {
   return of (null) as any;
 }
 
@@ -345,7 +357,7 @@ export class Router {
    */
   resetConfig(config: Routes): void {
     validateConfig(config);
-    this.config = config.map(copyConfig);
+    this.config = config.map(standardizeConfig);
     this.navigated = false;
     this.lastSuccessfulId = -1;
   }
@@ -531,7 +543,6 @@ export class Router {
       rawUrl: UrlTree, source: NavigationTrigger, state: {navigationId: number}|null,
       extras: NavigationExtras): Promise<boolean> {
     const lastNavigation = this.navigations.value;
-
     // If the user triggers a navigation imperatively (e.g., by using navigateByUrl),
     // and that navigation results in 'replaceState' that leads to the same URL,
     // we should skip those.
@@ -645,7 +656,13 @@ export class Router {
       const beforePreactivationDone$ =
           urlAndSnapshot$.pipe(mergeMap((p): Observable<NavStreamValue> => {
             if (typeof p === 'boolean') return of (p);
-            return this.hooks.beforePreactivation(p.snapshot).pipe(map(() => p));
+            return this.hooks
+                .beforePreactivation(p.snapshot, {
+                  navigationId: id,
+                  appliedUrlTree: url,
+                  rawUrlTree: rawUrl, skipLocationChange, replaceUrl,
+                })
+                .pipe(map(() => p));
           }));
 
       // run preactivation: guards and data resolvers
@@ -698,7 +715,13 @@ export class Router {
       const preactivationDone$ =
           preactivationResolveData$.pipe(mergeMap((p): Observable<NavStreamValue> => {
             if (typeof p === 'boolean' || this.navigationId !== id) return of (false);
-            return this.hooks.afterPreactivation(p.snapshot).pipe(map(() => p));
+            return this.hooks
+                .afterPreactivation(p.snapshot, {
+                  navigationId: id,
+                  appliedUrlTree: url,
+                  rawUrlTree: rawUrl, skipLocationChange, replaceUrl,
+                })
+                .pipe(map(() => p));
           }));
 
 

@@ -9,8 +9,10 @@
 import {RenderFlags} from '@angular/core/src/render3';
 
 import {defineComponent, defineDirective} from '../../src/render3/index';
-import {NO_CHANGE, bind, container, containerRefreshEnd, containerRefreshStart, elementAttribute, elementClassNamed, elementEnd, elementProperty, elementStart, elementStyleNamed, embeddedViewEnd, embeddedViewStart, interpolation1, interpolation2, interpolation3, interpolation4, interpolation5, interpolation6, interpolation7, interpolation8, interpolationV, load, loadDirective, projection, projectionDef, text, textBinding} from '../../src/render3/instructions';
-import {LViewFlags} from '../../src/render3/interfaces/view';
+import {NO_CHANGE, bind, container, containerRefreshEnd, containerRefreshStart, elementAttribute, elementClassNamed, elementEnd, elementProperty, elementStart, elementStyleNamed, embeddedViewEnd, embeddedViewStart, interpolation1, interpolation2, interpolation3, interpolation4, interpolation5, interpolation6, interpolation7, interpolation8, interpolationV, load, loadDirective, projection, projectionDef, text, textBinding,} from '../../src/render3/instructions';
+import {HEADER_OFFSET} from '../../src/render3/interfaces/view';
+import {sanitizeUrl} from '../../src/sanitization/sanitization';
+import {Sanitizer, SecurityContext} from '../../src/sanitization/security';
 
 import {ComponentFixture, containerEl, renderToHtml} from './render_util';
 
@@ -28,6 +30,12 @@ describe('render3 integration test', () => {
           elementEnd();
         }
       }
+      expect(ngDevMode).toHaveProperties({
+        firstTemplatePass: 1,
+        tNode: 3,  // 1 for div, 1 for text, 1 for host element
+        tView: 1,
+        rendererCreateElement: 1,
+      });
     });
 
     it('should render and update basic "Hello, World" template', () => {
@@ -60,6 +68,12 @@ describe('render3 integration test', () => {
 
       expect(renderToHtml(Template, 'benoit')).toEqual('benoit');
       expect(renderToHtml(Template, undefined)).toEqual('');
+      expect(ngDevMode).toHaveProperties({
+        firstTemplatePass: 0,
+        tNode: 2,
+        tView: 1,
+        rendererSetText: 2,
+      });
     });
 
     it('should render "null" as "" when used with `bind()`', () => {
@@ -74,6 +88,12 @@ describe('render3 integration test', () => {
 
       expect(renderToHtml(Template, 'benoit')).toEqual('benoit');
       expect(renderToHtml(Template, null)).toEqual('');
+      expect(ngDevMode).toHaveProperties({
+        firstTemplatePass: 0,
+        tNode: 2,
+        tView: 1,
+        rendererSetText: 2,
+      });
     });
 
     it('should support creation-time values in text nodes', () => {
@@ -87,6 +107,12 @@ describe('render3 integration test', () => {
       }
       expect(renderToHtml(Template, 'once')).toEqual('once');
       expect(renderToHtml(Template, 'twice')).toEqual('once');
+      expect(ngDevMode).toHaveProperties({
+        firstTemplatePass: 0,
+        tNode: 2,
+        tView: 1,
+        rendererSetText: 1,
+      });
     });
 
   });
@@ -823,8 +849,8 @@ describe('render3 integration test', () => {
       renderToHtml(Template, {condition: true});
 
       const oldTemplateData = (Template as any).ngPrivateData;
-      const oldContainerData = (oldTemplateData as any).data[0];
-      const oldElementData = oldContainerData.data[0][0];
+      const oldContainerData = (oldTemplateData as any).data[HEADER_OFFSET];
+      const oldElementData = oldContainerData.tViews[0][HEADER_OFFSET];
       expect(oldContainerData).not.toBeNull();
       expect(oldElementData).not.toBeNull();
 
@@ -832,8 +858,8 @@ describe('render3 integration test', () => {
       renderToHtml(Template, {condition: true});
 
       const newTemplateData = (Template as any).ngPrivateData;
-      const newContainerData = (oldTemplateData as any).data[0];
-      const newElementData = oldContainerData.data[0][0];
+      const newContainerData = (oldTemplateData as any).data[HEADER_OFFSET];
+      const newElementData = oldContainerData.tViews[0][HEADER_OFFSET];
       expect(newTemplateData === oldTemplateData).toBe(true);
       expect(newContainerData === oldContainerData).toBe(true);
       expect(newElementData === oldElementData).toBe(true);
@@ -841,4 +867,65 @@ describe('render3 integration test', () => {
 
   });
 
+  describe('sanitization', () => {
+    it('should sanitize data using the provided sanitization interface', () => {
+      class SanitizationComp {
+        static ngComponentDef = defineComponent({
+          type: SanitizationComp,
+          selectors: [['sanitize-this']],
+          factory: () => new SanitizationComp(),
+          template: (rf: RenderFlags, ctx: SanitizationComp) => {
+            if (rf & RenderFlags.Create) {
+              elementStart(0, 'a');
+              elementEnd();
+            }
+            if (rf & RenderFlags.Update) {
+              elementProperty(0, 'href', bind(ctx.href), sanitizeUrl);
+            }
+          }
+        });
+
+        private href = '';
+
+        updateLink(href: any) { this.href = href; }
+      }
+
+      const sanitizer = new LocalSanitizer((value) => { return 'http://bar'; });
+
+      const fixture = new ComponentFixture(SanitizationComp, {sanitizer});
+      fixture.component.updateLink('http://foo');
+      fixture.update();
+
+      const element = fixture.hostElement.querySelector('a') !;
+      expect(element.getAttribute('href')).toEqual('http://bar');
+
+      fixture.component.updateLink(sanitizer.bypassSecurityTrustUrl('http://foo'));
+      fixture.update();
+
+      expect(element.getAttribute('href')).toEqual('http://foo');
+    });
+  });
 });
+
+class LocalSanitizedValue {
+  constructor(public value: any) {}
+  toString() { return this.value; }
+}
+
+class LocalSanitizer implements Sanitizer {
+  constructor(private _interceptor: (value: string|null|any) => string) {}
+
+  sanitize(context: SecurityContext, value: LocalSanitizedValue|string|null): string|null {
+    if (value instanceof LocalSanitizedValue) {
+      return value.toString();
+    }
+    return this._interceptor(value);
+  }
+
+  bypassSecurityTrustHtml(value: string) {}
+  bypassSecurityTrustStyle(value: string) {}
+  bypassSecurityTrustScript(value: string) {}
+  bypassSecurityTrustResourceUrl(value: string) {}
+
+  bypassSecurityTrustUrl(value: string) { return new LocalSanitizedValue(value); }
+}

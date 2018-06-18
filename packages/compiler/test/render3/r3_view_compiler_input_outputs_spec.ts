@@ -51,8 +51,7 @@ describe('compiler compliance: listen()', () => {
       }
     };
 
-    // The template should look like this (where IDENT is a wild card for an identifier):
-    const template = `
+    const componentDef = `
       static ngComponentDef = IDENT.ɵdefineComponent({
           …
           inputs:{
@@ -63,9 +62,11 @@ describe('compiler compliance: listen()', () => {
             componentOutput: 'componentOutput',
             originalComponentOutput: 'renamedComponentOutput'
           }
-        });
-        …
-        static ngDirectiveDef = IDENT.ɵdefineDirective({
+          …
+        });`;
+
+    const directiveDef = `
+      static ngDirectiveDef = IDENT.ɵdefineDirective({
         …
         inputs:{
           directiveInput: 'directiveInput',
@@ -75,12 +76,14 @@ describe('compiler compliance: listen()', () => {
           directiveOutput: 'directiveOutput',
           originalDirectiveOutput: 'renamedDirectiveOutput'
         }
+        …
       });`;
 
 
     const result = compile(files, angularFiles);
 
-    expectEmit(result.source, template, 'Incorrect template');
+    expectEmit(result.source, componentDef, 'Incorrect component definition');
+    expectEmit(result.source, directiveDef, 'Incorrect directive definition');
   });
 
 });

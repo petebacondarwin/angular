@@ -6,9 +6,10 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {CommonModule, NgForOf, NgIf} from '@angular/common';
-import {ChangeDetectionStrategy, Component, EventEmitter, InjectFlags, Injectable, Input, IterableDiffers, NgModule, Output, createInjector, defineInjector, inject, ɵComponentDef as ComponentDef, ɵComponentType as ComponentType, ɵDirectiveDef as DirectiveDef, ɵDirectiveType as DirectiveType, ɵNgOnChangesFeature as NgOnChangesFeature, ɵdefaultIterableDiffers as defaultIterableDiffers, ɵdefineDirective as defineDirective, ɵinjectTemplateRef as injectTemplateRef, ɵinjectViewContainerRef as injectViewContainerRef, ɵmarkDirty as markDirty, ɵrenderComponent as renderComponent} from '@angular/core';
+import 'reflect-metadata';
 
+import {CommonModule, NgForOf, NgIf} from '@angular/common';
+import {Component, Injectable, IterableDiffers, NgModule, defineInjector, ɵNgOnChangesFeature as NgOnChangesFeature, ɵdefineDirective as defineDirective, ɵdirectiveInject as directiveInject, ɵinjectTemplateRef as injectTemplateRef, ɵinjectViewContainerRef as injectViewContainerRef, ɵrenderComponent as renderComponent} from '@angular/core';
 
 export class Todo {
   editing: boolean;
@@ -23,7 +24,7 @@ export class Todo {
   }
 }
 
-@Injectable()
+@Injectable({providedIn: 'root'})
 export class TodoStore {
   todos: Array<Todo> = [
     new Todo('Demonstrate Components'),
@@ -108,12 +109,9 @@ export class TodoStore {
   // changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ToDoAppComponent {
-  todoStore: TodoStore;
   newTodoText = '';
 
-  // TODO(misko) Fix injection
-  // constructor(todoStore: TodoStore) { this.todoStore = todoStore; }
-  constructor() { this.todoStore = new TodoStore(); }
+  constructor(public todoStore: TodoStore) {}
 
   stopEditing(todo: Todo, editedTitle: string) {
     todo.title = editedTitle;
@@ -149,40 +147,7 @@ export class ToDoAppComponent {
   }
 }
 
-// TODO(misko): This hack is here because common is not compiled with Ivy flag turned on.
-(CommonModule as any).ngInjectorDef = defineInjector({factory: () => new CommonModule});
-
-// TODO(misko): This hack is here because common is not compiled with Ivy flag turned on.
-(NgForOf as any).ngDirectiveDef = defineDirective({
-  type: NgForOf,
-  selectors: [['', 'ngFor', '', 'ngForOf', '']],
-  factory: () => new NgForOf(
-               injectViewContainerRef(), injectTemplateRef(),
-               // TODO(misko): inject does not work since it needs to be directiveInject
-               // inject(IterableDiffers, defaultIterableDiffers)
-               defaultIterableDiffers),
-  features: [NgOnChangesFeature({
-    ngForOf: 'ngForOf',
-    ngForTrackBy: 'ngForTrackBy',
-    ngForTemplate: 'ngForTemplate',
-  })],
-  inputs: {
-    ngForOf: 'ngForOf',
-    ngForTrackBy: 'ngForTrackBy',
-    ngForTemplate: 'ngForTemplate',
-  }
-});
-
-// TODO(misko): This hack is here because common is not compiled with Ivy flag turned on.
-(NgIf as any).ngDirectiveDef = defineDirective({
-  type: NgIf,
-  selectors: [['', 'ngIf', '']],
-  factory: () => new NgIf(injectViewContainerRef(), injectTemplateRef()),
-  inputs: {ngIf: 'ngIf', ngIfThen: 'ngIfThen', ngIfElse: 'ngIfElse'}
-});
-
-
-@NgModule({declarations: [ToDoAppComponent, ToDoAppComponent], imports: [CommonModule]})
+@NgModule({declarations: [ToDoAppComponent], imports: [CommonModule]})
 export class ToDoAppModule {
 }
 

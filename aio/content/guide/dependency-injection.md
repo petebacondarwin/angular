@@ -32,7 +32,7 @@ from the [The Tour of Heroes](tutorial/).
 </code-tabs>
 
 The `HeroesComponent` is the top-level heroes component.
-It's only purpose is to display the `HeroListComponent`
+Its only purpose is to display the `HeroListComponent`
 which displays a list of hero names.
 
 This version of the `HeroListComponent` gets its `heroes` from the `HEROES` array, an in-memory collection
@@ -439,6 +439,12 @@ In the example above, `providedIn` allows you to declare the injector which inje
 The service can be instantiated by configuring a factory function as shown below:
 
 <code-example path="dependency-injection/src/app/tree-shaking/service.0.ts"  title="src/app/tree-shaking/service.0.ts" linenums="false"> </code-example>
+
+<div class="l-sub-section">
+
+To override tree-shakable providers, register the provider using the `providers: []` array syntax of any Angular decorator that supports it.
+
+</div>
 
 {@a injector-config} 
 {@a bootstrap}

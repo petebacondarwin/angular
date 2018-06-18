@@ -6,25 +6,30 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {TNode} from '../../src/render3/interfaces/node';
+import {AttributeMarker, TAttributes, TNode, TNodeType} from '../../src/render3/interfaces/node';
+
 import {CssSelector, CssSelectorList, NG_PROJECT_AS_ATTR_NAME, SelectorFlags,} from '../../src/render3/interfaces/projection';
 import {getProjectAsAttrValue, isNodeMatchingSelectorList, isNodeMatchingSelector} from '../../src/render3/node_selector_matcher';
 
-function testLStaticData(tagName: string, attrs: string[] | null): TNode {
+function testLStaticData(tagName: string, attrs: TAttributes | null): TNode {
   return {
-    flags: 0,
-    tagName,
-    attrs,
+    type: TNodeType.Element,
+    index: 0,
+    flags: 0, tagName, attrs,
     localNames: null,
     initialInputs: undefined,
     inputs: undefined,
     outputs: undefined,
-    data: null,
+    tViews: null,
+    next: null,
+    child: null,
+    parent: null,
+    dynamicContainerNode: null
   };
 }
 
 describe('css selector matching', () => {
-  function isMatching(tagName: string, attrs: string[] | null, selector: CssSelector): boolean {
+  function isMatching(tagName: string, attrs: TAttributes | null, selector: CssSelector): boolean {
     return isNodeMatchingSelector(testLStaticData(tagName, attrs), selector);
   }
 
@@ -79,6 +84,12 @@ describe('css selector matching', () => {
         expect(isMatching('span', ['title', ''], [
           '', 'other', ''
         ])).toBeFalsy(`Selector '[other]' should NOT match <span title="">'`);
+      });
+
+      it('should match namespaced attributes', () => {
+        expect(isMatching(
+            'span', [AttributeMarker.NamespaceURI, 'http://some/uri', 'title', 'name'],
+            ['', 'title', '']));
       });
 
       it('should match selector with one attribute without value when element has several attributes',
@@ -172,6 +183,28 @@ describe('css selector matching', () => {
           '', 'class', 'foo'
         ])).toBeTruthy(`Selector '[class="foo"]' should match <span class="foo">`);
       });
+
+      it('should take optional binding attribute names into account', () => {
+        expect(isMatching('span', [AttributeMarker.SelectOnly, 'directive'], [
+          '', 'directive', ''
+        ])).toBeTruthy(`Selector '[directive]' should match <span [directive]="exp">`);
+      });
+
+      it('should not match optional binding attribute names if attribute selector has value',
+         () => {
+           expect(isMatching('span', [AttributeMarker.SelectOnly, 'directive'], [
+             '', 'directive', 'value'
+           ])).toBeFalsy(`Selector '[directive=value]' should not match <span [directive]="exp">`);
+         });
+
+      it('should not match optional binding attribute names if attribute selector has value and next name equals to value',
+         () => {
+           expect(isMatching(
+                      'span', [AttributeMarker.SelectOnly, 'directive', 'value'],
+                      ['', 'directive', 'value']))
+               .toBeFalsy(
+                   `Selector '[directive=value]' should not match <span [directive]="exp" [value]="otherExp">`);
+         });
     });
 
     describe('class matching', () => {

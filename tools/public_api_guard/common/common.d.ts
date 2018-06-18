@@ -175,6 +175,23 @@ export declare class JsonPipe implements PipeTransform {
     transform(value: any): string;
 }
 
+export interface KeyValue<K, V> {
+    key: K;
+    value: V;
+}
+
+export declare class KeyValuePipe implements PipeTransform {
+    constructor(differs: KeyValueDiffers);
+    transform<K, V>(input: null, compareFn?: (a: KeyValue<K, V>, b: KeyValue<K, V>) => number): null;
+    transform<V>(input: {
+        [key: string]: V;
+    } | Map<string, V>, compareFn?: (a: KeyValue<string, V>, b: KeyValue<string, V>) => number): Array<KeyValue<string, V>>;
+    transform<V>(input: {
+        [key: number]: V;
+    } | Map<number, V>, compareFn?: (a: KeyValue<number, V>, b: KeyValue<number, V>) => number): Array<KeyValue<number, V>>;
+    transform<K, V>(input: Map<K, V>, compareFn?: (a: KeyValue<K, V>, b: KeyValue<K, V>) => number): Array<KeyValue<K, V>>;
+}
+
 export declare class Location {
     constructor(platformStrategy: LocationStrategy);
     back(): void;
@@ -240,13 +257,12 @@ export declare class NgComponentOutlet implements OnChanges, OnDestroy {
     ngOnDestroy(): void;
 }
 
-export declare class NgForOf<T> implements DoCheck, OnChanges {
+export declare class NgForOf<T> implements DoCheck {
     ngForOf: NgIterable<T>;
     ngForTemplate: TemplateRef<NgForOfContext<T>>;
     ngForTrackBy: TrackByFunction<T>;
     constructor(_viewContainer: ViewContainerRef, _template: TemplateRef<NgForOfContext<T>>, _differs: IterableDiffers);
     ngDoCheck(): void;
-    ngOnChanges(changes: SimpleChanges): void;
 }
 
 export declare class NgForOfContext<T> {
@@ -433,6 +449,15 @@ export declare class UpperCasePipe implements PipeTransform {
 }
 
 export declare const VERSION: Version;
+
+export declare abstract class ViewportScroller {
+    abstract getScrollPosition(): [number, number];
+    abstract scrollToAnchor(anchor: string): void;
+    abstract scrollToPosition(position: [number, number]): void;
+    abstract setHistoryScrollRestoration(scrollRestoration: 'auto' | 'manual'): void;
+    abstract setOffset(offset: [number, number] | (() => [number, number])): void;
+    static ngInjectableDef: never;
+}
 
 /** @experimental */
 export declare enum WeekDay {

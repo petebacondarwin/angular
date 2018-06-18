@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {Attribute, ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChild, ContentChildren, Directive, HostBinding, HostListener, INJECTOR, Inject, InjectFlags, Injectable, InjectableDef, Injector, InjectorDef, Input, NgModule, OnDestroy, Optional, Pipe, PipeTransform, QueryList, SimpleChanges, SkipSelf, TemplateRef, ViewChild, ViewChildren, ViewContainerRef, defineInjectable, defineInjector, inject} from '../../../src/core';
+import {Attribute, ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChild, ContentChildren, Directive, HostBinding, HostListener, INJECTOR, Inject, InjectFlags, Injectable, Injector, Input, NgModule, OnDestroy, Optional, Pipe, PipeTransform, QueryList, SimpleChanges, SkipSelf, TemplateRef, ViewChild, ViewChildren, ViewContainerRef, defineInjectable, defineInjector, inject} from '../../../src/core';
 import * as $r3$ from '../../../src/core_render3_private_export';
 import {renderComponent, toHtml} from '../render_util';
 
@@ -54,8 +54,7 @@ describe('injection', () => {
           /** <my-comp></my-comp> */
           template: function MyApp_Template(rf: $RenderFlags$, ctx: $MyApp$) {
             if (rf & 1) {
-              $r3$.ɵE(0, 'my-comp');
-              $r3$.ɵe();
+              $r3$.ɵEe(0, 'my-comp');
             }
           },
           directives: () => [MyComp]
@@ -101,8 +100,7 @@ describe('injection', () => {
           /** <my-comp></my-comp> */
           template: function MyApp_Template(rf: $RenderFlags$, ctx: $MyApp$) {
             if (rf & 1) {
-              $r3$.ɵE(0, 'my-comp', e0_attrs);
-              $r3$.ɵe();
+              $r3$.ɵEe(0, 'my-comp', e0_attrs);
             }
           },
           directives: () => [MyComp]
@@ -151,7 +149,6 @@ describe('injection', () => {
             return new MyApp(
                 $r3$.ɵdirectiveInject(ServiceA), $r3$.ɵdirectiveInject(ServiceB), inject(INJECTOR));
           },
-          /**  */
           template: function MyApp_Template(rf: $RenderFlags$, ctx: $MyApp$) {},
           providers: [ServiceA],
           viewProviders: [ServiceB],
@@ -185,7 +182,7 @@ describe('injection', () => {
       // NORMATIVE
       static ngInjectableDef = defineInjectable({
         factory: function ServiceA_Factory() {
-          return new ServiceB(inject(ServiceA), inject(INJECTOR, undefined, InjectFlags.SkipSelf));
+          return new ServiceB(inject(ServiceA), inject(INJECTOR, InjectFlags.SkipSelf) !);
         },
       });
       // /NORMATIVE

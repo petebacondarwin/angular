@@ -8,7 +8,10 @@
 
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChild, ContentChildren, Directive, HostBinding, HostListener, Injectable, Input, NgModule, OnDestroy, Optional, Pipe, PipeTransform, QueryList, SimpleChanges, TemplateRef, ViewChild, ViewChildren, ViewContainerRef} from '../../../src/core';
 import * as $r3$ from '../../../src/core_render3_private_export';
+import {ComponentDefInternal} from '../../../src/render3/interfaces/definition';
 import {renderComponent, toHtml} from '../render_util';
+
+
 
 /// See: `normative.md`
 describe('components & directives', () => {
@@ -66,8 +69,7 @@ describe('components & directives', () => {
         factory: () => new MyComponent(),
         template: function(rf: $RenderFlags$, ctx: $MyComponent$) {
           if (rf & 1) {
-            $r3$.ɵE(0, 'child', $e0_attrs$);
-            $r3$.ɵe();
+            $r3$.ɵEe(0, 'child', $e0_attrs$);
             $r3$.ɵT(1, '!');
           }
         }
@@ -76,8 +78,9 @@ describe('components & directives', () => {
     }
 
     // NON-NORMATIVE (done by defineNgModule)
-    MyComponent.ngComponentDef.directiveDefs =
-        [ChildComponent.ngComponentDef, SomeDirective.ngDirectiveDef];
+    (MyComponent.ngComponentDef as ComponentDefInternal<any>).directiveDefs = [
+      (ChildComponent.ngComponentDef as ComponentDefInternal<any>), SomeDirective.ngDirectiveDef
+    ];
     // /NON-NORMATIVE
 
     expect(renderComp(MyComponent)).toEqual('<child some-directive="">child-view</child>!');
@@ -118,15 +121,15 @@ describe('components & directives', () => {
         factory: function MyApp_Factory() { return new MyApp(); },
         template: function MyApp_Template(rf: $RenderFlags$, ctx: $MyApp$) {
           if (rf & 1) {
-            $r3$.ɵE(0, 'div', $e0_attrs$);
-            $r3$.ɵe();
+            $r3$.ɵEe(0, 'div', $e0_attrs$);
           }
         }
       });
     }
 
     // NON-NORMATIVE (done by defineNgModule)
-    MyApp.ngComponentDef.directiveDefs = [HostBindingDir.ngDirectiveDef];
+    (MyApp.ngComponentDef as ComponentDefInternal<any>).directiveDefs =
+        [HostBindingDir.ngDirectiveDef];
     // /NON-NORMATIVE
 
     expect(renderComp(MyApp)).toEqual(`<div hostbindingdir="" id="some id"></div>`);
@@ -177,7 +180,8 @@ describe('components & directives', () => {
     }
 
     // NON-NORMATIVE (done by defineNgModule)
-    MyApp.ngComponentDef.directiveDefs = [HostListenerDir.ngDirectiveDef];
+    (MyApp.ngComponentDef as ComponentDefInternal<any>).directiveDefs =
+        [HostListenerDir.ngDirectiveDef];
     // /NON-NORMATIVE
 
     expect(renderComp(MyApp)).toEqual(`<button hostlistenerdir="">Click</button>`);
@@ -214,15 +218,15 @@ describe('components & directives', () => {
         factory: function MyApp_Factory() { return new MyApp(); },
         template: function MyApp_Template(rf: $RenderFlags$, ctx: $MyApp$) {
           if (rf & 1) {
-            $r3$.ɵE(0, 'div', $e0_attrs$);
-            $r3$.ɵe();
+            $r3$.ɵEe(0, 'div', $e0_attrs$);
           }
         }
       });
     }
 
     // NON-NORMATIVE (done by defineNgModule)
-    MyApp.ngComponentDef.directiveDefs = [HostAttributeDir.ngDirectiveDef];
+    (MyApp.ngComponentDef as ComponentDefInternal<any>).directiveDefs =
+        [HostAttributeDir.ngDirectiveDef];
     // /NON-NORMATIVE
 
     expect(renderComp(MyApp)).toEqual(`<div hostattributedir="" role="listbox"></div>`);
@@ -262,15 +266,15 @@ describe('components & directives', () => {
         factory: function MyApp_Factory() { return new MyApp(); },
         template: function MyApp_Template(rf: $RenderFlags$, ctx: $MyApp$) {
           if (rf & 1) {
-            $r3$.ɵE(0, 'div', $e0_attrs$);
-            $r3$.ɵe();
+            $r3$.ɵEe(0, 'div', $e0_attrs$);
           }
         }
       });
     }
 
     // NON-NORMATIVE (done by defineNgModule)
-    MyApp.ngComponentDef.directiveDefs = [HostBindingDir.ngDirectiveDef];
+    (MyApp.ngComponentDef as ComponentDefInternal<any>).directiveDefs =
+        [HostBindingDir.ngDirectiveDef];
     // /NON-NORMATIVE
 
     expect(renderComp(MyApp)).toEqual(`<div aria-label="some label" hostbindingdir=""></div>`);
@@ -322,8 +326,7 @@ describe('components & directives', () => {
         factory: function MyApp_Factory() { return new MyApp(); },
         template: function MyApp_Template(rf: $RenderFlags$, ctx: $MyApp$) {
           if (rf & 1) {
-            $r3$.ɵE(0, 'my-comp');
-            $r3$.ɵe();
+            $r3$.ɵEe(0, 'my-comp');
           }
           if (rf & 2) {
             $r3$.ɵp(0, 'name', $r3$.ɵb(ctx.name));
@@ -333,7 +336,8 @@ describe('components & directives', () => {
     }
 
     // NON-NORMATIVE (done by defineNgModule)
-    MyApp.ngComponentDef.directiveDefs = [MyComp.ngComponentDef];
+    (MyApp.ngComponentDef as ComponentDefInternal<any>).directiveDefs =
+        [(MyComp.ngComponentDef as ComponentDefInternal<any>)];
     // /NON-NORMATIVE
 
     expect(renderComp(MyApp)).toEqual(`<my-comp>some name</my-comp>`);
@@ -451,8 +455,7 @@ describe('components & directives', () => {
           factory: function MyApp_Factory() { return new MyApp(); },
           template: function MyApp_Template(rf: $RenderFlags$, ctx: $MyApp$) {
             if (rf & 1) {
-              $r3$.ɵE(0, 'my-array-comp');
-              $r3$.ɵe();
+              $r3$.ɵEe(0, 'my-array-comp');
             }
             if (rf & 2) {
               $r3$.ɵp(0, 'names', rf & 1 ? $e0_arr$ : $r3$.ɵNC);
@@ -463,7 +466,8 @@ describe('components & directives', () => {
       }
 
       // NON-NORMATIVE (done by defineNgModule)
-      MyApp.ngComponentDef.directiveDefs = [MyArrayComp.ngComponentDef];
+      (MyApp.ngComponentDef as ComponentDefInternal<any>).directiveDefs =
+          [(MyArrayComp.ngComponentDef as ComponentDefInternal<any>)];
       // /NON-NORMATIVE
 
       expect(renderComp(MyApp)).toEqual(`<my-array-comp>Nancy Bess</my-array-comp>`);
@@ -495,11 +499,11 @@ describe('components & directives', () => {
           factory: function MyApp_Factory() { return new MyApp(); },
           template: function MyApp_Template(rf: $RenderFlags$, ctx: $MyApp$) {
             if (rf & 1) {
-              $r3$.ɵE(0, 'my-array-comp');
-              $r3$.ɵe();
+              $r3$.ɵEe(0, 'my-array-comp');
+              $r3$.ɵrS(1);
             }
             if (rf & 2) {
-              $r3$.ɵp(0, 'names', $r3$.ɵb(ctx.someFn($r3$.ɵf0($e0_ff$))));
+              $r3$.ɵp(0, 'names', $r3$.ɵb(ctx.someFn($r3$.ɵf0(1, $e0_ff$))));
             }
           }
         });
@@ -507,7 +511,8 @@ describe('components & directives', () => {
       }
 
       // NON-NORMATIVE (done by defineNgModule)
-      MyApp.ngComponentDef.directiveDefs = [MyArrayComp.ngComponentDef];
+      (MyApp.ngComponentDef as ComponentDefInternal<any>).directiveDefs =
+          [(MyArrayComp.ngComponentDef as ComponentDefInternal<any>)];
       // /NON-NORMATIVE
 
       expect(renderComp(MyApp)).toEqual(`<my-array-comp>NANCY Bess</my-array-comp>`);
@@ -530,7 +535,11 @@ describe('components & directives', () => {
               $r3$.ɵT(0);
             }
             if (rf & 2) {
+              // clang-format wants to break this line by changing the second 'ɵ' to an invalid
+              // unicode sequence.
+              // clang-format off
               $r3$.ɵt(0, $r3$.ɵb(ctx.num));
+              // clang-format on
             }
           },
           inputs: {num: 'num'}
@@ -555,11 +564,11 @@ describe('components & directives', () => {
           factory: function MyApp_Factory() { return new MyApp(); },
           template: function MyApp_Template(rf: $RenderFlags$, ctx: $MyApp$) {
             if (rf & 1) {
-              $r3$.ɵE(0, 'my-comp');
-              $r3$.ɵe();
+              $r3$.ɵEe(0, 'my-comp');
+              $r3$.ɵrS(1);
             }
             if (rf & 2) {
-              $r3$.ɵp(0, 'num', $r3$.ɵb($r3$.ɵf0($e0_ff$).length + 1));
+              $r3$.ɵp(0, 'num', $r3$.ɵb($r3$.ɵf0(1, $e0_ff$).length + 1));
             }
           }
         });
@@ -567,7 +576,8 @@ describe('components & directives', () => {
       }
 
       // NON-NORMATIVE (done by defineNgModule)
-      MyApp.ngComponentDef.directiveDefs = [MyComp.ngComponentDef];
+      (MyApp.ngComponentDef as ComponentDefInternal<any>).directiveDefs =
+          [(MyComp.ngComponentDef as ComponentDefInternal<any>)];
       // /NON-NORMATIVE
 
       expect(renderComp(MyApp)).toEqual(`<my-comp>3</my-comp>`);
@@ -597,11 +607,11 @@ describe('components & directives', () => {
           factory: function MyApp_Factory() { return new MyApp(); },
           template: function MyApp_Template(rf: $RenderFlags$, ctx: $MyApp$) {
             if (rf & 1) {
-              $r3$.ɵE(0, 'my-array-comp');
-              $r3$.ɵe();
+              $r3$.ɵEe(0, 'my-array-comp');
+              $r3$.ɵrS(2);
             }
             if (rf & 2) {
-              $r3$.ɵp(0, 'names', $r3$.ɵb($r3$.ɵf1($e0_ff$, ctx.customName)));
+              $r3$.ɵp(0, 'names', $r3$.ɵb($r3$.ɵf1(2, $e0_ff$, ctx.customName)));
             }
           }
         });
@@ -609,7 +619,8 @@ describe('components & directives', () => {
       }
 
       // NON-NORMATIVE (done by defineNgModule)
-      MyApp.ngComponentDef.directiveDefs = [MyArrayComp.ngComponentDef];
+      (MyApp.ngComponentDef as ComponentDefInternal<any>).directiveDefs =
+          [(MyArrayComp.ngComponentDef as ComponentDefInternal<any>)];
       // /NON-NORMATIVE
 
       expect(renderComp(MyApp)).toEqual(`<my-array-comp>Nancy Bess</my-array-comp>`);
@@ -706,14 +717,14 @@ describe('components & directives', () => {
           factory: function MyApp_Factory() { return new MyApp(); },
           template: function MyApp_Template(rf: $RenderFlags$, c: $any$) {
             if (rf & 1) {
-              $r3$.ɵE(0, 'my-comp');
-              $r3$.ɵe();
+              $r3$.ɵEe(0, 'my-comp');
+              $r3$.ɵrS(10);
             }
             if (rf & 2) {
               $r3$.ɵp(
                   0, 'names',
-                  $r3$.ɵb(
-                      $r3$.ɵfV($e0_ff$, [c.n0, c.n1, c.n2, c.n3, c.n4, c.n5, c.n6, c.n7, c.n8])));
+                  $r3$.ɵb($r3$.ɵfV(
+                      10, $e0_ff$, [c.n0, c.n1, c.n2, c.n3, c.n4, c.n5, c.n6, c.n7, c.n8])));
             }
           }
         });
@@ -721,7 +732,8 @@ describe('components & directives', () => {
       }
 
       // NON-NORMATIVE (done by defineNgModule)
-      MyApp.ngComponentDef.directiveDefs = [MyComp.ngComponentDef];
+      (MyApp.ngComponentDef as ComponentDefInternal<any>).directiveDefs =
+          [(MyComp.ngComponentDef as ComponentDefInternal<any>)];
       // /NON-NORMATIVE
 
       expect(renderComp(MyApp)).toEqual(`<my-comp>start-abcde-middle-fghi-end</my-comp>`);
@@ -783,11 +795,11 @@ describe('components & directives', () => {
           factory: function MyApp_Factory() { return new MyApp(); },
           template: function MyApp_Template(rf: $RenderFlags$, ctx: $MyApp$) {
             if (rf & 1) {
-              $r3$.ɵE(0, 'object-comp');
-              $r3$.ɵe();
+              $r3$.ɵEe(0, 'object-comp');
+              $r3$.ɵrS(2);
             }
             if (rf & 2) {
-              $r3$.ɵp(0, 'config', $r3$.ɵb($r3$.ɵf1($e0_ff$, ctx.name)));
+              $r3$.ɵp(0, 'config', $r3$.ɵb($r3$.ɵf1(2, $e0_ff$, ctx.name)));
             }
           }
         });
@@ -795,7 +807,8 @@ describe('components & directives', () => {
       }
 
       // NON-NORMATIVE (done by defineNgModule)
-      MyApp.ngComponentDef.directiveDefs = [ObjectComp.ngComponentDef];
+      (MyApp.ngComponentDef as ComponentDefInternal<any>).directiveDefs =
+          [(ObjectComp.ngComponentDef as ComponentDefInternal<any>)];
       // /NON-NORMATIVE
 
       expect(renderComp(MyApp)).toEqual(`<object-comp><p>500</p><p>slide</p></object-comp>`);
@@ -867,14 +880,14 @@ describe('components & directives', () => {
           factory: function MyApp_Factory() { return new MyApp(); },
           template: function MyApp_Template(rf: $RenderFlags$, ctx: $MyApp$) {
             if (rf & 1) {
-              $r3$.ɵE(0, 'nested-comp');
-              $r3$.ɵe();
+              $r3$.ɵEe(0, 'nested-comp');
+              $r3$.ɵrS(7);
             }
             if (rf & 2) {
               $r3$.ɵp(
-                  0, 'config', $r3$.ɵf2(
-                                   $e0_ff_2$, ctx.name,
-                                   $r3$.ɵb($r3$.ɵf1($e0_ff_1$, $r3$.ɵf1($e0_ff$, ctx.duration)))));
+                  0, 'config', $r3$.ɵb($r3$.ɵf2(
+                                   7, $e0_ff_2$, ctx.name,
+                                   $r3$.ɵf1(4, $e0_ff_1$, $r3$.ɵf1(2, $e0_ff$, ctx.duration)))));
             }
           }
         });
@@ -882,7 +895,8 @@ describe('components & directives', () => {
       }
 
       // NON-NORMATIVE (done by defineNgModule)
-      MyApp.ngComponentDef.directiveDefs = [NestedComp.ngComponentDef];
+      (MyApp.ngComponentDef as ComponentDefInternal<any>).directiveDefs =
+          [(NestedComp.ngComponentDef as ComponentDefInternal<any>)];
       // /NON-NORMATIVE
 
       expect(renderComp(MyApp))

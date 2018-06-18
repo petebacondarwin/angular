@@ -1,12 +1,23 @@
 # Angular Elements Overview
 
+_Angular elements_ are Angular components packaged as _custom elements_, a web standard for defining new HTML elements in a framework-agnostic way.
+
 [Custom elements](https://developer.mozilla.org/en-US/docs/Web/Web_Components/Using_custom_elements) are a Web Platform feature currently supported by Chrome, Opera, and Safari, and available in other browsers through polyfills (see [Browser Support](#browser-support)).
 A custom element extends HTML by allowing you to define a tag whose content is created and controlled by JavaScript code. 
 The browser maintains a `CustomElementRegistry` of defined custom elements (also called Web Components), which maps an instantiable JavaScript class to an HTML tag.
 
 The `@angular/elements` package exports a `createCustomElement()` API that provides a bridge from Angular's component interface and change detection functionality to the built-in DOM API. 
 
-Transforming a component to a custom element makes all of the required Angular infrastructure available to the browser. Creating a custom element is simple and straightforward, and automatically connects your component-defined view with change detection and data binding, mapping Angular functionality to the corresponding native HTML equivalents. 
+Transforming a component to a custom element makes all of the required Angular infrastructure available to the browser. 
+Creating a custom element is simple and straightforward, and automatically connects your component-defined view with change detection and data binding, mapping Angular functionality to the corresponding native HTML equivalents. 
+
+<div class="l-sub-section">
+
+    We are working on custom elements that can be used by web apps built on other frameworks. 
+    A minimal, self-contained version of the Angular framework will be injected as a service to support the component's change-detection and data-binding functionality. 
+    For more about the direction of development, check out this [video presentation](https://www.youtube.com/watch?v=Z1gLFPLVJjY&t=4s).
+
+</div>
 
 ## Using custom elements
 
@@ -38,14 +49,6 @@ When your custom element is placed on a page, the browser creates an instance of
 </figure>
 
 <hr class="clear">
-
-<div class="l-sub-section">
-
-    We are working on custom elements that can be used by web apps built on other frameworks. 
-    A minimal, self-contained version of the Angular framework will be injected as a service to support the component's change-detection and data-binding functionality. 
-    For more about the direction of development, check out this [video presentation](https://www.youtube.com/watch?v=vHI5C-9vH-E).
-
-</div>
 
 ## Transforming components to custom elements
 
@@ -109,12 +112,14 @@ The recently-developed [custom elements](https://developer.mozilla.org/en-US/doc
 <tr>
   <td>Edge</td>
   <td>Working on an implementation. <br>    
- Use the <a href="https://cli.angular.io/" target="_blanks">CLI</a> to automatically set up your project with the correct polyfill: <code>ng add @angular/elements</code>.
+
   </td>
 </tr>
 </table>
-  
 
+In browsers that support Custom Elements natively, the specification requires developers use ES2015 classes to define Custom Elements - developers can opt-in to this by setting the `target: "es2015"` property in their project's `tsconfig.json`. As Custom Element and ES2015 support may not be available in all browsers, developers can instead choose to use a polyfill to support older browsers and ES5 code.
+
+Use the [Angular CLI](https://cli.angular.io/) to automatically set up your project with the correct polyfill: `ng add @angular/elements --name=*your_project_name*`.
 - For more information about polyfills, see [polyfill documentation](https://www.webcomponents.org/polyfills). 
 
 - For more information about Angular browser support, see [Browser Support](guide/browser-support).

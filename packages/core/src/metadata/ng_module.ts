@@ -9,9 +9,66 @@
 import {InjectorDef, InjectorType, defineInjector} from '../di/defs';
 import {convertInjectableProviderToFactory} from '../di/injectable';
 import {Provider} from '../di/provider';
+import {R3_COMPILE_NGMODULE} from '../ivy_switch';
 import {Type} from '../type';
 import {TypeDecorator, makeDecorator} from '../util/decorators';
 
+/**
+ * Represents the expansion of an `NgModule` into its scopes.
+ *
+ * A scope is a set of directives and pipes that are visible in a particular context. Each
+ * `NgModule` has two scopes. The `compilation` scope is the set of directives and pipes that will
+ * be recognized in the templates of components declared by the module. The `exported` scope is the
+ * set of directives and pipes exported by a module (that is, module B's exported scope gets added
+ * to module A's compilation scope when module A imports B).
+ */
+export interface NgModuleTransitiveScopes {
+  compilation: {directives: Set<any>; pipes: Set<any>;};
+  exported: {directives: Set<any>; pipes: Set<any>;};
+}
+
+/**
+ * A version of {@link NgModuleDef} that represents the runtime type shape only, and excludes
+ * metadata parameters.
+ */
+export type NgModuleDefInternal<T> = NgModuleDef<T, any, any, any>;
+
+/**
+ * Runtime link information for NgModules.
+ *
+ * This is the internal data structure used by the runtime to assemble components, directives,
+ * pipes, and injectors.
+ *
+ * NOTE: Always use `defineNgModule` function to create this object,
+ * never create the object directly since the shape of this object
+ * can change between versions.
+ */
+export interface NgModuleDef<T, Declarations, Imports, Exports> {
+  /** Token representing the module. Used by DI. */
+  type: T;
+
+  /** List of components to bootstrap. */
+  bootstrap: Type<any>[];
+
+  /** List of components, directives, and pipes declared by this module. */
+  declarations: Type<any>[];
+
+  /** List of modules or `ModuleWithProviders` imported by this module. */
+  imports: Type<any>[];
+
+  /**
+   * List of modules, `ModuleWithProviders`, components, directives, or pipes exported by this
+   * module.
+   */
+  exports: Type<any>[];
+
+  /**
+   * Cached value of computed `transitiveCompileScopes` for this module.
+   *
+   * This should never be read directly, but accessed via `transitiveScopesFor`.
+   */
+  transitiveCompileScopes: NgModuleTransitiveScopes|null;
+}
 
 /**
  * A wrapper around a module that also includes the providers.
@@ -185,6 +242,27 @@ export interface NgModule {
    * `getModuleFactory`.
    */
   id?: string;
+
+  /**
+   * If true, this module will be skipped by the AOT compiler and so will always be compiled
+   * using JIT.
+   *
+   * This exists to support future Ivy work and has no effect currently.
+   */
+  jit?: true;
+}
+
+function preR3NgModuleCompile(moduleType: InjectorType<any>, metadata: NgModule): void {
+  let imports = (metadata && metadata.imports) || [];
+  if (metadata && metadata.exports) {
+    imports = [...imports, metadata.exports];
+  }
+
+  moduleType.ngInjectorDef = defineInjector({
+    factory: convertInjectableProviderToFactory(moduleType, {useClass: moduleType}),
+    providers: metadata && metadata.providers,
+    imports: imports,
+  });
 }
 
 /**
@@ -195,15 +273,4 @@ export interface NgModule {
  */
 export const NgModule: NgModuleDecorator = makeDecorator(
     'NgModule', (ngModule: NgModule) => ngModule, undefined, undefined,
-    (moduleType: InjectorType<any>, metadata: NgModule) => {
-      let imports = (metadata && metadata.imports) || [];
-      if (metadata && metadata.exports) {
-        imports = [...imports, metadata.exports];
-      }
-
-      moduleType.ngInjectorDef = defineInjector({
-        factory: convertInjectableProviderToFactory(moduleType, {useClass: moduleType}),
-        providers: metadata && metadata.providers,
-        imports: imports,
-      });
-    });
+    (type: Type<any>, meta: NgModule) => (R3_COMPILE_NGMODULE || preR3NgModuleCompile)(type, meta));

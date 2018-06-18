@@ -65,6 +65,8 @@ module.exports = function(config) {
       'dist/all/@angular/**/*node_only_spec.js',
       'dist/all/@angular/benchpress/**',
       'dist/all/@angular/compiler-cli/**',
+      'dist/all/@angular/compiler-cli/src/ngtsc/**',
+      'dist/all/@angular/compiler-cli/test/ngtsc/**',
       'dist/all/@angular/compiler/test/aot/**',
       'dist/all/@angular/compiler/test/render3/**',
       'dist/all/@angular/core/test/bundling/**',
@@ -90,6 +92,16 @@ module.exports = function(config) {
 
     preprocessors: {
       '**/*.js': ['sourcemap'],
+    },
+
+    // Bazel inter-op: Allow tests to request resources from either
+    //   /base/node_modules/path/to/thing
+    // or
+    //   /base/angular/node_modules/path/to/thing
+    // This can be removed when all karma tests are run under Bazel, then we
+    // don't need this entire config file.
+    proxies: {
+      '/base/angular/': '/base/',
     },
 
     reporters: ['internal-angular'],
