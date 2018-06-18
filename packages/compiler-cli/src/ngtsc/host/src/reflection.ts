@@ -25,7 +25,8 @@ export enum ClassMemberKind {
 
 export interface ClassMember {
   node: ts.Node;
-  kind: ClassMemberKind, type: ts.TypeNode|null;
+  kind: ClassMemberKind;
+  type: ts.TypeNode|null;
   name: string;
   nameNode: ts.Identifier|null;
   initializer: ts.Expression|null;

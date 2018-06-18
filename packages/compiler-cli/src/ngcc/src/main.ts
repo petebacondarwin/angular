@@ -7,28 +7,24 @@
  */
 
 import { resolve } from 'path';
-import { findMetadataPaths } from './metadata-json-parser';
-import { Fesm2015PackageAdapter, PackageParser } from './ast-parser';
+import * as ts from 'typescript';
+import { PackageParser } from './parser';
+import { Esm2015ReflectionHost } from './host/esm2015_host';
 
-export function mainNgcc(
-  args: string[],
-  consoleError: (s: any) => void = console.error,
-): number {
+export function mainNgcc(args: string[]): number {
   const rootPath = args[0];
+  const packagePath = resolve(rootPath, 'fesm2015');
+  const entryPointPath = resolve(packagePath, 'common.js');
+  const options: ts.CompilerOptions = { allowJs: true, rootDir: packagePath };
+  const host = ts.createCompilerHost(options);
+  const packageProgram = ts.createProgram([entryPointPath], options, host);
+  const entryPointFile = packageProgram.getSourceFile(entryPointPath)!;
+  const typeChecker = packageProgram.getTypeChecker();
 
-  // const metadataPaths = findMetadataPaths(rootPath);
-  // parseMetadataPath(metadataPaths[0]);
-  const packageParser = new PackageParser(new Fesm2015PackageAdapter());
-  const parsedPackage = packageParser.parseEntryPoint(resolve(rootPath, 'fesm2015'), 'common.js');
-  const analysisOutput = packageParser.analyzeDecorators(parsedPackage);
-  packageParser.transformDecorators(analysisOutput);
+  const packageParser = new PackageParser(new Esm2015ReflectionHost(typeChecker));
+  const decoratedClasses = packageParser.getDecoratedClasses(entryPointFile);
 
-  // const decoratedClasses = parsedPackage.decoratedClasses;
-  // console.error('Components', decoratedClasses.components.map(m => m!.classSymbol.escapedName));
-  // console.error('Directives', decoratedClasses.directives.map(m => m!.classSymbol.escapedName));
-  // console.error('Injectables', decoratedClasses.injectables.map(m => m!.classSymbol.escapedName));
-  // console.error('NgModules', decoratedClasses.ngModules.map(m => m!.classSymbol.escapedName));
-  // console.error('Pipes', decoratedClasses.pipes.map(m => m!.classSymbol.escapedName));
+  console.error('Decorated Classes', decoratedClasses.map(m => m.decorators));
 
   return 0;
 }
