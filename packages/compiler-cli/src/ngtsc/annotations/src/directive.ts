@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {ConstantPool, Expression, ParseError, ParsedHostBindings, R3DirectiveMetadata, R3QueryMetadata, Statement, WrappedNodeExpr, compileDirectiveFromMetadata, makeBindingParser, parseHostBindings, verifyHostBindings} from '@angular/compiler';
+import {ConstantPool, Expression, ParseError, ParseSourceSpan, ParsedHostBindings, R3DirectiveMetadata, R3QueryMetadata, Statement, WrappedNodeExpr, compileDirectiveFromMetadata, makeBindingParser, parseHostBindings, verifyHostBindings} from '@angular/compiler';
 import * as ts from 'typescript';
 
 import {ErrorCode, FatalDiagnosticError} from '../../diagnostics';
@@ -226,7 +226,7 @@ export function extractDirectiveMetadata(
     outputs: {...outputsFromMeta, ...outputsFromFields}, queries, viewQueries, selector,
     type: new WrappedNodeExpr(clazz.name),
     typeArgumentCount: reflector.getGenericArityOfClass(clazz) || 0,
-    typeSourceSpan: null !, usesInheritance, exportAs, providers
+    typeSourceSpan: evaluator.evaluate(clazz.name !).span, usesInheritance, exportAs, providers
   };
   return {decoratedElements, decorator: directive, metadata};
 }
@@ -462,9 +462,12 @@ function extractHostBindings(
     metadata: Map<string, ts.Expression>, members: ClassMember[], evaluator: PartialEvaluator,
     coreModule: string | undefined): ParsedHostBindings {
   let hostMetadata: StringMap<string|Expression> = {};
+  let hostMetaSpan: ParseSourceSpan;
   if (metadata.has('host')) {
     const expr = metadata.get('host') !;
-    const hostMetaMap = evaluator.evaluate(expr).unwrap();
+    const resolvedHostMetadata = evaluator.evaluate(expr);
+    const hostMetaMap = resolvedHostMetadata.unwrap();
+    hostMetaSpan = resolvedHostMetadata.span;
     if (!(hostMetaMap instanceof Map)) {
       throw new FatalDiagnosticError(
           ErrorCode.DECORATOR_ARG_NOT_LITERAL, expr, `Decorator host metadata must be an object`);
@@ -494,7 +497,7 @@ function extractHostBindings(
   const bindings = parseHostBindings(hostMetadata);
 
   // TODO: create and provide proper sourceSpan to make error message more descriptive (FW-995)
-  const errors = verifyHostBindings(bindings, /* sourceSpan */ null !);
+  const errors = verifyHostBindings(bindings, hostMetaSpan !);
   if (errors.length > 0) {
     throw new FatalDiagnosticError(
         // TODO: provide more granular diagnostic and output specific host expression that triggered
