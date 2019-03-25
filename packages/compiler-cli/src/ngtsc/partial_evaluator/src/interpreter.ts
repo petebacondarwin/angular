@@ -8,14 +8,14 @@
 
 import * as ts from 'typescript';
 
-import {Reference} from '../../imports';
-import {OwningModule} from '../../imports/src/references';
+import {OwningModule, Reference} from '../../imports';
 import {Declaration, ReflectionHost} from '../../reflection';
 
 import {ArraySliceBuiltinFn} from './builtin';
 import {DynamicValue} from './dynamic';
 import {ForeignFunctionResolver} from './interface';
-import {BuiltinFn, EnumValue, ResolvedValue, ResolvedValueArray, ResolvedValueMap} from './result';
+import {BuiltinFn, EnumValue, ResolvedValue, ResolvedValueArray, ResolvedValueMap, ResolvedValueType} from './result';
+
 
 
 /**
@@ -26,7 +26,7 @@ type Scope = Map<ts.ParameterDeclaration, ResolvedValue>;
 
 interface BinaryOperatorDef {
   literal: boolean;
-  op: (a: any, b: any) => ResolvedValue;
+  op: (a: any, b: any) => ResolvedValueType;
 }
 
 function literalBinaryOp(op: (a: any, b: any) => any): BinaryOperatorDef {
@@ -88,17 +88,17 @@ export class StaticInterpreter {
   private visitExpression(node: ts.Expression, context: Context): ResolvedValue {
     let result: ResolvedValue;
     if (node.kind === ts.SyntaxKind.TrueKeyword) {
-      return true;
+      return new ResolvedValue(true);
     } else if (node.kind === ts.SyntaxKind.FalseKeyword) {
-      return false;
+      return new ResolvedValue(false);
     } else if (ts.isStringLiteral(node)) {
-      return node.text;
+      return new ResolvedValue(node.text);
     } else if (ts.isNoSubstitutionTemplateLiteral(node)) {
-      return node.text;
+      return new ResolvedValue(node.text);
     } else if (ts.isTemplateExpression(node)) {
       result = this.visitTemplateExpression(node, context);
     } else if (ts.isNumericLiteral(node)) {
-      return parseFloat(node.text);
+      return new ResolvedValue(parseFloat(node.text));
     } else if (ts.isObjectLiteralExpression(node)) {
       result = this.visitObjectLiteralExpression(node, context);
     } else if (ts.isIdentifier(node)) {
@@ -126,10 +126,10 @@ export class StaticInterpreter {
     } else if (this.host.isClass(node)) {
       result = this.visitDeclaration(node, context);
     } else {
-      return DynamicValue.fromUnknownExpressionType(node);
+      return new ResolvedValue(DynamicValue.fromUnknownExpressionType(node))
     }
     if (result instanceof DynamicValue && result.node !== node) {
-      return DynamicValue.fromDynamicInput(node, result);
+      return new ResolvedValue(DynamicValue.fromDynamicInput(node, result));
     }
     return result;
   }
@@ -137,12 +137,13 @@ export class StaticInterpreter {
   private visitArrayLiteralExpression(node: ts.ArrayLiteralExpression, context: Context):
       ResolvedValue {
     const array: ResolvedValueArray = [];
+    const resolvedArray = new ResolvedValue(array);
     for (let i = 0; i < node.elements.length; i++) {
       const element = node.elements[i];
       if (ts.isSpreadElement(element)) {
-        const spread = this.visitExpression(element.expression, context);
+        const spread = this.visitExpression(element.expression, context).value;
         if (spread instanceof DynamicValue) {
-          array.push(DynamicValue.fromDynamicInput(element.expression, spread));
+          array.push(new ResolvedValue(DynamicValue.fromDynamicInput(element.expression, spread)));
         } else if (!Array.isArray(spread)) {
           throw new Error(`Unexpected value in spread expression: ${spread}`);
         } else {
@@ -152,48 +153,50 @@ export class StaticInterpreter {
         array.push(this.visitExpression(element, context));
       }
     }
-    return array;
+    return resolvedArray;
   }
 
   private visitObjectLiteralExpression(node: ts.ObjectLiteralExpression, context: Context):
       ResolvedValue {
-    const map: ResolvedValueMap = new Map<string, ResolvedValue>();
+    const map = new ResolvedValueMap();
+    const resolvedMap = new ResolvedValue(map);
     for (let i = 0; i < node.properties.length; i++) {
       const property = node.properties[i];
       if (ts.isPropertyAssignment(property)) {
         const name = this.stringNameFromPropertyName(property.name, context);
         // Check whether the name can be determined statically.
         if (name === undefined) {
-          return DynamicValue.fromDynamicInput(node, DynamicValue.fromDynamicString(property.name));
+          return new ResolvedValue(
+              DynamicValue.fromDynamicInput(node, DynamicValue.fromDynamicString(property.name)));
         }
         map.set(name, this.visitExpression(property.initializer, context));
       } else if (ts.isShorthandPropertyAssignment(property)) {
         const symbol = this.checker.getShorthandAssignmentValueSymbol(property);
         if (symbol === undefined || symbol.valueDeclaration === undefined) {
-          map.set(property.name.text, DynamicValue.fromUnknown(property));
+          map.set(property.name.text, new ResolvedValue(DynamicValue.fromUnknown(property)));
         } else {
           map.set(property.name.text, this.visitDeclaration(symbol.valueDeclaration, context));
         }
       } else if (ts.isSpreadAssignment(property)) {
-        const spread = this.visitExpression(property.expression, context);
-        if (spread instanceof DynamicValue) {
-          return DynamicValue.fromDynamicInput(node, spread);
-        } else if (!(spread instanceof Map)) {
-          throw new Error(`Unexpected value in spread assignment: ${spread}`);
+        const spreadValue = this.visitExpression(property.expression, context).value;
+        if (spreadValue instanceof DynamicValue) {
+          return new ResolvedValue(DynamicValue.fromDynamicInput(node, spreadValue));
+        } else if (!(spreadValue instanceof ResolvedValueMap)) {
+          throw new Error(`Unexpected value in spread assignment: ${spreadValue}`);
         }
-        spread.forEach((value, key) => map.set(key, value));
+        spreadValue.forEach((value, key) => map.set(key, value));
       } else {
-        return DynamicValue.fromUnknown(node);
+        return new ResolvedValue(DynamicValue.fromUnknown(node));
       }
     }
-    return map;
+    return resolvedMap;
   }
 
   private visitTemplateExpression(node: ts.TemplateExpression, context: Context): ResolvedValue {
     const pieces: string[] = [node.head.text];
     for (let i = 0; i < node.templateSpans.length; i++) {
       const span = node.templateSpans[i];
-      let value = this.visit(span.expression, context);
+      let value = this.visit(span.expression, context).value;
       if (value instanceof EnumValue) {
         value = value.resolved;
       }
@@ -201,38 +204,39 @@ export class StaticInterpreter {
           value == null) {
         pieces.push(`${value}`);
       } else if (value instanceof DynamicValue) {
-        return DynamicValue.fromDynamicInput(node, value);
+        return new ResolvedValue(DynamicValue.fromDynamicInput(node, value))
       } else {
-        return DynamicValue.fromDynamicInput(node, DynamicValue.fromDynamicString(span.expression));
+        return new ResolvedValue(
+            DynamicValue.fromDynamicInput(node, DynamicValue.fromDynamicString(span.expression)));
       }
       pieces.push(span.literal.text);
     }
-    return pieces.join('');
+    return new ResolvedValue(pieces.join(''));
   }
 
   private visitIdentifier(node: ts.Identifier, context: Context): ResolvedValue {
     const decl = this.host.getDeclarationOfIdentifier(node);
     if (decl === null) {
-      return DynamicValue.fromUnknownIdentifier(node);
+      return new ResolvedValue(DynamicValue.fromUnknownIdentifier(node));
     }
     const result =
         this.visitDeclaration(decl.node, {...context, ...joinModuleContext(context, node, decl)});
-    if (result instanceof Reference) {
+    if (result.value instanceof Reference) {
       // Only record identifiers to non-synthetic references. Synthetic references may not have the
       // same value at runtime as they do at compile time, so it's not legal to refer to them by the
       // identifier here.
-      if (!result.synthetic) {
-        result.addIdentifier(node);
+      if (!result.value.synthetic) {
+        result.value.addIdentifier(node);
       }
-    } else if (result instanceof DynamicValue) {
-      return DynamicValue.fromDynamicInput(node, result);
+    } else if (result.value instanceof DynamicValue) {
+      return new ResolvedValue(DynamicValue.fromDynamicInput(node, result.value));
     }
     return result;
   }
 
   private visitDeclaration(node: ts.Declaration, context: Context): ResolvedValue {
     if (this.host.isClass(node)) {
-      return this.getReference(node, context);
+      return new ResolvedValue(this.getReference(node, context));
     } else if (ts.isVariableDeclaration(node)) {
       return this.visitVariableDeclaration(node, context);
     } else if (ts.isParameter(node) && context.scope.has(node)) {
@@ -244,7 +248,7 @@ export class StaticInterpreter {
     } else if (ts.isSourceFile(node)) {
       return this.visitSourceFile(node, context);
     } else {
-      return this.getReference(node, context);
+      return new ResolvedValue(this.getReference(node, context));
     }
   }
 
@@ -253,23 +257,23 @@ export class StaticInterpreter {
     if (value !== null) {
       return this.visitExpression(value, context);
     } else if (isVariableDeclarationDeclared(node)) {
-      return this.getReference(node, context);
+      return new ResolvedValue(this.getReference(node, context));
     } else {
-      return undefined;
+      return new ResolvedValue(undefined);
     }
   }
 
   private visitEnumDeclaration(node: ts.EnumDeclaration, context: Context): ResolvedValue {
     const enumRef = this.getReference(node, context) as Reference<ts.EnumDeclaration>;
-    const map = new Map<string, EnumValue>();
+    const map = new Map<string, ResolvedValue>();
     node.members.forEach(member => {
       const name = this.stringNameFromPropertyName(member.name, context);
       if (name !== undefined) {
         const resolved = member.initializer && this.visit(member.initializer, context);
-        map.set(name, new EnumValue(enumRef, name, resolved));
+        map.set(name, new ResolvedValue(new EnumValue(enumRef, name, resolved && resolved.value)));
       }
     });
-    return map;
+    return new ResolvedValue(map as ResolvedValueMap);
   }
 
   private visitElementAccessExpression(node: ts.ElementAccessExpression, context: Context):
@@ -278,19 +282,19 @@ export class StaticInterpreter {
     if (node.argumentExpression === undefined) {
       throw new Error(`Expected argument in ElementAccessExpression`);
     }
-    if (lhs instanceof DynamicValue) {
-      return DynamicValue.fromDynamicInput(node, lhs);
+    if (lhs.value instanceof DynamicValue) {
+      return new ResolvedValue(DynamicValue.fromDynamicInput(node, lhs.value));
     }
-    const rhs = this.visitExpression(node.argumentExpression, context);
-    if (rhs instanceof DynamicValue) {
-      return DynamicValue.fromDynamicInput(node, rhs);
+    const rhsValue = this.visitExpression(node.argumentExpression, context).value;
+    if (rhsValue instanceof DynamicValue) {
+      return new ResolvedValue(DynamicValue.fromDynamicInput(node, rhsValue));
     }
-    if (typeof rhs !== 'string' && typeof rhs !== 'number') {
+    if (typeof rhsValue !== 'string' && typeof rhsValue !== 'number') {
       throw new Error(
-          `ElementAccessExpression index should be string or number, got ${typeof rhs}: ${rhs}`);
+          `ElementAccessExpression index should be string or number, got ${typeof rhsValue}: ${rhsValue}`);
     }
 
-    return this.accessHelper(node, lhs, rhs, context);
+    return this.accessHelper(node, lhs, rhsValue, context);
   }
 
   private visitPropertyAccessExpression(node: ts.PropertyAccessExpression, context: Context):
@@ -298,8 +302,8 @@ export class StaticInterpreter {
     const lhs = this.visitExpression(node.expression, context);
     const rhs = node.name.text;
     // TODO: handle reference to class declaration.
-    if (lhs instanceof DynamicValue) {
-      return DynamicValue.fromDynamicInput(node, lhs);
+    if (lhs.value instanceof DynamicValue) {
+      return new ResolvedValue(DynamicValue.fromDynamicInput(node, lhs.value));
     }
     return this.accessHelper(node, lhs, rhs, context);
   }
@@ -307,7 +311,7 @@ export class StaticInterpreter {
   private visitSourceFile(node: ts.SourceFile, context: Context): ResolvedValue {
     const declarations = this.host.getExportsOfModule(node);
     if (declarations === null) {
-      return DynamicValue.fromUnknown(node);
+      return new ResolvedValue(DynamicValue.fromUnknown(node));
     }
     const map = new Map<string, ResolvedValue>();
     declarations.forEach((decl, name) => {
@@ -317,94 +321,97 @@ export class StaticInterpreter {
                      });
       map.set(name, value);
     });
-    return map;
+    return new ResolvedValue(map);
   }
 
   private accessHelper(
-      node: ts.Expression, lhs: ResolvedValue, rhs: string|number,
+      lhsNode: ts.Expression, lhs: ResolvedValue, rhs: string|number,
       context: Context): ResolvedValue {
     const strIndex = `${rhs}`;
-    if (lhs instanceof Map) {
-      if (lhs.has(strIndex)) {
-        return lhs.get(strIndex) !;
+    const lhsValue = lhs.value;
+    if (lhsValue instanceof Map) {
+      if (lhsValue.has(strIndex)) {
+        return lhsValue.get(strIndex) !;
       } else {
-        throw new Error(`Invalid map access: [${Array.from(lhs.keys())}] dot ${rhs}`);
+        throw new Error(`Invalid map access: [${Array.from(lhsValue.keys())}] dot ${rhs}`);
       }
-    } else if (Array.isArray(lhs)) {
+    } else if (Array.isArray(lhsValue)) {
       if (rhs === 'length') {
-        return lhs.length;
+        return new ResolvedValue(lhsValue.length);
       } else if (rhs === 'slice') {
-        return new ArraySliceBuiltinFn(node, lhs);
+        return new ResolvedValue(new ArraySliceBuiltinFn(lhsNode, lhs));
       }
       if (typeof rhs !== 'number' || !Number.isInteger(rhs)) {
-        return DynamicValue.fromUnknown(node);
+        return new ResolvedValue(DynamicValue.fromUnknown(lhsNode));
       }
-      if (rhs < 0 || rhs >= lhs.length) {
-        throw new Error(`Index out of bounds: ${rhs} vs ${lhs.length}`);
+      if (rhs < 0 || rhs >= lhsValue.length) {
+        throw new Error(`Index out of bounds: ${rhs} vs ${lhsValue.length}`);
       }
-      return lhs[rhs];
-    } else if (lhs instanceof Reference) {
-      const ref = lhs.node;
+      return lhsValue[rhs];
+    } else if (lhsValue instanceof Reference) {
+      const ref = lhsValue.node;
       if (this.host.isClass(ref)) {
-        const module = owningModule(context, lhs.bestGuessOwningModule);
-        let value: ResolvedValue = undefined;
+        const module = owningModule(context, lhsValue.bestGuessOwningModule);
+        let resolved: ResolvedValue = new ResolvedValue(undefined);
         const member = this.host.getMembersOfClass(ref).find(
             member => member.isStatic && member.name === strIndex);
         if (member !== undefined) {
           if (member.value !== null) {
-            value = this.visitExpression(member.value, context);
+            resolved = this.visitExpression(member.value, context);
           } else if (member.implementation !== null) {
-            value = new Reference(member.implementation, module);
+            resolved.value = new Reference(member.implementation, module);
           } else if (member.node) {
-            value = new Reference(member.node, module);
+            resolved.value = new Reference(member.node, module);
           }
         }
-        return value;
+        return resolved;
       }
-    } else if (lhs instanceof DynamicValue) {
-      return DynamicValue.fromDynamicInput(node, lhs);
+    } else if (lhsValue instanceof DynamicValue) {
+      return new ResolvedValue(DynamicValue.fromDynamicInput(lhsNode, lhsValue));
     } else {
-      throw new Error(`Invalid dot property access: ${lhs} dot ${rhs}`);
+      throw new Error(`Invalid dot property access: ${lhsValue} dot ${rhs}`);
     }
+    return new ResolvedValue(undefined);
   }
 
   private visitCallExpression(node: ts.CallExpression, context: Context): ResolvedValue {
     const lhs = this.visitExpression(node.expression, context);
-    if (lhs instanceof DynamicValue) {
-      return DynamicValue.fromDynamicInput(node, lhs);
+    const lhsValue = lhs.value;
+    if (lhsValue instanceof DynamicValue) {
+      return new ResolvedValue(DynamicValue.fromDynamicInput(node, lhsValue));
     }
 
     // If the call refers to a builtin function, attempt to evaluate the function.
-    if (lhs instanceof BuiltinFn) {
-      return lhs.evaluate(node.arguments.map(arg => this.visitExpression(arg, context)));
+    if (lhsValue instanceof BuiltinFn) {
+      return lhsValue.evaluate(node.arguments.map(arg => this.visitExpression(arg, context)));
     }
 
-    if (!(lhs instanceof Reference)) {
-      return DynamicValue.fromInvalidExpressionType(node.expression, lhs);
-    } else if (!isFunctionOrMethodReference(lhs)) {
-      return DynamicValue.fromInvalidExpressionType(node.expression, lhs);
+    if (!(lhsValue instanceof Reference)) {
+      return new ResolvedValue(DynamicValue.fromInvalidExpressionType(node.expression, lhsValue));
+    } else if (!isFunctionOrMethodReference(lhsValue)) {
+      return new ResolvedValue(DynamicValue.fromInvalidExpressionType(node.expression, lhsValue));
     }
 
-    const fn = this.host.getDefinitionOfFunction(lhs.node);
+    const fn = this.host.getDefinitionOfFunction(lhsValue.node);
 
     // If the function is foreign (declared through a d.ts file), attempt to resolve it with the
     // foreignFunctionResolver, if one is specified.
     if (fn.body === null) {
       let expr: ts.Expression|null = null;
       if (context.foreignFunctionResolver) {
-        expr = context.foreignFunctionResolver(lhs, node.arguments);
+        expr = context.foreignFunctionResolver(lhsValue, node.arguments);
       }
       if (expr === null) {
-        return DynamicValue.fromDynamicInput(
-            node, DynamicValue.fromExternalReference(node.expression, lhs));
+        return new ResolvedValue(DynamicValue.fromDynamicInput(
+            node, DynamicValue.fromExternalReference(node.expression, lhsValue)));
       }
 
       // If the function is declared in a different file, resolve the foreign function expression
       // using the absolute module name of that file (if any).
-      if (lhs.bestGuessOwningModule !== null) {
+      if (lhsValue.bestGuessOwningModule !== null) {
         context = {
           ...context,
-          absoluteModuleName: lhs.bestGuessOwningModule.specifier,
+          absoluteModuleName: lhsValue.bestGuessOwningModule.specifier,
           resolutionContext: node.getSourceFile().fileName,
         };
       }
@@ -427,7 +434,7 @@ export class StaticInterpreter {
 
     const newScope: Scope = new Map<ts.ParameterDeclaration, ResolvedValue>();
     fn.parameters.forEach((param, index) => {
-      let value: ResolvedValue = undefined;
+      let value = new ResolvedValue(undefined);
       if (index < node.arguments.length) {
         const arg = node.arguments[index];
         value = this.visitExpression(arg, context);
@@ -440,17 +447,17 @@ export class StaticInterpreter {
 
     return ret.expression !== undefined ?
         this.visitExpression(ret.expression, {...context, scope: newScope}) :
-        undefined;
+        new ResolvedValue(undefined);
   }
 
   private visitConditionalExpression(node: ts.ConditionalExpression, context: Context):
       ResolvedValue {
     const condition = this.visitExpression(node.condition, context);
-    if (condition instanceof DynamicValue) {
-      return DynamicValue.fromDynamicInput(node, condition);
+    if (condition.value instanceof DynamicValue) {
+      return new ResolvedValue(DynamicValue.fromDynamicInput(node, condition.value));
     }
 
-    if (condition) {
+    if (condition.value) {
       return this.visitExpression(node.whenTrue, context);
     } else {
       return this.visitExpression(node.whenFalse, context);
@@ -465,11 +472,11 @@ export class StaticInterpreter {
     }
 
     const op = UNARY_OPERATORS.get(operatorKind) !;
-    const value = this.visitExpression(node.operand, context);
+    const value = this.visitExpression(node.operand, context).value;
     if (value instanceof DynamicValue) {
-      return DynamicValue.fromDynamicInput(node, value);
+      return new ResolvedValue(DynamicValue.fromDynamicInput(node, value));
     } else {
-      return op(value);
+      return new ResolvedValue(op(value));
     }
   }
 
@@ -488,12 +495,12 @@ export class StaticInterpreter {
       lhs = this.visitExpression(node.left, context);
       rhs = this.visitExpression(node.right, context);
     }
-    if (lhs instanceof DynamicValue) {
-      return DynamicValue.fromDynamicInput(node, lhs);
-    } else if (rhs instanceof DynamicValue) {
-      return DynamicValue.fromDynamicInput(node, rhs);
+    if (lhs.value instanceof DynamicValue) {
+      return new ResolvedValue(DynamicValue.fromDynamicInput(node, lhs.value));
+    } else if (rhs.value instanceof DynamicValue) {
+      return new ResolvedValue(DynamicValue.fromDynamicInput(node, rhs.value));
     } else {
-      return opRecord.op(lhs, rhs);
+      return new ResolvedValue(opRecord.op(lhs.value, rhs.value));
     }
   }
 
@@ -522,10 +529,11 @@ function isFunctionOrMethodReference(ref: Reference<ts.Node>):
       ts.isFunctionExpression(ref.node);
 }
 
-function literal(value: ResolvedValue): any {
+function literal(resolved: ResolvedValue): ResolvedValue {
+  const value = resolved.value;
   if (value instanceof DynamicValue || value === null || value === undefined ||
       typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-    return value;
+    return resolved;
   }
   throw new Error(`Value ${value} is not literal and cannot be used in this context.`);
 }

@@ -70,7 +70,7 @@ export class PipeDecoratorHandler implements DecoratorHandler<PipeHandlerData, D
           ErrorCode.PIPE_MISSING_NAME, meta, `@Pipe decorator is missing name field`);
     }
     const pipeNameExpr = pipe.get('name') !;
-    const pipeName = this.evaluator.evaluate(pipeNameExpr);
+    const pipeName = this.evaluator.evaluate(pipeNameExpr).unwrap();
     if (typeof pipeName !== 'string') {
       throw new FatalDiagnosticError(
           ErrorCode.VALUE_HAS_WRONG_TYPE, pipeNameExpr, `@Pipe.name must be a string`);
@@ -81,7 +81,7 @@ export class PipeDecoratorHandler implements DecoratorHandler<PipeHandlerData, D
     let pure = true;
     if (pipe.has('pure')) {
       const expr = pipe.get('pure') !;
-      const pureValue = this.evaluator.evaluate(expr);
+      const pureValue = this.evaluator.evaluate(expr).unwrap();
       if (typeof pureValue !== 'boolean') {
         throw new FatalDiagnosticError(
             ErrorCode.VALUE_HAS_WRONG_TYPE, expr, `@Pipe.pure must be a boolean`);

@@ -51,7 +51,7 @@ function evaluate<T extends ResolvedValue>(
 
 describe('ngtsc metadata', () => {
   it('reads a file correctly', () => {
-    const value = evaluate(
+    const resolved = evaluate(
         `
         import {Y} from './other';
         const A = Y;
@@ -65,74 +65,78 @@ describe('ngtsc metadata', () => {
           },
         ]);
 
-    expect(value).toEqual('test');
+    expect(resolved.value).toEqual('test');
   });
 
   it('map access works',
-     () => { expect(evaluate('const obj = {a: "test"};', 'obj.a')).toEqual('test'); });
+     () => { expect(evaluate('const obj = {a: "test"};', 'obj.a').value).toEqual('test'); });
 
   it('function calls work', () => {
-    expect(evaluate(`function foo(bar) { return bar; }`, 'foo("test")')).toEqual('test');
+    expect(evaluate(`function foo(bar) { return bar; }`, 'foo("test")').value).toEqual('test');
   });
 
   it('conditionals work', () => {
-    expect(evaluate(`const x = false; const y = x ? 'true' : 'false';`, 'y')).toEqual('false');
+    expect(evaluate(`const x = false; const y = x ? 'true' : 'false';`, 'y').value)
+        .toEqual('false');
   });
 
-  it('addition works', () => { expect(evaluate(`const x = 1 + 2;`, 'x')).toEqual(3); });
+  it('addition works', () => { expect(evaluate(`const x = 1 + 2;`, 'x').value).toEqual(3); });
 
-  it('static property on class works',
-     () => { expect(evaluate(`class Foo { static bar = 'test'; }`, 'Foo.bar')).toEqual('test'); });
+  it('static property on class works', () => {
+    expect(evaluate(`class Foo { static bar = 'test'; }`, 'Foo.bar').value).toEqual('test');
+  });
 
   it('static property call works', () => {
-    expect(evaluate(`class Foo { static bar(test) { return test; } }`, 'Foo.bar("test")'))
+    expect(evaluate(`class Foo { static bar(test) { return test; } }`, 'Foo.bar("test")').value)
         .toEqual('test');
   });
 
   it('indirected static property call works', () => {
-    expect(
-        evaluate(
-            `class Foo { static bar(test) { return test; } }; const fn = Foo.bar;`, 'fn("test")'))
+    expect(evaluate(
+               `class Foo { static bar(test) { return test; } }; const fn = Foo.bar;`, 'fn("test")')
+               .value)
         .toEqual('test');
   });
 
   it('array works', () => {
-    expect(evaluate(`const x = 'test'; const y = [1, x, 2];`, 'y')).toEqual([1, 'test', 2]);
+    expect(evaluate(`const x = 'test'; const y = [1, x, 2];`, 'y').unwrap() as any).toEqual([
+      1, 'test', 2
+    ]);
   });
 
   it('array spread works', () => {
-    expect(evaluate(`const a = [1, 2]; const b = [4, 5]; const c = [...a, 3, ...b];`, 'c'))
+    expect(evaluate(`const a = [1, 2]; const b = [4, 5]; const c = [...a, 3, ...b];`, 'c').unwrap())
         .toEqual([1, 2, 3, 4, 5]);
   });
 
   it('&& operations work', () => {
-    expect(evaluate(`const a = 'hello', b = 'world';`, 'a && b')).toEqual('world');
-    expect(evaluate(`const a = false, b = 'world';`, 'a && b')).toEqual(false);
-    expect(evaluate(`const a = 'hello', b = 0;`, 'a && b')).toEqual(0);
+    expect(evaluate(`const a = 'hello', b = 'world';`, 'a && b').value).toEqual('world');
+    expect(evaluate(`const a = false, b = 'world';`, 'a && b').value).toEqual(false);
+    expect(evaluate(`const a = 'hello', b = 0;`, 'a && b').value).toEqual(0);
   });
 
   it('|| operations work', () => {
-    expect(evaluate(`const a = 'hello', b = 'world';`, 'a || b')).toEqual('hello');
-    expect(evaluate(`const a = false, b = 'world';`, 'a || b')).toEqual('world');
-    expect(evaluate(`const a = 'hello', b = 0;`, 'a || b')).toEqual('hello');
+    expect(evaluate(`const a = 'hello', b = 'world';`, 'a || b').value).toEqual('hello');
+    expect(evaluate(`const a = false, b = 'world';`, 'a || b').value).toEqual('world');
+    expect(evaluate(`const a = 'hello', b = 0;`, 'a || b').value).toEqual('hello');
   });
 
   it('parentheticals work',
-     () => { expect(evaluate(`const a = 3, b = 4;`, 'a * (a + b)')).toEqual(21); });
+     () => { expect(evaluate(`const a = 3, b = 4;`, 'a * (a + b)').value).toEqual(21); });
 
   it('array access works',
-     () => { expect(evaluate(`const a = [1, 2, 3];`, 'a[1] + a[0]')).toEqual(3); });
+     () => { expect(evaluate(`const a = [1, 2, 3];`, 'a[1] + a[0]').value).toEqual(3); });
 
   it('array `length` property access works',
-     () => { expect(evaluate(`const a = [1, 2, 3];`, 'a[\'length\'] + 1')).toEqual(4); });
+     () => { expect(evaluate(`const a = [1, 2, 3];`, 'a[\'length\'] + 1').value).toEqual(4); });
 
   it('array `slice` function works', () => {
-    expect(evaluate(`const a = [1, 2, 3];`, 'a[\'slice\']()')).toEqual([1, 2, 3]);
+    expect(evaluate(`const a = [1, 2, 3];`, 'a[\'slice\']()').unwrap()).toEqual([1, 2, 3]);
   });
 
   it('negation works', () => {
-    expect(evaluate(`const x = 3;`, '!x')).toEqual(false);
-    expect(evaluate(`const x = 3;`, '!!x')).toEqual(true);
+    expect(evaluate(`const x = 3;`, '!x').value).toBe(false);
+    expect(evaluate(`const x = 3;`, '!!x').value).toBe(true);
   });
 
   it('imports work', () => {
@@ -151,7 +155,7 @@ describe('ngtsc metadata', () => {
     const result = getDeclaration(program, 'entry.ts', 'target$', ts.isVariableDeclaration);
     const expr = result.initializer !;
     const evaluator = new PartialEvaluator(reflectionHost, checker);
-    const resolved = evaluator.evaluate(expr);
+    const resolved = evaluator.evaluate(expr).value;
     if (!(resolved instanceof Reference)) {
       return fail('Expected expression to resolve to a reference');
     }
@@ -179,7 +183,7 @@ describe('ngtsc metadata', () => {
     const result = getDeclaration(program, 'entry.ts', 'target$', ts.isVariableDeclaration);
     const expr = result.initializer !;
     const evaluator = new PartialEvaluator(reflectionHost, checker);
-    const resolved = evaluator.evaluate(expr);
+    const resolved = evaluator.evaluate(expr).value;
     if (!(resolved instanceof Reference)) {
       return fail('Expected expression to resolve to an absolute reference');
     }
@@ -191,36 +195,37 @@ describe('ngtsc metadata', () => {
   });
 
   it('reads values from default exports', () => {
-    const value = evaluate(
+    const resolved = evaluate(
         `
       import mod from './second';
       `,
         'mod.property', [
           {name: 'second.ts', contents: 'export default {property: "test"}'},
         ]);
-    expect(value).toEqual('test');
+    expect(resolved.value).toEqual('test');
   });
 
   it('reads values from named exports', () => {
-    const value = evaluate(`import * as mod from './second';`, 'mod.a.property', [
+    const resolved = evaluate(`import * as mod from './second';`, 'mod.a.property', [
       {name: 'second.ts', contents: 'export const a = {property: "test"};'},
     ]);
-    expect(value).toEqual('test');
+    expect(resolved.value).toEqual('test');
   });
 
   it('chain of re-exports works', () => {
-    const value = evaluate(`import * as mod from './direct-reexport';`, 'mod.value.property', [
+    const resolved = evaluate(`import * as mod from './direct-reexport';`, 'mod.value.property', [
       {name: 'const.ts', contents: 'export const value = {property: "test"};'},
       {name: 'def.ts', contents: `import {value} from './const'; export default value;`},
       {name: 'indirect-reexport.ts', contents: `import value from './def'; export {value};`},
       {name: 'direct-reexport.ts', contents: `export {value} from './indirect-reexport';`},
     ]);
-    expect(value).toEqual('test');
+    expect(resolved.value).toEqual('test');
   });
 
   it('map spread works', () => {
-    const map: Map<string, number> = evaluate<Map<string, number>>(
-        `const a = {a: 1}; const b = {b: 2, c: 1}; const c = {...a, ...b, c: 3};`, 'c');
+    const map: Map<string, number> =
+        evaluate(`const a = {a: 1}; const b = {b: 2, c: 1}; const c = {...a, ...b, c: 3};`, 'c')
+            .unwrap();
 
     const obj: {[key: string]: number} = {};
     map.forEach((value, key) => obj[key] = value);
@@ -237,25 +242,26 @@ describe('ngtsc metadata', () => {
       function fn(res) { return res; }
       const obj = {fn};
     `,
-               'obj.fn("test")'))
+               'obj.fn("test")')
+               .value)
         .toEqual('test');
   });
 
   it('template expressions work',
-     () => { expect(evaluate('const a = 2, b = 4;', '`1${a}3${b}5`')).toEqual('12345'); });
+     () => { expect(evaluate('const a = 2, b = 4;', '`1${a}3${b}5`').value).toEqual('12345'); });
 
   it('enum resolution works', () => {
     const result = evaluate(
-        `
+                       `
       enum Foo {
         A,
         B,
         C,
       }
 
-      const r = Foo.B;
-    `,
-        'r');
+      const r = Foo.B;`,
+                       'r')
+                       .value;
     if (!(result instanceof EnumValue)) {
       return fail(`result is not an EnumValue`);
     }
@@ -265,8 +271,8 @@ describe('ngtsc metadata', () => {
 
   it('variable declaration resolution works', () => {
     const value = evaluate(`import {value} from './decl';`, 'value', [
-      {name: 'decl.d.ts', contents: 'export declare let value: number;'},
-    ]);
+                    {name: 'decl.d.ts', contents: 'export declare let value: number;'},
+                  ]).value;
     expect(value instanceof Reference).toBe(true);
   });
 
@@ -281,7 +287,7 @@ describe('ngtsc metadata', () => {
     const prop = expr.properties[0] as ts.ShorthandPropertyAssignment;
     const evaluator = new PartialEvaluator(reflectionHost, checker);
     const resolved = evaluator.evaluate(prop.name);
-    expect(resolved).toBe(42);
+    expect(resolved.value).toBe(42);
   });
 
   it('should resolve dynamic values in object literals', () => {
@@ -297,7 +303,7 @@ describe('ngtsc metadata', () => {
     const result = getDeclaration(program, 'entry.ts', 'target$', ts.isVariableDeclaration);
     const expr = result.initializer !as ts.ObjectLiteralExpression;
     const evaluator = new PartialEvaluator(reflectionHost, checker);
-    const resolved = evaluator.evaluate(expr);
+    const resolved = evaluator.evaluate(expr).unwrap();
     if (!(resolved instanceof Map)) {
       return fail('Should have resolved to a Map');
     }
@@ -310,21 +316,22 @@ describe('ngtsc metadata', () => {
   });
 
   it('should resolve enums in template expressions', () => {
-    const value =
+    const resolved =
         evaluate(`enum Test { VALUE = 'test', } const value = \`a.\${Test.VALUE}.b\`;`, 'value');
-    expect(value).toBe('a.test.b');
+    expect(resolved.value).toBe('a.test.b');
   });
 
   it('should not attach identifiers to FFR-resolved values', () => {
     const value = evaluate(
-        `
+                      `
     declare function foo(arg: any): any;
     class Target {}
 
     const indir = foo(Target);
     const value = indir;
   `,
-        'value', [], firstArgFfr);
+                      'value', [], firstArgFfr)
+                      .value;
     if (!(value instanceof Reference)) {
       return fail('Expected value to be a Reference');
     }

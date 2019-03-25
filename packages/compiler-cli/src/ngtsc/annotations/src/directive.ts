@@ -180,7 +180,7 @@ export function extractDirectiveMetadata(
   let selector = defaultSelector;
   if (directive.has('selector')) {
     const expr = directive.get('selector') !;
-    const resolved = evaluator.evaluate(expr);
+    const resolved = evaluator.evaluate(expr).unwrap();
     if (typeof resolved !== 'string') {
       throw new FatalDiagnosticError(
           ErrorCode.VALUE_HAS_WRONG_TYPE, expr, `selector must be a string`);
@@ -206,7 +206,7 @@ export function extractDirectiveMetadata(
   let exportAs: string[]|null = null;
   if (directive.has('exportAs')) {
     const expr = directive.get('exportAs') !;
-    const resolved = evaluator.evaluate(expr);
+    const resolved = evaluator.evaluate(expr).unwrap();
     if (typeof resolved !== 'string') {
       throw new FatalDiagnosticError(
           ErrorCode.VALUE_HAS_WRONG_TYPE, expr, `exportAs must be a string`);
@@ -240,7 +240,7 @@ export function extractQueryMetadata(
   }
   const first = name === 'ViewChild' || name === 'ContentChild';
   const node = unwrapForwardRef(args[0], reflector);
-  const arg = evaluator.evaluate(node);
+  const arg = evaluator.evaluate(node).unwrap();
 
   /** Whether or not this query should collect only static results (see view/api.ts)  */
   let isStatic: boolean = false;
@@ -273,7 +273,7 @@ export function extractQueryMetadata(
     }
 
     if (options.has('descendants')) {
-      const descendantsValue = evaluator.evaluate(options.get('descendants') !);
+      const descendantsValue = evaluator.evaluate(options.get('descendants') !).unwrap();
       if (typeof descendantsValue !== 'boolean') {
         throw new Error(`@${name} options.descendants must be a boolean`);
       }
@@ -358,7 +358,7 @@ export function parseFieldArrayValue(
   }
 
   // Resolve the field of interest from the directive metadata to a string[].
-  const value = evaluator.evaluate(directive.get(field) !);
+  const value = evaluator.evaluate(directive.get(field) !).unwrap();
   if (!isStringArrayOrDie(value, field)) {
     throw new Error(`Failed to resolve @Directive.${field}`);
   }
@@ -406,7 +406,7 @@ function parseDecoratedFields(
           if (decorator.args == null || decorator.args.length === 0) {
             results[fieldName] = fieldName;
           } else if (decorator.args.length === 1) {
-            const property = evaluator.evaluate(decorator.args[0]);
+            const property = evaluator.evaluate(decorator.args[0]).unwrap();
             if (typeof property !== 'string') {
               throw new Error(`Decorator argument must resolve to a string`);
             }
@@ -464,7 +464,7 @@ function extractHostBindings(
   let hostMetadata: StringMap<string|Expression> = {};
   if (metadata.has('host')) {
     const expr = metadata.get('host') !;
-    const hostMetaMap = evaluator.evaluate(expr);
+    const hostMetaMap = evaluator.evaluate(expr).unwrap();
     if (!(hostMetaMap instanceof Map)) {
       throw new FatalDiagnosticError(
           ErrorCode.DECORATOR_ARG_NOT_LITERAL, expr, `Decorator host metadata must be an object`);
@@ -512,7 +512,7 @@ function extractHostBindings(
               throw new Error(`@HostBinding() can have at most one argument`);
             }
 
-            const resolved = evaluator.evaluate(decorator.args[0]);
+            const resolved = evaluator.evaluate(decorator.args[0]).unwrap();
             if (typeof resolved !== 'string') {
               throw new Error(`@HostBinding()'s argument must be a string`);
             }
@@ -536,7 +536,7 @@ function extractHostBindings(
                   `@HostListener() can have at most two arguments`);
             }
 
-            const resolved = evaluator.evaluate(decorator.args[0]);
+            const resolved = evaluator.evaluate(decorator.args[0]).unwrap();
             if (typeof resolved !== 'string') {
               throw new FatalDiagnosticError(
                   ErrorCode.VALUE_HAS_WRONG_TYPE, decorator.args[0],
@@ -546,7 +546,7 @@ function extractHostBindings(
             eventName = resolved;
 
             if (decorator.args.length === 2) {
-              const resolvedArgs = evaluator.evaluate(decorator.args[1]);
+              const resolvedArgs = evaluator.evaluate(decorator.args[1]).unwrap();
               if (!isStringArrayOrDie(resolvedArgs, '@HostListener.args')) {
                 throw new FatalDiagnosticError(
                     ErrorCode.VALUE_HAS_WRONG_TYPE, decorator.args[1],

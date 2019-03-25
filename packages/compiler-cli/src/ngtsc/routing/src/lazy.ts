@@ -82,14 +82,15 @@ function scanForProviders(expr: ts.Expression, evaluator: PartialEvaluator): str
   const providers = evaluator.evaluate(expr);
 
   function recursivelyAddProviders(provider: ResolvedValue): void {
-    if (Array.isArray(provider)) {
-      for (const entry of provider) {
+    const providerValue = provider.value;
+    if (Array.isArray(providerValue)) {
+      for (const entry of providerValue) {
         recursivelyAddProviders(entry);
       }
-    } else if (provider instanceof Map) {
-      if (provider.has('provide') && provider.has('useValue')) {
-        const provide = provider.get('provide');
-        const useValue = provider.get('useValue');
+    } else if (providerValue instanceof Map) {
+      if (providerValue.has('provide') && providerValue.has('useValue')) {
+        const provide = providerValue.get('provide') !.unwrap();
+        const useValue = providerValue.get('useValue') !.unwrap();
         if (isRouteToken(provide) && Array.isArray(useValue)) {
           loadChildrenIdentifiers.push(...scanForLazyRoutes(useValue));
         }
@@ -105,16 +106,17 @@ function scanForRouterModuleUsage(expr: ts.Expression, evaluator: PartialEvaluat
   const loadChildrenIdentifiers: string[] = [];
   const imports = evaluator.evaluate(expr, routerModuleFFR);
 
-  function recursivelyAddRoutes(imp: ResolvedValue) {
-    if (Array.isArray(imp)) {
-      for (const entry of imp) {
+  function recursivelyAddRoutes(imp: ResolvedValue): void {
+    const importValue = imp.value;
+    if (Array.isArray(importValue)) {
+      for (const entry of importValue) {
         recursivelyAddRoutes(entry);
       }
-    } else if (imp instanceof Map) {
-      if (imp.has(ROUTES_MARKER) && imp.has('routes')) {
-        const routes = imp.get('routes');
-        if (Array.isArray(routes)) {
-          loadChildrenIdentifiers.push(...scanForLazyRoutes(routes));
+    } else if (importValue instanceof Map) {
+      if (importValue.has(ROUTES_MARKER) && importValue.has('routes')) {
+        const routes = importValue.get('routes') !;
+        if (Array.isArray(routes.value)) {
+          loadChildrenIdentifiers.push(...scanForLazyRoutes(routes.value));
         }
       }
     }
@@ -129,16 +131,17 @@ function scanForLazyRoutes(routes: ResolvedValue[]): string[] {
 
   function recursivelyScanRoutes(routes: ResolvedValue[]): void {
     for (let route of routes) {
-      if (!(route instanceof Map)) {
+      const routeValue = route.value;
+      if (!(routeValue instanceof Map)) {
         continue;
       }
-      if (route.has('loadChildren')) {
-        const loadChildren = route.get('loadChildren');
+      if (routeValue.has('loadChildren')) {
+        const loadChildren = routeValue.get('loadChildren') !.value;
         if (typeof loadChildren === 'string') {
           loadChildrenIdentifiers.push(loadChildren);
         }
-      } else if (route.has('children')) {
-        const children = route.get('children');
+      } else if (routeValue.has('children')) {
+        const children = routeValue.get('children') !.value;
         if (Array.isArray(children)) {
           recursivelyScanRoutes(children);
         }

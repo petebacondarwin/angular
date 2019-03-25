@@ -352,34 +352,35 @@ export class NgModuleDecoratorHandler implements DecoratorHandler<NgModuleAnalys
       expr: ts.Node, resolvedList: ResolvedValue, className: string,
       arrayName: string): Reference<ClassDeclaration>[] {
     const refList: Reference<ClassDeclaration>[] = [];
-    if (!Array.isArray(resolvedList)) {
+    if (!Array.isArray(resolvedList.value)) {
       throw new FatalDiagnosticError(
           ErrorCode.VALUE_HAS_WRONG_TYPE, expr,
           `Expected array when reading property ${arrayName}`);
     }
 
-    resolvedList.forEach((entry, idx) => {
+    resolvedList.value.forEach((entry, idx) => {
+      const entryValue = entry.unwrap();
       // Unwrap ModuleWithProviders for modules that are locally declared (and thus static
       // resolution was able to descend into the function and return an object literal, a Map).
-      if (entry instanceof Map && entry.has('ngModule')) {
-        entry = entry.get('ngModule') !;
+      if (entryValue instanceof Map && entryValue.has('ngModule')) {
+        entry = entryValue.get('ngModule') !;
       }
 
-      if (Array.isArray(entry)) {
+      if (Array.isArray(entryValue)) {
         // Recurse into nested arrays.
         refList.push(...this.resolveTypeList(expr, entry, className, arrayName));
-      } else if (isDeclarationReference(entry)) {
-        if (!this.isClassDeclarationReference(entry)) {
+      } else if (isDeclarationReference(entryValue)) {
+        if (!this.isClassDeclarationReference(entryValue)) {
           throw new FatalDiagnosticError(
-              ErrorCode.VALUE_HAS_WRONG_TYPE, entry.node,
+              ErrorCode.VALUE_HAS_WRONG_TYPE, entryValue.node,
               `Value at position ${idx} in the NgModule.${arrayName}s of ${className} is not a class`);
         }
-        refList.push(entry);
+        refList.push(entryValue);
       } else {
         // TODO(alxhub): Produce a better diagnostic here - the array index may be an inner array.
         throw new FatalDiagnosticError(
             ErrorCode.VALUE_HAS_WRONG_TYPE, expr,
-            `Value at position ${idx} in the NgModule.${arrayName}s of ${className} is not a reference: ${entry}`);
+            `Value at position ${idx} in the NgModule.${arrayName}s of ${className} is not a reference: ${entryValue}`);
       }
     });
 

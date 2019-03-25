@@ -20,24 +20,43 @@ import {DynamicValue} from './dynamic';
  * non-primitive value, or a special `DynamicValue` type which indicates the value was not
  * available statically.
  */
-export type ResolvedValue = number | boolean | string | null | undefined | Reference | EnumValue |
-    ResolvedValueArray | ResolvedValueMap | BuiltinFn | DynamicValue<unknown>;
+export class ResolvedValue {
+  constructor(public value: ResolvedValueType) {}
+
+  unwrap(): any {
+    if (Array.isArray(this.value)) {
+      return this.value.map(item => item.unwrap());
+    } else if (this.value instanceof ResolvedValueMap) {
+      const unwrappedMap = new Map();
+      this.value.forEach((value, key) => unwrappedMap.set(key, value.unwrap()));
+      return unwrappedMap;
+    } else {
+      return this.value;
+    }
+  }
+
+  toString(): string { return `ResolvedValue:${this.unwrap().toString()}`; }
+}
+
+export type ResolvedValueType = number | boolean | string | null | undefined | Reference |
+    EnumValue | ResolvedValueArray | ResolvedValueMap | BuiltinFn | DynamicValue<unknown>;
 
 /**
  * An array of `ResolvedValue`s.
  *
- * This is a reified type to allow the circular reference of `ResolvedValue` -> `ResolvedValueArray`
- * ->
- * `ResolvedValue`.
+ * This is a reified type to allow the circular reference of
+ * `ResolvedValue` -> `ResolvedValueArray` -> `ResolvedValue`.
  */
 export interface ResolvedValueArray extends Array<ResolvedValue> {}
 
 /**
  * A map of strings to `ResolvedValue`s.
  *
- * This is a reified type to allow the circular reference of `ResolvedValue` -> `ResolvedValueMap` ->
- * `ResolvedValue`.
- */ export interface ResolvedValueMap extends Map<string, ResolvedValue> {}
+ * This is a reified type to allow the circular reference of
+ * `ResolvedValue` -> `ResolvedValueMap` -> `ResolvedValue`.
+ */
+export type ResolvedValueMap = Map<string, ResolvedValue>;
+export const ResolvedValueMap = Map;
 
 /**
  * A value member of an enumeration.
@@ -47,7 +66,7 @@ export interface ResolvedValueArray extends Array<ResolvedValue> {}
 export class EnumValue {
   constructor(
       readonly enumRef: Reference<ts.EnumDeclaration>, readonly name: string,
-      readonly resolved: ResolvedValue) {}
+      readonly resolved: ResolvedValueType) {}
 }
 
 /**

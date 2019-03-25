@@ -79,7 +79,7 @@ export class BaseDefDecoratorHandler implements
         const args = decorator.args;
         let value: string|[string, string];
         if (args && args.length > 0) {
-          const resolvedValue = this.evaluator.evaluate(args[0]);
+          const resolvedValue = this.evaluator.evaluate(args[0]).unwrap();
           if (typeof resolvedValue !== 'string') {
             throw new TypeError('Input alias does not resolve to a string value');
           }
@@ -98,7 +98,7 @@ export class BaseDefDecoratorHandler implements
         const args = decorator.args;
         let value: string;
         if (args && args.length > 0) {
-          const resolvedValue = this.evaluator.evaluate(args[0]);
+          const resolvedValue = this.evaluator.evaluate(args[0]).unwrap();
           if (typeof resolvedValue !== 'string') {
             throw new TypeError('Output alias does not resolve to a string value');
           }

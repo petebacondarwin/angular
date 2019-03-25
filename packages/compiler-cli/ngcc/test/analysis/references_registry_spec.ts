@@ -42,7 +42,7 @@ describe('NgccReferencesRegistry', () => {
     const evaluator = new PartialEvaluator(reflectionHost, checker);
     const registry = new NgccReferencesRegistry(reflectionHost);
 
-    const references = (evaluator.evaluate(testArrayExpression) as any[])
+    const references = (evaluator.evaluate(testArrayExpression).value as any[])
                            .filter(ref => ref instanceof Reference) as Reference<ts.Declaration>[];
     registry.add(null !, ...references);
 

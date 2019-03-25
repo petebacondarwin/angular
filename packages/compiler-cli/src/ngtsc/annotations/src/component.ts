@@ -414,7 +414,7 @@ export class ComponentDecoratorHandler implements
     let resolved: number|null = null;
     if (component.has(field)) {
       const expr = component.get(field) !;
-      const value = this.evaluator.evaluate(expr) as any;
+      const value = this.evaluator.evaluate(expr).unwrap();
       if (value instanceof EnumValue && isAngularCoreReference(value.enumRef, enumSymbolName)) {
         resolved = value.resolved as number;
       } else {
@@ -433,7 +433,7 @@ export class ComponentDecoratorHandler implements
     }
 
     const styleUrlsExpr = component.get('styleUrls') !;
-    const styleUrls = this.evaluator.evaluate(styleUrlsExpr);
+    const styleUrls = this.evaluator.evaluate(styleUrlsExpr).unwrap();
     if (!Array.isArray(styleUrls) || !styleUrls.every(url => typeof url === 'string')) {
       throw new FatalDiagnosticError(
           ErrorCode.VALUE_HAS_WRONG_TYPE, styleUrlsExpr, 'styleUrls must be an array of strings');
@@ -539,14 +539,14 @@ export class ComponentDecoratorHandler implements
     let interpolation: InterpolationConfig = DEFAULT_INTERPOLATION_CONFIG;
     if (component.has('interpolation')) {
       const expr = component.get('interpolation') !;
-      const value = this.evaluator.evaluate(expr);
+      const value = this.evaluator.evaluate(expr).unwrap();
       if (!Array.isArray(value) || value.length !== 2 ||
           !value.every(element => typeof element === 'string')) {
         throw new FatalDiagnosticError(
             ErrorCode.VALUE_HAS_WRONG_TYPE, expr,
             'interpolation must be an array with 2 elements of string type');
       }
-      interpolation = InterpolationConfig.fromArray(value as[string, string]);
+      interpolation = InterpolationConfig.fromArray(value as unknown as[string, string]);
     }
 
     return {

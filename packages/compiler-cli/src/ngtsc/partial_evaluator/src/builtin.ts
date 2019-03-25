@@ -12,13 +12,13 @@ import {DynamicValue} from './dynamic';
 import {BuiltinFn, ResolvedValue, ResolvedValueArray} from './result';
 
 export class ArraySliceBuiltinFn extends BuiltinFn {
-  constructor(private node: ts.Node, private lhs: ResolvedValueArray) { super(); }
+  constructor(private node: ts.Node, private lhs: ResolvedValue) { super(); }
 
   evaluate(args: ResolvedValueArray): ResolvedValue {
     if (args.length === 0) {
-      return this.lhs;
+      return new ResolvedValue(this.lhs.value);
     } else {
-      return DynamicValue.fromUnknown(this.node);
+      return new ResolvedValue(DynamicValue.fromUnknown(this.node));
     }
   }
 }
