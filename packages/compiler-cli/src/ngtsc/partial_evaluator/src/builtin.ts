@@ -16,9 +16,9 @@ export class ArraySliceBuiltinFn extends BuiltinFn {
 
   evaluate(args: ResolvedValueArray): ResolvedValue {
     if (args.length === 0) {
-      return new ResolvedValue(this.lhs.value);
+      return new ResolvedValue(this.lhs.value, this.node, this.lhs);
     } else {
-      return new ResolvedValue(DynamicValue.fromUnknown(this.node));
+      return new ResolvedValue(DynamicValue.fromUnknown(this.node), this.node, this.lhs);
     }
   }
 }

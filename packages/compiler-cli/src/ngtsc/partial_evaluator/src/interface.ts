@@ -27,6 +27,7 @@ export class PartialEvaluator {
       absoluteModuleName: null,
       resolutionContext: expr.getSourceFile().fileName,
       scope: new Map<ts.ParameterDeclaration, ResolvedValue>(), foreignFunctionResolver,
+      container: null
     });
   }
 }

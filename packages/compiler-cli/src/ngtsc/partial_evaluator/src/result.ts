@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+import {ParseLocation, ParseSourceFile, ParseSourceSpan} from '@angular/compiler/src/compiler';
 import * as ts from 'typescript';
 
 import {Reference} from '../../imports';
@@ -19,9 +20,16 @@ import {DynamicValue} from './dynamic';
  * This could be a primitive, collection type, reference to a `ts.Node` that declares a
  * non-primitive value, or a special `DynamicValue` type which indicates the value was not
  * available statically.
+ *
+ * The position of the value in the source is captured in the `span` property.
  */
 export class ResolvedValue {
-  constructor(public value: ResolvedValueType) {}
+  span: ParseSourceSpan;
+  constructor(
+      public value: ResolvedValueType, spanOrNode: ParseSourceSpan|ts.Node,
+      container: ResolvedValue|null = null) {
+    this.span = this.computeSpan(spanOrNode, container);
+  }
 
   unwrap(): any {
     if (Array.isArray(this.value)) {
@@ -36,6 +44,26 @@ export class ResolvedValue {
   }
 
   toString(): string { return `ResolvedValue:${this.unwrap().toString()}`; }
+
+  private computeSpan(spanOrNode: ParseSourceSpan|ts.Node, container: ResolvedValue|null):
+      ParseSourceSpan {
+    if (spanOrNode instanceof ParseSourceSpan) {
+      return spanOrNode;
+    } else {
+      const tsSpan = ts.getSourceMapRange(spanOrNode);
+      const tsFile = tsSpan.source || spanOrNode.getSourceFile();
+      if (!tsFile) {
+        if (container) {
+          // This value is synthesized so we just use the span of its container.
+          return container.span;
+        }
+        throw new Error('Missing source file');
+      }
+      const file = new TsParseSourceFile(tsFile);
+      return new ParseSourceSpan(
+          new TsParseLocation(file, tsSpan.pos), new TsParseLocation(file, tsSpan.end));
+    }
+  }
 }
 
 export type ResolvedValueType = number | boolean | string | null | undefined | Reference |
@@ -73,3 +101,15 @@ export class EnumValue {
  * An implementation of a builtin function, such as `Array.prototype.slice`.
  */
 export abstract class BuiltinFn { abstract evaluate(args: ResolvedValueArray): ResolvedValue; }
+
+
+export class TsParseSourceFile extends ParseSourceFile {
+  constructor(public tsSource: ts.SourceMapSource) { super(tsSource.text, tsSource.fileName); }
+}
+
+export class TsParseLocation extends ParseLocation {
+  constructor(file: TsParseSourceFile, offset: number) {
+    const {line, character} = file.tsSource.getLineAndCharacterOfPosition(offset);
+    super(file, offset, line, character);
+  }
+}
