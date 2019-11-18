@@ -7,6 +7,10 @@
  */
 // General API
 export {Diagnostics} from './src/diagnostics';
+// Babel plugins
+export {makeEs2015TranslatePlugin} from './src/translate/source_files/es2015_translate_plugin';
+export {makeEs5TranslatePlugin} from './src/translate/source_files/es5_translate_plugin';
+export {makeLocalePlugin} from './src/translate/source_files/locale_plugin';
 // Translation loading API
 export {TranslationFile, TranslationLoader} from './src/translate/translation_files/translation_loader';
 export {SimpleJsonTranslationParser} from './src/translate/translation_files/translation_parsers/simple_json_translation_parser';
