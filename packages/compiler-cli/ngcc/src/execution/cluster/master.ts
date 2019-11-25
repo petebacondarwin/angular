@@ -12,6 +12,7 @@ import * as cluster from 'cluster';
 
 import {resolve} from '../../../../src/ngtsc/file_system';
 import {Logger} from '../../logging/logger';
+import {BuildMarker} from '../../packages/build_marker';
 import {PackageJsonUpdater} from '../../writing/package_json_updater';
 import {AnalyzeEntryPointsFn, Task, TaskQueue} from '../api';
 import {onTaskCompleted, stringifyTask} from '../utils';
@@ -32,7 +33,8 @@ export class ClusterMaster {
 
   constructor(
       private workerCount: number, private logger: Logger,
-      private pkgJsonUpdater: PackageJsonUpdater, analyzeEntryPoints: AnalyzeEntryPointsFn) {
+      private pkgJsonUpdater: PackageJsonUpdater, private buildMarker: BuildMarker,
+      analyzeEntryPoints: AnalyzeEntryPointsFn) {
     if (!cluster.isMaster) {
       throw new Error('Tried to instantiate `ClusterMaster` on a worker process.');
     }
@@ -199,7 +201,7 @@ export class ClusterMaster {
           JSON.stringify(msg));
     }
 
-    onTaskCompleted(this.pkgJsonUpdater, task, msg.outcome);
+    onTaskCompleted(this.buildMarker, task, msg.outcome);
 
     this.taskQueue.markTaskCompleted(task);
     this.taskAssignments.set(workerId, null);

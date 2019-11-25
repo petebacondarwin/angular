@@ -14,7 +14,7 @@ import {AbsoluteFsPath, FileSystem, absoluteFrom, getFileSystem, join} from '../
 import {Folder, MockFileSystem, TestFile, runInEachFileSystem} from '../../../src/ngtsc/file_system/testing';
 import {loadStandardTestFiles, loadTestFiles} from '../../../test/helpers';
 import {mainNgcc} from '../../src/main';
-import {markAsProcessed} from '../../src/packages/build_marker';
+import {InlineBuildMarker} from '../../src/packages/build_marker';
 import {EntryPointJsonProperty, EntryPointPackageJson, SUPPORTED_FORMAT_PROPERTIES} from '../../src/packages/entry_point';
 import {Transformer} from '../../src/packages/transformer';
 import {DirectPackageJsonUpdater, PackageJsonUpdater} from '../../src/writing/package_json_updater';
@@ -463,8 +463,8 @@ runInEachFileSystem(() => {
       const basePath = _('/node_modules');
       const targetPackageJsonPath = join(basePath, packagePath, 'package.json');
       const targetPackage = loadPackage(packagePath);
-      markAsProcessed(
-          pkgJsonUpdater, targetPackage, targetPackageJsonPath, ['typings', ...properties]);
+      const buildMarker = new InlineBuildMarker(pkgJsonUpdater);
+      buildMarker.markAsProcessed(targetPackage, targetPackageJsonPath, ['typings', ...properties]);
     }
 
 

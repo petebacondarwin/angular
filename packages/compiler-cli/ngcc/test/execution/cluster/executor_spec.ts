@@ -13,6 +13,7 @@ import * as cluster from 'cluster';
 import {ClusterExecutor} from '../../../src/execution/cluster/executor';
 import {ClusterMaster} from '../../../src/execution/cluster/master';
 import {ClusterWorker} from '../../../src/execution/cluster/worker';
+import {BuildMarker} from '../../../src/packages/build_marker';
 import {PackageJsonUpdater} from '../../../src/writing/package_json_updater';
 import {MockLogger} from '../../helpers/mock_logger';
 import {mockProperty} from '../../helpers/spy_utils';
@@ -30,7 +31,8 @@ describe('ClusterExecutor', () => {
     workerRunSpy = spyOn(ClusterWorker.prototype, 'run');
 
     mockLogger = new MockLogger();
-    executor = new ClusterExecutor(42, mockLogger, null as unknown as PackageJsonUpdater);
+    executor = new ClusterExecutor(
+        42, mockLogger, null as unknown as PackageJsonUpdater, null as unknown as BuildMarker);
   });
 
   describe('execute()', () => {

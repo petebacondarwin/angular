@@ -7,16 +7,13 @@
  */
 
 import {resolve} from '../../../src/ngtsc/file_system';
-import {markAsProcessed} from '../packages/build_marker';
+import {BuildMarker} from '../packages/build_marker';
 import {PackageJsonFormatProperties} from '../packages/entry_point';
-import {PackageJsonUpdater} from '../writing/package_json_updater';
-
 import {Task, TaskProcessingOutcome} from './api';
-
 
 /** A helper function for handling a task's being completed. */
 export const onTaskCompleted =
-    (pkgJsonUpdater: PackageJsonUpdater, task: Task, outcome: TaskProcessingOutcome): void => {
+    (buildMarker: BuildMarker, task: Task, outcome: TaskProcessingOutcome): void => {
       const {entryPoint, formatPropertiesToMarkAsProcessed, processDts} = task;
 
       if (outcome === TaskProcessingOutcome.Processed) {
@@ -28,8 +25,8 @@ export const onTaskCompleted =
           propsToMarkAsProcessed.push('typings');
         }
 
-        markAsProcessed(
-            pkgJsonUpdater, entryPoint.packageJson, packageJsonPath, propsToMarkAsProcessed);
+        buildMarker.markAsProcessed(
+            entryPoint.packageJson, packageJsonPath, propsToMarkAsProcessed);
       }
     };
 

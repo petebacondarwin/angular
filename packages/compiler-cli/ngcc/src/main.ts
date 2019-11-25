@@ -29,7 +29,7 @@ import {ParallelTaskQueue} from './execution/task_selection/parallel_task_queue'
 import {SerialTaskQueue} from './execution/task_selection/serial_task_queue';
 import {ConsoleLogger, LogLevel} from './logging/console_logger';
 import {Logger} from './logging/logger';
-import {hasBeenProcessed, markAsProcessed} from './packages/build_marker';
+import {BuildMarker, InlineBuildMarker} from './packages/build_marker';
 import {NgccConfiguration} from './packages/configuration';
 import {EntryPoint, EntryPointJsonProperty, EntryPointPackageJson, SUPPORTED_FORMAT_PROPERTIES, getEntryPointFormat} from './packages/entry_point';
 import {makeEntryPointBundle} from './packages/entry_point_bundle';
@@ -138,6 +138,7 @@ export function mainNgcc(
   //       This is hard to enforce automatically, when running on multiple processes, so needs to be
   //       enforced manually.
   const pkgJsonUpdater = getPackageJsonUpdater(inParallel, fileSystem);
+  const buildMarker: BuildMarker = new InlineBuildMarker(pkgJsonUpdater);
 
   // The function for performing the analysis.
   const analyzeEntryPoints: AnalyzeEntryPointsFn = () => {
@@ -160,7 +161,7 @@ export function mainNgcc(
     const absBasePath = absoluteFrom(basePath);
     const config = new NgccConfiguration(fileSystem, dirname(absBasePath));
     const {entryPoints, graph} = getEntryPoints(
-        fileSystem, pkgJsonUpdater, logger, dependencyResolver, config, absBasePath,
+        fileSystem, buildMarker, logger, dependencyResolver, config, absBasePath,
         targetEntryPointPath, pathMappings, supportedPropertiesToConsider, compileAllFormats);
 
     const unprocessableEntryPointPaths: string[] = [];
@@ -169,7 +170,8 @@ export function mainNgcc(
 
     for (const entryPoint of entryPoints) {
       const packageJson = entryPoint.packageJson;
-      const hasProcessedTypings = hasBeenProcessed(packageJson, 'typings', entryPoint.path);
+      const hasProcessedTypings =
+          buildMarker.hasBeenProcessed(packageJson, 'typings', entryPoint.path);
       const {propertiesToProcess, equivalentPropertiesMap} =
           getPropertiesToProcess(packageJson, supportedPropertiesToConsider, compileAllFormats);
       let processDts = !hasProcessedTypings;
@@ -234,7 +236,7 @@ export function mainNgcc(
       }
 
       // The format-path which the property maps to is already processed - nothing to do.
-      if (hasBeenProcessed(packageJson, formatProperty, entryPoint.path)) {
+      if (buildMarker.hasBeenProcessed(packageJson, formatProperty, entryPoint.path)) {
         logger.debug(`Skipping ${entryPoint.name} : ${formatProperty} (already compiled).`);
         onTaskCompleted(task, TaskProcessingOutcome.AlreadyProcessed);
         return;
@@ -264,7 +266,7 @@ export function mainNgcc(
   };
 
   // The executor for actually planning and getting the work done.
-  const executor = getExecutor(async, inParallel, logger, pkgJsonUpdater);
+  const executor = getExecutor(async, inParallel, logger, pkgJsonUpdater, buildMarker);
 
   return executor.execute(analyzeEntryPoints, createCompileFn);
 }
@@ -311,29 +313,29 @@ function getTaskQueue(
 }
 
 function getExecutor(
-    async: boolean, inParallel: boolean, logger: Logger,
-    pkgJsonUpdater: PackageJsonUpdater): Executor {
+    async: boolean, inParallel: boolean, logger: Logger, pkgJsonUpdater: PackageJsonUpdater,
+    buildMarker: BuildMarker): Executor {
   if (inParallel) {
     // Execute in parallel (which implies async).
     // Use up to 8 CPU cores for workers, always reserving one for master.
     const workerCount = Math.min(8, os.cpus().length - 1);
-    return new ClusterExecutor(workerCount, logger, pkgJsonUpdater);
+    return new ClusterExecutor(workerCount, logger, pkgJsonUpdater, buildMarker);
   } else {
     // Execute serially, on a single thread (either sync or async).
-    return async ? new AsyncSingleProcessExecutor(logger, pkgJsonUpdater) :
-                   new SingleProcessExecutor(logger, pkgJsonUpdater);
+    return async ? new AsyncSingleProcessExecutor(logger, buildMarker) :
+                   new SingleProcessExecutor(logger, buildMarker);
   }
 }
 
 function getEntryPoints(
-    fs: FileSystem, pkgJsonUpdater: PackageJsonUpdater, logger: Logger,
-    resolver: DependencyResolver, config: NgccConfiguration, basePath: AbsoluteFsPath,
-    targetEntryPointPath: string | undefined, pathMappings: PathMappings | undefined,
-    propertiesToConsider: string[], compileAllFormats: boolean):
+    fs: FileSystem, buildMarker: BuildMarker, logger: Logger, resolver: DependencyResolver,
+    config: NgccConfiguration, basePath: AbsoluteFsPath, targetEntryPointPath: string | undefined,
+    pathMappings: PathMappings | undefined, propertiesToConsider: string[],
+    compileAllFormats: boolean):
     {entryPoints: PartiallyOrderedEntryPoints, graph: DepGraph<EntryPoint>} {
   const {entryPoints, invalidEntryPoints, graph} = (targetEntryPointPath !== undefined) ?
       getTargetedEntryPoints(
-          fs, pkgJsonUpdater, logger, resolver, config, basePath, targetEntryPointPath,
+          fs, buildMarker, logger, resolver, config, basePath, targetEntryPointPath,
           propertiesToConsider, compileAllFormats, pathMappings) :
       getAllEntryPoints(fs, config, logger, resolver, basePath, pathMappings);
   logInvalidEntryPoints(logger, invalidEntryPoints);
@@ -341,13 +343,13 @@ function getEntryPoints(
 }
 
 function getTargetedEntryPoints(
-    fs: FileSystem, pkgJsonUpdater: PackageJsonUpdater, logger: Logger,
-    resolver: DependencyResolver, config: NgccConfiguration, basePath: AbsoluteFsPath,
-    targetEntryPointPath: string, propertiesToConsider: string[], compileAllFormats: boolean,
+    fs: FileSystem, buildMarker: BuildMarker, logger: Logger, resolver: DependencyResolver,
+    config: NgccConfiguration, basePath: AbsoluteFsPath, targetEntryPointPath: string,
+    propertiesToConsider: string[], compileAllFormats: boolean,
     pathMappings: PathMappings | undefined): SortedEntryPointsInfo {
   const absoluteTargetEntryPointPath = resolve(basePath, targetEntryPointPath);
   if (hasProcessedTargetEntryPoint(
-          fs, absoluteTargetEntryPointPath, propertiesToConsider, compileAllFormats)) {
+          fs, buildMarker, absoluteTargetEntryPointPath, propertiesToConsider, compileAllFormats)) {
     logger.debug('The target entry-point has already been processed');
     return {
       entryPoints: [] as unknown as PartiallyOrderedEntryPoints,
@@ -367,7 +369,7 @@ function getTargetedEntryPoints(
         invalidTarget.missingDependencies.map(dep => ` - ${dep}\n`).join(''));
   }
   if (entryPointInfo.entryPoints.length === 0) {
-    markNonAngularPackageAsProcessed(fs, pkgJsonUpdater, absoluteTargetEntryPointPath);
+    markNonAngularPackageAsProcessed(fs, buildMarker, absoluteTargetEntryPointPath);
   }
   return entryPointInfo;
 }
@@ -381,8 +383,8 @@ function getAllEntryPoints(
 }
 
 function hasProcessedTargetEntryPoint(
-    fs: FileSystem, targetPath: AbsoluteFsPath, propertiesToConsider: string[],
-    compileAllFormats: boolean) {
+    fs: FileSystem, buildMarker: BuildMarker, targetPath: AbsoluteFsPath,
+    propertiesToConsider: string[], compileAllFormats: boolean) {
   const packageJsonPath = resolve(targetPath, 'package.json');
   // It might be that this target is configured in which case its package.json might not exist.
   if (!fs.exists(packageJsonPath)) {
@@ -393,7 +395,8 @@ function hasProcessedTargetEntryPoint(
   for (const property of propertiesToConsider) {
     if (packageJson[property]) {
       // Here is a property that should be processed
-      if (hasBeenProcessed(packageJson, property as EntryPointJsonProperty, targetPath)) {
+      if (buildMarker.hasBeenProcessed(
+              packageJson, property as EntryPointJsonProperty, targetPath)) {
         if (!compileAllFormats) {
           // It has been processed and we only need one, so we are done.
           return true;
@@ -417,13 +420,13 @@ function hasProcessedTargetEntryPoint(
  * triggering ngcc for this entry-point in the future.
  */
 function markNonAngularPackageAsProcessed(
-    fs: FileSystem, pkgJsonUpdater: PackageJsonUpdater, path: AbsoluteFsPath) {
+    fs: FileSystem, buildMarker: BuildMarker, path: AbsoluteFsPath) {
   const packageJsonPath = resolve(path, 'package.json');
   const packageJson = JSON.parse(fs.readFile(packageJsonPath));
 
   // Note: We are marking all supported properties as processed, even if they don't exist in the
   //       `package.json` file. While this is redundant, it is also harmless.
-  markAsProcessed(pkgJsonUpdater, packageJson, packageJsonPath, SUPPORTED_FORMAT_PROPERTIES);
+  buildMarker.markAsProcessed(packageJson, packageJsonPath, SUPPORTED_FORMAT_PROPERTIES);
 }
 
 function logInvalidEntryPoints(logger: Logger, invalidEntryPoints: InvalidEntryPoint[]): void {

@@ -7,24 +7,22 @@
  */
 
 import {Logger} from '../logging/logger';
-import {PackageJsonUpdater} from '../writing/package_json_updater';
-
+import {BuildMarker} from '../packages/build_marker';
 import {AnalyzeEntryPointsFn, CreateCompileFn, Executor} from './api';
 import {onTaskCompleted} from './utils';
-
 
 /**
  * An `Executor` that processes all tasks serially and completes synchronously.
  */
 export class SingleProcessExecutor implements Executor {
-  constructor(private logger: Logger, private pkgJsonUpdater: PackageJsonUpdater) {}
+  constructor(private logger: Logger, private buildMarker: BuildMarker) {}
 
   execute(analyzeEntryPoints: AnalyzeEntryPointsFn, createCompileFn: CreateCompileFn): void {
     this.logger.debug(`Running ngcc on ${this.constructor.name}.`);
 
     const taskQueue = analyzeEntryPoints();
     const compile =
-        createCompileFn((task, outcome) => onTaskCompleted(this.pkgJsonUpdater, task, outcome));
+        createCompileFn((task, outcome) => onTaskCompleted(this.buildMarker, task, outcome));
 
     // Process all tasks.
     this.logger.debug('Processing tasks...');

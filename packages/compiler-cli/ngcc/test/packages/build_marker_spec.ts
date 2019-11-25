@@ -8,11 +8,11 @@
 import {AbsoluteFsPath, absoluteFrom, getFileSystem} from '../../../src/ngtsc/file_system';
 import {runInEachFileSystem} from '../../../src/ngtsc/file_system/testing';
 import {loadTestFiles} from '../../../test/helpers';
-import {hasBeenProcessed, markAsProcessed} from '../../src/packages/build_marker';
+import {InlineBuildMarker} from '../../src/packages/build_marker';
 import {DirectPackageJsonUpdater} from '../../src/writing/package_json_updater';
 
 runInEachFileSystem(() => {
-  describe('Marker files', () => {
+  describe('InlineBuildMarker', () => {
     let _: typeof absoluteFrom;
     beforeEach(() => {
       _ = absoluteFrom;
@@ -84,11 +84,12 @@ runInEachFileSystem(() => {
         const COMMON_PACKAGE_PATH = _('/node_modules/@angular/common/package.json');
         const fs = getFileSystem();
         const pkgUpdater = new DirectPackageJsonUpdater(fs);
+        const buildMarker = new InlineBuildMarker(pkgUpdater);
         let pkg = JSON.parse(fs.readFile(COMMON_PACKAGE_PATH));
         expect(pkg.__processed_by_ivy_ngcc__).toBeUndefined();
         expect(pkg.scripts).toBeUndefined();
 
-        markAsProcessed(pkgUpdater, pkg, COMMON_PACKAGE_PATH, ['fesm2015', 'fesm5']);
+        buildMarker.markAsProcessed(pkg, COMMON_PACKAGE_PATH, ['fesm2015', 'fesm5']);
         pkg = JSON.parse(fs.readFile(COMMON_PACKAGE_PATH));
         expect(pkg.__processed_by_ivy_ngcc__.fesm2015).toBe('0.0.0-PLACEHOLDER');
         expect(pkg.__processed_by_ivy_ngcc__.fesm5).toBe('0.0.0-PLACEHOLDER');
@@ -96,7 +97,7 @@ runInEachFileSystem(() => {
         expect(pkg.__processed_by_ivy_ngcc__.esm5).toBeUndefined();
         expect(pkg.scripts.prepublishOnly).toBeDefined();
 
-        markAsProcessed(pkgUpdater, pkg, COMMON_PACKAGE_PATH, ['esm2015', 'esm5']);
+        buildMarker.markAsProcessed(pkg, COMMON_PACKAGE_PATH, ['esm2015', 'esm5']);
         pkg = JSON.parse(fs.readFile(COMMON_PACKAGE_PATH));
         expect(pkg.__processed_by_ivy_ngcc__.fesm2015).toBe('0.0.0-PLACEHOLDER');
         expect(pkg.__processed_by_ivy_ngcc__.fesm5).toBe('0.0.0-PLACEHOLDER');
@@ -109,18 +110,19 @@ runInEachFileSystem(() => {
         const COMMON_PACKAGE_PATH = _('/node_modules/@angular/common/package.json');
         const fs = getFileSystem();
         const pkgUpdater = new DirectPackageJsonUpdater(fs);
+        const buildMarker = new InlineBuildMarker(pkgUpdater);
         const pkg = JSON.parse(fs.readFile(COMMON_PACKAGE_PATH));
         expect(pkg.__processed_by_ivy_ngcc__).toBeUndefined();
         expect(pkg.scripts).toBeUndefined();
 
-        markAsProcessed(pkgUpdater, pkg, COMMON_PACKAGE_PATH, ['fesm2015', 'fesm5']);
+        buildMarker.markAsProcessed(pkg, COMMON_PACKAGE_PATH, ['fesm2015', 'fesm5']);
         expect(pkg.__processed_by_ivy_ngcc__.fesm2015).toBe('0.0.0-PLACEHOLDER');
         expect(pkg.__processed_by_ivy_ngcc__.fesm5).toBe('0.0.0-PLACEHOLDER');
         expect(pkg.__processed_by_ivy_ngcc__.esm2015).toBeUndefined();
         expect(pkg.__processed_by_ivy_ngcc__.esm5).toBeUndefined();
         expect(pkg.scripts.prepublishOnly).toBeDefined();
 
-        markAsProcessed(pkgUpdater, pkg, COMMON_PACKAGE_PATH, ['esm2015', 'esm5']);
+        buildMarker.markAsProcessed(pkg, COMMON_PACKAGE_PATH, ['esm2015', 'esm5']);
         expect(pkg.__processed_by_ivy_ngcc__.fesm2015).toBe('0.0.0-PLACEHOLDER');
         expect(pkg.__processed_by_ivy_ngcc__.fesm5).toBe('0.0.0-PLACEHOLDER');
         expect(pkg.__processed_by_ivy_ngcc__.esm2015).toBe('0.0.0-PLACEHOLDER');
@@ -132,11 +134,12 @@ runInEachFileSystem(() => {
         const COMMON_PACKAGE_PATH = _('/node_modules/@angular/common/package.json');
         const fs = getFileSystem();
         const pkgUpdater = new DirectPackageJsonUpdater(fs);
+        const buildMarker = new InlineBuildMarker(pkgUpdater);
         const writeFileSpy = spyOn(fs, 'writeFile');
         let pkg = JSON.parse(fs.readFile(COMMON_PACKAGE_PATH));
 
-        markAsProcessed(
-            pkgUpdater, pkg, COMMON_PACKAGE_PATH, ['fesm2015', 'fesm5', 'esm2015', 'esm5']);
+        buildMarker.markAsProcessed(
+            pkg, COMMON_PACKAGE_PATH, ['fesm2015', 'fesm5', 'esm2015', 'esm5']);
         expect(writeFileSpy).toHaveBeenCalledTimes(1);
       });
 
@@ -144,11 +147,12 @@ runInEachFileSystem(() => {
         const COMMON_PACKAGE_PATH = _('/node_modules/@angular/common/package.json');
         const fs = getFileSystem();
         const pkgUpdater = new DirectPackageJsonUpdater(fs);
+        const buildMarker = new InlineBuildMarker(pkgUpdater);
         const prepublishOnly = 'existing script';
         let pkg = JSON.parse(fs.readFile(COMMON_PACKAGE_PATH));
         pkg.scripts = {prepublishOnly};
 
-        markAsProcessed(pkgUpdater, pkg, COMMON_PACKAGE_PATH, ['fesm2015']);
+        buildMarker.markAsProcessed(pkg, COMMON_PACKAGE_PATH, ['fesm2015']);
         pkg = JSON.parse(fs.readFile(COMMON_PACKAGE_PATH));
         expect(pkg.scripts.prepublishOnly).toContain('This is not allowed');
         expect(pkg.scripts.prepublishOnly__ivy_ngcc_bak).toBe(prepublishOnly);
@@ -158,9 +162,10 @@ runInEachFileSystem(() => {
         const COMMON_PACKAGE_PATH = _('/node_modules/@angular/common/package.json');
         const fs = getFileSystem();
         const pkgUpdater = new DirectPackageJsonUpdater(fs);
+        const buildMarker = new InlineBuildMarker(pkgUpdater);
         let pkg = JSON.parse(fs.readFile(COMMON_PACKAGE_PATH));
 
-        markAsProcessed(pkgUpdater, pkg, COMMON_PACKAGE_PATH, ['fesm2015']);
+        buildMarker.markAsProcessed(pkg, COMMON_PACKAGE_PATH, ['fesm2015']);
 
         pkg = JSON.parse(fs.readFile(COMMON_PACKAGE_PATH));
         expect(pkg.scripts.prepublishOnly).toContain('This is not allowed');
@@ -168,7 +173,7 @@ runInEachFileSystem(() => {
 
         // Running again, now that there is `prepublishOnly` script (created by `ngcc`), it should
         // still not back it up as `prepublishOnly__ivy_ngcc_bak`.
-        markAsProcessed(pkgUpdater, pkg, COMMON_PACKAGE_PATH, ['fesm2015']);
+        buildMarker.markAsProcessed(pkg, COMMON_PACKAGE_PATH, ['fesm2015']);
 
         pkg = JSON.parse(fs.readFile(COMMON_PACKAGE_PATH));
         expect(pkg.scripts.prepublishOnly).toContain('This is not allowed');
@@ -186,44 +191,79 @@ runInEachFileSystem(() => {
       });
 
       it('should return true if the marker exists for the given format property', () => {
-        expect(hasBeenProcessed(
-                   {name: 'test', __processed_by_ivy_ngcc__: {'fesm2015': '0.0.0-PLACEHOLDER'}},
+        const fs = getFileSystem();
+        const pkgUpdater = new DirectPackageJsonUpdater(fs);
+        const buildMarker = new InlineBuildMarker(pkgUpdater);
+        expect(buildMarker.hasBeenProcessed(
+                   {
+                     name: 'test',
+                     version: '0.0.0-PLACEHOLDER',
+                     __processed_by_ivy_ngcc__: {'fesm2015': '0.0.0-PLACEHOLDER'}
+                   },
                    'fesm2015', entryPointPath))
             .toBe(true);
       });
 
       it('should return false if the marker does not exist for the given format property', () => {
-        expect(hasBeenProcessed(
-                   {name: 'test', __processed_by_ivy_ngcc__: {'fesm2015': '0.0.0-PLACEHOLDER'}},
+        const fs = getFileSystem();
+        const pkgUpdater = new DirectPackageJsonUpdater(fs);
+        const buildMarker = new InlineBuildMarker(pkgUpdater);
+        expect(buildMarker.hasBeenProcessed(
+                   {
+                     name: 'test',
+                     version: '0.0.0-PLACEHOLDER',
+                     __processed_by_ivy_ngcc__: {'fesm2015': '0.0.0-PLACEHOLDER'}
+                   },
                    'module', entryPointPath))
             .toBe(false);
       });
 
-      it('should return false if no markers exist',
-         () => { expect(hasBeenProcessed({name: 'test'}, 'module', entryPointPath)).toBe(false); });
+      it('should return false if no markers exist', () => {
+        const fs = getFileSystem();
+        const pkgUpdater = new DirectPackageJsonUpdater(fs);
+        const buildMarker = new InlineBuildMarker(pkgUpdater);
+        expect(buildMarker.hasBeenProcessed(
+                   {name: 'test', version: '0.0.0-PLACEHOLDER'}, 'module', entryPointPath))
+            .toBe(false);
+      });
 
       it('should throw an Error if the format has been compiled with a different version.', () => {
+        const fs = getFileSystem();
+        const pkgUpdater = new DirectPackageJsonUpdater(fs);
+        const buildMarker = new InlineBuildMarker(pkgUpdater);
         expect(
-            () => hasBeenProcessed(
-                {name: 'test', __processed_by_ivy_ngcc__: {'fesm2015': '8.0.0'}}, 'fesm2015',
-                entryPointPath))
+            () => buildMarker.hasBeenProcessed(
+                {
+                  name: 'test',
+                  version: '0.0.0-PLACEHOLDER',
+                  __processed_by_ivy_ngcc__: {'fesm2015': '8.0.0'}
+                },
+                'fesm2015', entryPointPath))
             .toThrowError(
                 'The ngcc compiler has changed since the last ngcc build.\n' +
                 `Please remove "${nodeModulesPath}" and try again.`);
       });
 
       it('should throw an Error if any format has been compiled with a different version.', () => {
+        const fs = getFileSystem();
+        const pkgUpdater = new DirectPackageJsonUpdater(fs);
+        const buildMarker = new InlineBuildMarker(pkgUpdater);
         expect(
-            () => hasBeenProcessed(
-                {name: 'test', __processed_by_ivy_ngcc__: {'fesm2015': '8.0.0'}}, 'module',
-                entryPointPath))
+            () => buildMarker.hasBeenProcessed(
+                {
+                  name: 'test',
+                  version: '0.0.0-PLACEHOLDER',
+                  __processed_by_ivy_ngcc__: {'fesm2015': '8.0.0'}
+                },
+                'module', entryPointPath))
             .toThrowError(
                 'The ngcc compiler has changed since the last ngcc build.\n' +
                 `Please remove "${nodeModulesPath}" and try again.`);
         expect(
-            () => hasBeenProcessed(
+            () => buildMarker.hasBeenProcessed(
                 {
                   name: 'test',
+                  version: '0.0.0-PLACEHOLDER',
                   __processed_by_ivy_ngcc__: {'module': '0.0.0-PLACEHOLDER', 'fesm2015': '8.0.0'}
                 },
                 'module', entryPointPath))
@@ -231,9 +271,10 @@ runInEachFileSystem(() => {
                 'The ngcc compiler has changed since the last ngcc build.\n' +
                 `Please remove "${nodeModulesPath}" and try again.`);
         expect(
-            () => hasBeenProcessed(
+            () => buildMarker.hasBeenProcessed(
                 {
                   name: 'test',
+                  version: '0.0.0-PLACEHOLDER',
                   __processed_by_ivy_ngcc__: {'module': '0.0.0-PLACEHOLDER', 'fesm2015': '8.0.0'}
                 },
                 'fesm2015', entryPointPath))
@@ -244,26 +285,41 @@ runInEachFileSystem(() => {
 
       it('should throw an Error, with the appropriate path to remove, if the format has been compiled with a different version',
          () => {
+           const fs = getFileSystem();
+           const pkgUpdater = new DirectPackageJsonUpdater(fs);
+           const buildMarker = new InlineBuildMarker(pkgUpdater);
            expect(
-               () => hasBeenProcessed(
-                   {name: 'test', __processed_by_ivy_ngcc__: {'fesm2015': '8.0.0'}}, 'fesm2015',
-                   _('/node_modules/test')))
+               () => buildMarker.hasBeenProcessed(
+                   {
+                     name: 'test',
+                     version: '0.0.0-PLACEHOLDER',
+                     __processed_by_ivy_ngcc__: {'fesm2015': '8.0.0'}
+                   },
+                   'fesm2015', _('/node_modules/test')))
                .toThrowError(
                    'The ngcc compiler has changed since the last ngcc build.\n' +
                    `Please remove "${_('/node_modules')}" and try again.`);
 
            expect(
-               () => hasBeenProcessed(
-                   {name: 'nested', __processed_by_ivy_ngcc__: {'fesm2015': '8.0.0'}}, 'fesm2015',
-                   _('/node_modules/test/node_modules/nested')))
+               () => buildMarker.hasBeenProcessed(
+                   {
+                     name: 'nested',
+                     version: '0.0.0-PLACEHOLDER',
+                     __processed_by_ivy_ngcc__: {'fesm2015': '8.0.0'}
+                   },
+                   'fesm2015', _('/node_modules/test/node_modules/nested')))
                .toThrowError(
                    'The ngcc compiler has changed since the last ngcc build.\n' +
                    `Please remove "${_('/node_modules/test/node_modules')}" and try again.`);
 
            expect(
-               () => hasBeenProcessed(
-                   {name: 'test', __processed_by_ivy_ngcc__: {'fesm2015': '8.0.0'}}, 'fesm2015',
-                   _('/dist/test')))
+               () => buildMarker.hasBeenProcessed(
+                   {
+                     name: 'test',
+                     version: '0.0.0-PLACEHOLDER',
+                     __processed_by_ivy_ngcc__: {'fesm2015': '8.0.0'}
+                   },
+                   'fesm2015', _('/dist/test')))
                .toThrowError(
                    'The ngcc compiler has changed since the last ngcc build.\n' +
                    `Please remove "${_('/dist/test')}" and try again.`);
