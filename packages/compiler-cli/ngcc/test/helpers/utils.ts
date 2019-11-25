@@ -22,7 +22,8 @@ export function makeTestEntryPoint(
   return {
     name: entryPointName,
     packageJson: {name: entryPointName},
-    package: absoluteFrom(`/node_modules/${packageName}`),
+    package:
+        {name: packageName, path: absoluteFrom(`/node_modules/${packageName}`), version: '1.0.1'},
     path: absoluteFrom(`/node_modules/${entryPointName}`),
     typings: absoluteFrom(`/node_modules/${entryPointName}/index.d.ts`),
     compiledByAngular: true,
@@ -42,8 +43,9 @@ export function makeTestEntryPointBundle(
     dtsRootNames?: AbsoluteFsPath[], config?: TestConfig): EntryPointBundle {
   const entryPoint = makeTestEntryPoint(packageName, packageName, config);
   const src = makeTestBundleProgram(srcRootNames[0], isCore);
-  const dts =
-      dtsRootNames ? makeTestDtsBundleProgram(dtsRootNames[0], entryPoint.package, isCore) : null;
+  const dts = dtsRootNames ?
+      makeTestDtsBundleProgram(dtsRootNames[0], entryPoint.package.path, isCore) :
+      null;
   const isFlatCore = isCore && src.r3SymbolsFile === null;
   return {entryPoint, format, rootDirs: [absoluteFrom('/')], src, dts, isCore, isFlatCore};
 }

@@ -159,7 +159,11 @@ runInEachFileSystem(() => {
          const entryPoint: EntryPoint = {
            name: 'test',
            packageJson: {name: 'test'},
-           package: absoluteFrom('/node_modules/test'),
+           package: {
+             name: 'test',
+             path: absoluteFrom('/node_modules/test'),
+             version: '1.0.1',
+           },
            path: absoluteFrom('/node_modules/test'),
            typings: absoluteFrom('/node_modules/test/index.d.ts'),
            compiledByAngular: true,
@@ -207,7 +211,11 @@ runInEachFileSystem(() => {
          const entryPoint: EntryPoint = {
            name: 'test',
            packageJson: {name: 'test'},
-           package: absoluteFrom('/node_modules/test'),
+           package: {
+             name: 'test',
+             path: absoluteFrom('/node_modules/test'),
+             version: '1.0.1',
+           },
            path: absoluteFrom('/node_modules/test'),
            typings: absoluteFrom('/node_modules/test/index.d.ts'),
            compiledByAngular: true,
@@ -230,7 +238,11 @@ runInEachFileSystem(() => {
          const entryPoint: EntryPoint = {
            name: 'internal',
            packageJson: {name: 'internal'},
-           package: absoluteFrom('/node_modules/internal'),
+           package: {
+             name: 'internal',
+             path: absoluteFrom('/node_modules/internal'),
+             version: '1.0.1',
+           },
            path: absoluteFrom('/node_modules/internal'),
            typings: absoluteFrom('/node_modules/internal/index.d.ts'),
            compiledByAngular: true,
@@ -253,7 +265,11 @@ runInEachFileSystem(() => {
          const entryPoint: EntryPoint = {
            name: 'test',
            packageJson: {name: 'test'},
-           package: absoluteFrom('/node_modules/test'),
+           package: {
+             name: 'test',
+             path: absoluteFrom('/node_modules/test'),
+             version: '1.0.1',
+           },
            path: absoluteFrom('/node_modules/test'),
            typings: absoluteFrom('/node_modules/test/index.d.ts'),
            compiledByAngular: true,

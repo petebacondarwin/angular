@@ -149,8 +149,8 @@ export class NgccConfiguration {
    * @param version The version of the package whose config we want, or `null` if the package's
    * package.json did not exist or was invalid.
    */
-  getConfig(packagePath: AbsoluteFsPath, version: string|null): VersionedPackageConfig {
-    const cacheKey = packagePath + (version !== null ? `@${version}` : '');
+  getConfig(packagePath: AbsoluteFsPath, version: string): VersionedPackageConfig {
+    const cacheKey = `${packagePath}@${version}`;
     if (this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey) !;
     }
@@ -207,13 +207,13 @@ export class NgccConfiguration {
     }
   }
 
-  private loadPackageConfig(packagePath: AbsoluteFsPath, version: string|null):
-      VersionedPackageConfig|null {
+  private loadPackageConfig(packagePath: AbsoluteFsPath, version: string): VersionedPackageConfig
+      |null {
     const configFilePath = join(packagePath, NGCC_CONFIG_FILENAME);
     if (this.fs.exists(configFilePath)) {
       try {
         return {
-          versionRange: version || '*',
+          versionRange: version,
           entryPoints: this.processEntryPoints(packagePath, this.evalSrcFile(configFilePath)),
         };
       } catch (e) {
@@ -262,16 +262,9 @@ export class NgccConfiguration {
 }
 
 function findSatisfactoryVersion(
-    configs: VersionedPackageConfig[] | undefined, version: string | null): VersionedPackageConfig|
-    null {
+    configs: VersionedPackageConfig[] | undefined, version: string): VersionedPackageConfig|null {
   if (configs === undefined) {
     return null;
-  }
-  if (version === null) {
-    // The package has no version (!) - perhaps the entry-point was from a deep import, which made
-    // it impossible to find the package.json.
-    // So just return the first config that matches the package name.
-    return configs[0];
   }
   return configs.find(config => satisfies(version, config.versionRange)) || null;
 }

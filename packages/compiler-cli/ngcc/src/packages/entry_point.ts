@@ -20,16 +20,25 @@ import {NgccConfiguration, NgccEntryPointConfig} from './configuration';
 export type EntryPointFormat = 'esm5' | 'esm2015' | 'umd' | 'commonjs';
 
 /**
+ * An object containing information about a package, which would contain
+ * entry-points.
+ */
+export interface Package extends JsonObject {
+  name: string;
+  version: string;
+  path: AbsoluteFsPath;
+}
+
+/**
  * An object containing information about an entry-point, including paths
  * to each of the possible entry-point formats.
  */
 export interface EntryPoint extends JsonObject {
-  /** The name of the package (e.g. `@angular/core`). */
+  /** The name of the entry-point package (e.g. `@angular/core/testing`). */
   name: string;
+  package: Package;
   /** The parsed package.json file for this entry-point. */
   packageJson: EntryPointPackageJson;
-  /** The path to the package that contains this entry-point. */
-  package: AbsoluteFsPath;
   /** The path to this entry point. */
   path: AbsoluteFsPath;
   /** The path to a typings (.d.ts) file for this entry-point. */
@@ -86,9 +95,12 @@ export function getEntryPointInfo(
     fs: FileSystem, config: NgccConfiguration, logger: Logger, packagePath: AbsoluteFsPath,
     entryPointPath: AbsoluteFsPath): EntryPoint|null {
   const packageJsonPath = resolve(entryPointPath, 'package.json');
-  const packageVersion = getPackageVersion(fs, packageJsonPath);
+  const packageInfo = getPackageInfo(fs, packagePath);
+  if (packageInfo === null) {
+    return null;
+  }
   const entryPointConfig =
-      config.getConfig(packagePath, packageVersion).entryPoints[entryPointPath];
+      config.getConfig(packagePath, packageInfo.version).entryPoints[entryPointPath];
   if (entryPointConfig === undefined && !fs.exists(packageJsonPath)) {
     return null;
   }
@@ -121,7 +133,7 @@ export function getEntryPointInfo(
   const entryPointInfo: EntryPoint = {
     name: entryPointPackageJson.name,
     packageJson: entryPointPackageJson,
-    package: packagePath,
+    package: packageInfo,
     path: entryPointPath,
     typings: resolve(entryPointPath, typings), compiledByAngular,
     ignoreMissingDependencies:
@@ -236,15 +248,16 @@ function guessTypingsFromPackageJson(
 }
 
 /**
- * Find the version of the package at `packageJsonPath`.
+ * Find the version of the package at `packagePath`.
  *
  * @returns the version string or `null` if the package.json does not exist or is invalid.
  */
-function getPackageVersion(fs: FileSystem, packageJsonPath: AbsoluteFsPath): string|null {
+function getPackageInfo(fs: FileSystem, packagePath: AbsoluteFsPath): Package|null {
   try {
+    const packageJsonPath = fs.resolve(packagePath, 'package.json');
     if (fs.exists(packageJsonPath)) {
       const packageJson = JSON.parse(fs.readFile(packageJsonPath));
-      return packageJson['version'] || null;
+      return {name: packageJson.name, version: packageJson.version, path: packagePath};
     }
   } catch {
     // Do nothing

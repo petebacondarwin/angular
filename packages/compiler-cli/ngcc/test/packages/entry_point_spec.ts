@@ -22,6 +22,10 @@ runInEachFileSystem(() => {
     beforeEach(() => {
       _ = absoluteFrom;
       SOME_PACKAGE = _('/project/node_modules/some_package');
+      loadTestFiles([{
+        name: _('/project/node_modules/some_package/package.json'),
+        contents: '{ "name": "some_package", "version": "1.0.1" }',
+      }]);
       fs = getFileSystem();
     });
 
@@ -44,7 +48,11 @@ runInEachFileSystem(() => {
              _('/project/node_modules/some_package/valid_entry_point'));
          expect(entryPoint).toEqual({
            name: 'some_package/valid_entry_point',
-           package: SOME_PACKAGE,
+           package: {
+             name: 'some_package',
+             version: '1.0.1',
+             path: SOME_PACKAGE,
+           },
            path: _('/project/node_modules/some_package/valid_entry_point'),
            typings:
                _(`/project/node_modules/some_package/valid_entry_point/valid_entry_point.d.ts`),
@@ -106,7 +114,11 @@ runInEachFileSystem(() => {
           ...override};
       expect(entryPoint).toEqual({
         name: 'some_package/valid_entry_point',
-        package: SOME_PACKAGE,
+        package: {
+          name: 'some_package',
+          version: '1.0.1',
+          path: SOME_PACKAGE,
+        },
         path: _('/project/node_modules/some_package/valid_entry_point'),
         typings: _('/project/node_modules/some_package/valid_entry_point/some_other.d.ts'),
         packageJson: overriddenPackageJson,
@@ -153,7 +165,11 @@ runInEachFileSystem(() => {
              _('/project/node_modules/some_package/missing_package_json'));
          expect(entryPoint).toEqual({
            name: 'some_package/missing_package_json',
-           package: SOME_PACKAGE,
+           package: {
+             name: 'some_package',
+             version: '1.0.1',
+             path: SOME_PACKAGE,
+           },
            path: _('/project/node_modules/some_package/missing_package_json'),
            typings: _(
                '/project/node_modules/some_package/missing_package_json/missing_package_json.d.ts'),
@@ -232,7 +248,11 @@ runInEachFileSystem(() => {
             _('/project/node_modules/some_package/missing_typings'));
         expect(entryPoint).toEqual({
           name: 'some_package/missing_typings',
-          package: SOME_PACKAGE,
+          package: {
+            name: 'some_package',
+            version: '1.0.1',
+            path: SOME_PACKAGE,
+          },
           path: _('/project/node_modules/some_package/missing_typings'),
           typings: _(`/project/node_modules/some_package/missing_typings/${typingsPath}.d.ts`),
           packageJson: loadPackageJson(fs, '/project/node_modules/some_package/missing_typings'),
@@ -257,7 +277,11 @@ runInEachFileSystem(() => {
              _('/project/node_modules/some_package/missing_metadata'));
          expect(entryPoint).toEqual({
            name: 'some_package/missing_metadata',
-           package: SOME_PACKAGE,
+           package: {
+             name: 'some_package',
+             version: '1.0.1',
+             path: SOME_PACKAGE,
+           },
            path: _('/project/node_modules/some_package/missing_metadata'),
            typings: _(`/project/node_modules/some_package/missing_metadata/missing_metadata.d.ts`),
            packageJson: loadPackageJson(fs, '/project/node_modules/some_package/missing_metadata'),
@@ -285,7 +309,11 @@ runInEachFileSystem(() => {
              _('/project/node_modules/some_package/missing_metadata'));
          expect(entryPoint).toEqual({
            name: 'some_package/missing_metadata',
-           package: SOME_PACKAGE,
+           package: {
+             name: 'some_package',
+             version: '1.0.1',
+             path: SOME_PACKAGE,
+           },
            path: _('/project/node_modules/some_package/missing_metadata'),
            typings: _('/project/node_modules/some_package/missing_metadata/missing_metadata.d.ts'),
            packageJson: loadPackageJson(fs, '/project/node_modules/some_package/missing_metadata'),
@@ -313,7 +341,11 @@ runInEachFileSystem(() => {
           _('/project/node_modules/some_package/types_rather_than_typings'));
       expect(entryPoint).toEqual({
         name: 'some_package/types_rather_than_typings',
-        package: SOME_PACKAGE,
+        package: {
+          name: 'some_package',
+          version: '1.0.1',
+          path: SOME_PACKAGE,
+        },
         path: _('/project/node_modules/some_package/types_rather_than_typings'),
         typings: _(
             `/project/node_modules/some_package/types_rather_than_typings/types_rather_than_typings.d.ts`),
@@ -348,7 +380,11 @@ runInEachFileSystem(() => {
           _('/project/node_modules/some_package/material_style'));
       expect(entryPoint).toEqual({
         name: 'some_package/material_style',
-        package: SOME_PACKAGE,
+        package: {
+          name: 'some_package',
+          version: '1.0.1',
+          path: SOME_PACKAGE,
+        },
         path: _('/project/node_modules/some_package/material_style'),
         typings: _(`/project/node_modules/some_package/material_style/material_style.d.ts`),
         packageJson: loadPackageJson(fs, '/project/node_modules/some_package/material_style'),
@@ -386,10 +422,16 @@ runInEachFileSystem(() => {
       _ = absoluteFrom;
       SOME_PACKAGE = _('/project/node_modules/some_package');
       fs = getFileSystem();
-      loadTestFiles([{
-        name: _('/project/node_modules/some_package/valid_entry_point/package.json'),
-        contents: createPackageJson('valid_entry_point')
-      }]);
+      loadTestFiles([
+        {
+          name: _('/project/node_modules/some_package/package.json'),
+          contents: createPackageJson('some_package', {version: '1.0.1'})
+        },
+        {
+          name: _('/project/node_modules/some_package/valid_entry_point/package.json'),
+          contents: createPackageJson('valid_entry_point')
+        }
+      ]);
       const config = new NgccConfiguration(fs, _('/project'));
       entryPoint = getEntryPointInfo(
           fs, config, new MockLogger(), SOME_PACKAGE,
@@ -463,9 +505,12 @@ runInEachFileSystem(() => {
   });
 
   function createPackageJson(
-      packageName: string,
-      {excludes, typingsProp = 'typings', typingsIsArray}:
-          {excludes?: string[], typingsProp?: string, typingsIsArray?: boolean} = {}): string {
+      packageName: string, {excludes, typingsProp = 'typings', typingsIsArray, version}: {
+        excludes?: string[],
+        typingsProp?: string,
+        typingsIsArray?: boolean,
+        version?: string
+      } = {}): string {
     const packageJson: any = {
       name: `some_package/${packageName}`,
       [typingsProp]: typingsIsArray ? [`./${packageName}.d.ts`] : `./${packageName}.d.ts`,
@@ -479,6 +524,9 @@ runInEachFileSystem(() => {
     };
     if (excludes) {
       excludes.forEach(exclude => delete packageJson[exclude]);
+    }
+    if (version !== undefined) {
+      packageJson.version = version;
     }
     return JSON.stringify(packageJson);
   }
