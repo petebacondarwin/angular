@@ -35,6 +35,7 @@ import {EntryPoint, EntryPointJsonProperty, EntryPointPackageJson, SUPPORTED_FOR
 import {makeEntryPointBundle} from './packages/entry_point_bundle';
 import {Transformer} from './packages/transformer';
 import {PathMappings} from './utils';
+import {CacheFileWriter} from './writing/cache_file_writer';
 import {FileWriter} from './writing/file_writer';
 import {InPlaceFileWriter} from './writing/in_place_file_writer';
 import {NewEntryPointFileWriter} from './writing/new_entry_point_file_writer';
@@ -73,6 +74,8 @@ export interface SyncNgccOptions {
    * Whether to create new entry-points bundles rather than overwriting the original files.
    */
   createNewEntryPointFormats?: boolean;
+
+  cacheRoot?: string
 
   /**
    * Provide a logger that will be called with log messages.
@@ -123,7 +126,7 @@ export function mainNgcc(options: AsyncNgccOptions): Promise<void>;
 export function mainNgcc(options: SyncNgccOptions): void;
 export function mainNgcc(
     {basePath, targetEntryPointPath, propertiesToConsider = SUPPORTED_FORMAT_PROPERTIES,
-     compileAllFormats = true, createNewEntryPointFormats = false,
+     compileAllFormats = true, createNewEntryPointFormats = false, cacheRoot,
      logger = new ConsoleLogger(LogLevel.info), pathMappings, async = false}: NgccOptions): void|
     Promise<void> {
   // Execute in parallel, if async execution is acceptable and there are more than 1 CPU cores.
@@ -212,7 +215,8 @@ export function mainNgcc(
 
   // The function for creating the `compile()` function.
   const createCompileFn: CreateCompileFn = onTaskCompleted => {
-    const fileWriters = getFileWriters(fileSystem, pkgJsonUpdater, createNewEntryPointFormats);
+    const fileWriters =
+        getFileWriters(fileSystem, pkgJsonUpdater, createNewEntryPointFormats, cacheRoot);
     const transformer = new Transformer(fileSystem, logger);
 
     return (task: Task) => {
@@ -299,11 +303,14 @@ function getPackageJsonUpdater(inParallel: boolean, fs: FileSystem): PackageJson
 }
 
 function getFileWriters(
-    fs: FileSystem, pkgJsonUpdater: PackageJsonUpdater,
-    createNewEntryPointFormats: boolean): FileWriter[] {
-  const fileWriters =
+    fs: FileSystem, pkgJsonUpdater: PackageJsonUpdater, createNewEntryPointFormats: boolean,
+    cacheRoot: string | undefined): FileWriter[] {
+  const fileWriters: FileWriter[] =
       [createNewEntryPointFormats ? new NewEntryPointFileWriter(fs, pkgJsonUpdater) :
                                     new InPlaceFileWriter(fs)];
+  if (cacheRoot !== undefined) {
+    fileWriters.push(new CacheFileWriter(fs, absoluteFrom(cacheRoot)));
+  }
   return fileWriters;
 }
 

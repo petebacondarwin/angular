@@ -64,6 +64,10 @@ if (require.main === module) {
             describe: 'The lowest severity logging message that should be output.',
             choices: ['debug', 'info', 'warn', 'error'],
           })
+          .option('cache', {
+            describe: 'An absolute path to a directory where ngcc output should be cached',
+            type: 'string'
+          })
           .help()
           .parse(args);
 
@@ -81,6 +85,7 @@ if (require.main === module) {
   const compileAllFormats = !options['first-only'];
   const createNewEntryPointFormats = options['create-ivy-entry-points'];
   const logLevel = options['l'] as keyof typeof LogLevel | undefined;
+  const cacheRoot = options['cache'];
 
   (async() => {
     try {
@@ -92,6 +97,7 @@ if (require.main === module) {
         targetEntryPointPath,
         compileAllFormats,
         createNewEntryPointFormats,
+        cacheRoot,
         logger,
         async: options['async'],
       });
