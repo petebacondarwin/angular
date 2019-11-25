@@ -210,7 +210,7 @@ export function mainNgcc(
 
   // The function for creating the `compile()` function.
   const createCompileFn: CreateCompileFn = onTaskCompleted => {
-    const fileWriter = getFileWriter(fileSystem, pkgJsonUpdater, createNewEntryPointFormats);
+    const fileWriters = getFileWriters(fileSystem, pkgJsonUpdater, createNewEntryPointFormats);
     const transformer = new Transformer(fileSystem, logger);
 
     return (task: Task) => {
@@ -250,7 +250,9 @@ export function mainNgcc(
         if (result.diagnostics.length > 0) {
           logger.warn(ts.formatDiagnostics(result.diagnostics, bundle.src.host));
         }
-        fileWriter.writeBundle(bundle, result.transformedFiles, formatPropertiesToMarkAsProcessed);
+        fileWriters.forEach(
+            fileWriter => fileWriter.writeBundle(
+                bundle, result.transformedFiles, formatPropertiesToMarkAsProcessed));
       } else {
         const errors = ts.formatDiagnostics(result.diagnostics, bundle.src.host);
         throw new Error(
@@ -294,11 +296,13 @@ function getPackageJsonUpdater(inParallel: boolean, fs: FileSystem): PackageJson
   return inParallel ? new ClusterPackageJsonUpdater(directPkgJsonUpdater) : directPkgJsonUpdater;
 }
 
-function getFileWriter(
+function getFileWriters(
     fs: FileSystem, pkgJsonUpdater: PackageJsonUpdater,
-    createNewEntryPointFormats: boolean): FileWriter {
-  return createNewEntryPointFormats ? new NewEntryPointFileWriter(fs, pkgJsonUpdater) :
-                                      new InPlaceFileWriter(fs);
+    createNewEntryPointFormats: boolean): FileWriter[] {
+  const fileWriters =
+      [createNewEntryPointFormats ? new NewEntryPointFileWriter(fs, pkgJsonUpdater) :
+                                    new InPlaceFileWriter(fs)];
+  return fileWriters;
 }
 
 function getTaskQueue(
