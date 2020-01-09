@@ -9,9 +9,11 @@
 import {Expression, ExternalExpr} from '@angular/compiler';
 import * as ts from 'typescript';
 
-import {ClassDeclaration, ReflectionHost, isNamedClassDeclaration} from '../../reflection';
+import {ClassDeclaration, ReflectionHost} from '../../reflection';
+import {Reference} from '../../util/src/references';
+
 import {FileToModuleHost, ReferenceEmitStrategy} from './emitter';
-import {ImportMode, Reference} from './references';
+import {ImportMode} from './import_mode';
 
 // Escape anything that isn't alphanumeric, '/' or '_'.
 const CHARS_TO_ESCAPE = /[^a-zA-Z0-9/_]/g;

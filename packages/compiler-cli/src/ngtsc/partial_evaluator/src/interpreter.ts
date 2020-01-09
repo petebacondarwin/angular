@@ -8,10 +8,9 @@
 
 import * as ts from 'typescript';
 
-import {Reference} from '../../imports';
-import {OwningModule} from '../../imports/src/references';
 import {DependencyTracker} from '../../incremental/api';
 import {Declaration, InlineDeclaration, ReflectionHost} from '../../reflection';
+import {OwningModule, Reference} from '../../util/src/references';
 import {isDeclaration} from '../../util/src/typescript';
 
 import {ArrayConcatBuiltinFn, ArraySliceBuiltinFn} from './builtin';

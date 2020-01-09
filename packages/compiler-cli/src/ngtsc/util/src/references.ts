@@ -9,12 +9,7 @@
 import {Expression} from '@angular/compiler';
 import * as ts from 'typescript';
 
-import {identifierOfNode} from '../../util/src/typescript';
-
-export enum ImportMode {
-  UseExistingImport,
-  ForceNewImport,
-}
+import {identifierOfNode} from './typescript';
 
 export interface OwningModule {
   specifier: string;

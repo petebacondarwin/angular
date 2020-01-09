@@ -12,8 +12,8 @@ import {LogicalFileSystem, absoluteFrom} from '../../file_system';
 import {runInEachFileSystem} from '../../file_system/testing';
 import {Declaration, TypeScriptReflectionHost} from '../../reflection';
 import {getDeclaration, makeProgram} from '../../testing';
+import {Reference} from '../../util/src/references';
 import {LogicalProjectStrategy} from '../src/emitter';
-import {Reference} from '../src/references';
 
 runInEachFileSystem(() => {
   describe('LogicalProjectStrategy', () => {

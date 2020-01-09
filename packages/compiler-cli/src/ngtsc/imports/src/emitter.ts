@@ -11,10 +11,11 @@ import * as ts from 'typescript';
 import {LogicalFileSystem, LogicalProjectPath, PathSegment, absoluteFromSourceFile, dirname, relative} from '../../file_system';
 import {stripExtension} from '../../file_system/src/util';
 import {ReflectionHost} from '../../reflection';
+import {Reference} from '../../util/src/references';
 import {getSourceFile, isDeclaration, nodeNameForError} from '../../util/src/typescript';
 
 import {findExportedNameOfNode} from './find_export';
-import {ImportMode, Reference} from './references';
+import {ImportMode} from './import_mode';
 import {ModuleResolver} from './resolver';
 
 
