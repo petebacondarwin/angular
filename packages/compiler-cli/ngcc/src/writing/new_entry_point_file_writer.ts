@@ -13,7 +13,7 @@ import {EntryPointBundle} from '../packages/entry_point_bundle';
 import {FileToWrite} from '../rendering/utils';
 
 import {InPlaceFileWriter} from './in_place_file_writer';
-import {PackageJsonUpdater} from './package_json_updater';
+import {PackageJsonUpdater, createInsertBeforeFn} from './package_json_updater';
 
 const NGCC_DIRECTORY = '__ivy_ngcc__';
 
@@ -93,7 +93,8 @@ export class NewEntryPointFileWriter extends InPlaceFileWriter {
             `(${formatProperties.join(', ')}) map to more than one format-path.`);
       }
 
-      update.addChange([`${formatProperty}_ivy_ngcc`], newFormatPath, {before: formatProperty});
+      update.addChange(
+          [`${formatProperty}_ivy_ngcc`], newFormatPath, createInsertBeforeFn(formatProperty));
     }
 
     update.writeChanges(packageJsonPath, packageJson);

@@ -14,7 +14,7 @@ import {absoluteFrom as _} from '../../../../src/ngtsc/file_system';
 import {runInEachFileSystem} from '../../../../src/ngtsc/file_system/testing';
 import {ClusterPackageJsonUpdater} from '../../../src/execution/cluster/package_json_updater';
 import {JsonObject} from '../../../src/packages/entry_point';
-import {PackageJsonPropertyPositioning, PackageJsonUpdate, PackageJsonUpdater} from '../../../src/writing/package_json_updater';
+import {PackageJsonUpdate, PackageJsonUpdater, PropertyPositioner, createInsertBeforeFn, insertAlphabetically} from '../../../src/writing/package_json_updater';
 import {mockProperty} from '../../helpers/spy_utils';
 
 
@@ -48,16 +48,16 @@ runInEachFileSystem(() => {
               const update = updater.createUpdate();
 
               update.addChange(['foo'], 'updated');
-              update.addChange(['baz'], 'updated 2', 'alphabetic');
-              update.addChange(['bar'], 'updated 3', {before: 'bar'});
+              update.addChange(['baz'], 'updated 2', insertAlphabetically);
+              update.addChange(['bar'], 'updated 3', createInsertBeforeFn('bar'));
               update.writeChanges(jsonPath);
 
               expect(writeChangesSpy)
                   .toHaveBeenCalledWith(
                       [
                         [['foo'], 'updated', 'unimportant'],
-                        [['baz'], 'updated 2', 'alphabetic'],
-                        [['bar'], 'updated 3', {before: 'bar'}],
+                        [['baz'], 'updated 2', insertAlphabetically],
+                        [['bar'], 'updated 3', createInsertBeforeFn('bar')],
                       ],
                       jsonPath, undefined);
             });
@@ -75,14 +75,14 @@ runInEachFileSystem(() => {
 
           updater.createUpdate()
               .addChange(['foo'], 'updated')
-              .addChange(['bar'], 'updated too', 'alphabetic')
+              .addChange(['bar'], 'updated too', insertAlphabetically)
               .writeChanges(jsonPath, parsedJson);
 
           expect(delegate.writeChanges)
               .toHaveBeenCalledWith(
                   [
                     [['foo'], 'updated', 'unimportant'],
-                    [['bar'], 'updated too', 'alphabetic'],
+                    [['bar'], 'updated too', insertAlphabetically],
                   ],
                   jsonPath, parsedJson);
         });
@@ -106,10 +106,10 @@ runInEachFileSystem(() => {
           const jsonPath = _('/foo/package.json');
 
           const writeToProp =
-              (propPath: string[], positioning?: PackageJsonPropertyPositioning,
-               parsed?: JsonObject) => updater.createUpdate()
-                                           .addChange(propPath, 'updated', positioning)
-                                           .writeChanges(jsonPath, parsed);
+              (propPath: string[], positioner?: PropertyPositioner, parsed?: JsonObject) =>
+                  updater.createUpdate()
+                      .addChange(propPath, 'updated', positioner)
+                      .writeChanges(jsonPath, parsed);
 
           writeToProp(['foo']);
           expect(processSendSpy).toHaveBeenCalledWith({
@@ -118,18 +118,18 @@ runInEachFileSystem(() => {
             changes: [[['foo'], 'updated', 'unimportant']],
           });
 
-          writeToProp(['bar'], {before: 'foo'});
+          writeToProp(['bar'], createInsertBeforeFn('foo'));
           expect(processSendSpy).toHaveBeenCalledWith({
             type: 'update-package-json',
             packageJsonPath: jsonPath,
-            changes: [[['bar'], 'updated', {before: 'foo'}]],
+            changes: [[['bar'], 'updated', createInsertBeforeFn('foo')]],
           });
 
-          writeToProp(['bar', 'baz', 'qux'], 'alphabetic', {});
+          writeToProp(['bar', 'baz', 'qux'], insertAlphabetically, {});
           expect(processSendSpy).toHaveBeenCalledWith({
             type: 'update-package-json',
             packageJsonPath: jsonPath,
-            changes: [[['bar', 'baz', 'qux'], 'updated', 'alphabetic']],
+            changes: [[['bar', 'baz', 'qux'], 'updated', insertAlphabetically]],
           });
         });
 

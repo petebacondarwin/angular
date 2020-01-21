@@ -9,7 +9,7 @@ import {AbsoluteFsPath, FileSystem, absoluteFrom, getFileSystem} from '../../../
 import {runInEachFileSystem} from '../../../src/ngtsc/file_system/testing';
 import {loadTestFiles} from '../../../test/helpers';
 import {JsonObject} from '../../src/packages/entry_point';
-import {DirectPackageJsonUpdater, PackageJsonUpdater} from '../../src/writing/package_json_updater';
+import {DirectPackageJsonUpdater, PackageJsonUpdater, addToEnd, createInsertBeforeFn, insertAlphabetically} from '../../src/writing/package_json_updater';
 
 runInEachFileSystem(() => {
   describe('DirectPackageJsonUpdater', () => {
@@ -190,10 +190,10 @@ runInEachFileSystem(() => {
         });
 
         updater.createUpdate()
-            .addChange(['p1', 'p11'], '1.1-updated', 'unimportant')
-            .addChange(['p1', 'p10'], '1.0-added', 'unimportant')
-            .addChange(['p2'], '2-updated', 'unimportant')
-            .addChange(['p0'], '0-added', 'unimportant')
+            .addChange(['p1', 'p11'], '1.1-updated', addToEnd)
+            .addChange(['p1', 'p10'], '1.0-added', addToEnd)
+            .addChange(['p2'], '2-updated', addToEnd)
+            .addChange(['p0'], '0-added', addToEnd)
             .writeChanges(jsonPath);
 
         expectJsonEquals(jsonPath, {
@@ -211,10 +211,10 @@ runInEachFileSystem(() => {
            });
 
            updater.createUpdate()
-               .addChange(['p1', 'p11'], '1.1-updated', 'alphabetic')
-               .addChange(['p1', 'p10'], '1.0-added', 'alphabetic')
-               .addChange(['p0'], '0-added', 'alphabetic')
-               .addChange(['p3'], '3-added', 'alphabetic')
+               .addChange(['p1', 'p11'], '1.1-updated', insertAlphabetically)
+               .addChange(['p1', 'p10'], '1.0-added', insertAlphabetically)
+               .addChange(['p0'], '0-added', insertAlphabetically)
+               .addChange(['p3'], '3-added', insertAlphabetically)
                .writeChanges(jsonPath);
 
            expectJsonEquals(jsonPath, {
@@ -225,7 +225,7 @@ runInEachFileSystem(() => {
            });
          });
 
-      it('should position added/updated properties correctly with `positioning: {before: ...}`',
+      it('should position added/updated properties correctly with `positioning: createInsertBeforeFn(...}`',
          () => {
            const jsonPath = createJsonFile({
              p2: '2',
@@ -233,9 +233,9 @@ runInEachFileSystem(() => {
            });
 
            updater.createUpdate()
-               .addChange(['p0'], '0-added', {before: 'p1'})
-               .addChange(['p1', 'p10'], '1.0-added', {before: 'p11'})
-               .addChange(['p1', 'p12'], '1.2-updated', {before: 'p11'})
+               .addChange(['p0'], '0-added', createInsertBeforeFn('p1'))
+               .addChange(['p1', 'p10'], '1.0-added', createInsertBeforeFn('p11'))
+               .addChange(['p1', 'p12'], '1.2-updated', createInsertBeforeFn('p11'))
                .writeChanges(jsonPath);
 
            expectJsonEquals(jsonPath, {
@@ -247,8 +247,8 @@ runInEachFileSystem(() => {
            // Verify that trying to add before non-existent property, puts updated property at the
            // end.
            updater.createUpdate()
-               .addChange(['p3'], '3-added', {before: 'non-existent'})
-               .addChange(['p1', 'p10'], '1.0-updated', {before: 'non-existent'})
+               .addChange(['p3'], '3-added', createInsertBeforeFn('non-existent'))
+               .addChange(['p1', 'p10'], '1.0-updated', createInsertBeforeFn('non-existent'))
                .writeChanges(jsonPath);
 
            expectJsonEquals(jsonPath, {
@@ -267,12 +267,12 @@ runInEachFileSystem(() => {
         const jsonPath = createJsonFile(jsonObj);
 
         updater.createUpdate()
-            .addChange(['p0'], '0-added', 'alphabetic')
-            .addChange(['p1'], '1-added', 'unimportant')
+            .addChange(['p0'], '0-added', insertAlphabetically)
+            .addChange(['p1'], '1-added', addToEnd)
             .addChange(['p2'], '2-added')
-            .addChange(['p20'], '20-updated', 'alphabetic')
-            .addChange(['p10', 'p103'], '10.3-added', {before: 'p102'})
-            .addChange(['p10', 'p102'], '10.2-updated', {before: 'p103'})
+            .addChange(['p20'], '20-updated', insertAlphabetically)
+            .addChange(['p10', 'p103'], '10.3-added', createInsertBeforeFn('p102'))
+            .addChange(['p10', 'p102'], '10.2-updated', createInsertBeforeFn('p103'))
             .writeChanges(jsonPath, jsonObj);
 
         expect(JSON.stringify(jsonObj)).toBe(JSON.stringify({

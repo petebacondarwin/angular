@@ -10,8 +10,8 @@ import {AbsoluteFsPath, FileSystem, dirname} from '../../../src/ngtsc/file_syste
 import {JsonObject, JsonValue} from '../packages/entry_point';
 
 
-export type PackageJsonChange = [string[], JsonValue, PackageJsonPropertyPositioning];
-export type PackageJsonPropertyPositioning = 'unimportant' | 'alphabetic' | {before: string};
+export interface PropertyPositioner { (ctx: JsonObject, prop: string): void; }
+export type PackageJsonChange = [string[], JsonValue, PropertyPositioner];
 export type WritePackageJsonChangesFn =
     (changes: PackageJsonChange[], packageJsonPath: AbsoluteFsPath, parsedJson?: JsonObject) =>
         void;
@@ -83,9 +83,8 @@ export class PackageJsonUpdate {
    * @param value The new value to set the property to.
    * @param position The desired position for the added/updated property.
    */
-  addChange(
-      propertyPath: string[], value: JsonValue,
-      positioning: PackageJsonPropertyPositioning = 'unimportant'): this {
+  addChange(propertyPath: string[], value: JsonValue, positioning: PropertyPositioner = addToEnd):
+      this {
     this.ensureNotApplied();
     this.changes.push([propertyPath, value, positioning]);
     return this;
@@ -135,16 +134,16 @@ export class DirectPackageJsonUpdater implements PackageJsonUpdater {
 
     // Apply all changes to both the canonical representation (read from disk) and any pre-existing,
     // in-memory representation.
-    for (const [propPath, value, positioning] of changes) {
+    for (const [propPath, value, positioner] of changes) {
       if (propPath.length === 0) {
         throw new Error(`Missing property path for writing value to '${packageJsonPath}'.`);
       }
 
-      applyChange(parsedJson, propPath, value, positioning);
+      applyChange(parsedJson, propPath, value, positioner);
 
       if (preExistingParsedJson) {
         // No need to take property positioning into account for in-memory representations.
-        applyChange(preExistingParsedJson, propPath, value, 'unimportant');
+        applyChange(preExistingParsedJson, propPath, value, addToEnd);
       }
     }
 
@@ -158,7 +157,7 @@ export class DirectPackageJsonUpdater implements PackageJsonUpdater {
 // Helpers
 export function applyChange(
     ctx: JsonObject, propPath: string[], value: JsonValue,
-    positioning: PackageJsonPropertyPositioning): void {
+    positionProperty: PropertyPositioner): void {
   const lastPropIdx = propPath.length - 1;
   const lastProp = propPath[lastPropIdx];
 
@@ -174,7 +173,19 @@ export function applyChange(
   }
 
   ctx[lastProp] = value;
-  positionProperty(ctx, lastProp, positioning);
+  positionProperty(ctx, lastProp);
+}
+
+export function insertAlphabetically(ctx: JsonObject, prop: string): void {
+  movePropBefore(ctx, prop, p => p > prop);
+}
+
+export function addToEnd(ctx: JsonObject, prop: string): void {
+  // Do nothing
+}
+
+export function createInsertBeforeFn(markerProp: string): PropertyPositioner {
+  return (ctx: JsonObject, prop: string) => movePropBefore(ctx, prop, p => p === markerProp);
 }
 
 function movePropBefore(ctx: JsonObject, prop: string, isNextProp: (p: string) => boolean): void {
@@ -191,25 +202,4 @@ function movePropToEnd(ctx: JsonObject, prop: string): void {
   const value = ctx[prop];
   delete ctx[prop];
   ctx[prop] = value;
-}
-
-function positionProperty(
-    ctx: JsonObject, prop: string, positioning: PackageJsonPropertyPositioning): void {
-  switch (positioning) {
-    case 'alphabetic':
-      movePropBefore(ctx, prop, p => p > prop);
-      break;
-    case 'unimportant':
-      // Leave the property order unchanged; i.e. newly added properties will be last and existing
-      // ones will remain in their old position.
-      break;
-    default:
-      if ((typeof positioning !== 'object') || (positioning.before === undefined)) {
-        throw new Error(
-            `Unknown positioning (${JSON.stringify(positioning)}) for property '${prop}'.`);
-      }
-
-      movePropBefore(ctx, prop, p => p === positioning.before);
-      break;
-  }
 }

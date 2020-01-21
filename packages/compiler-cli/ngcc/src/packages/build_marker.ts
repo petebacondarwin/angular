@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import {AbsoluteFsPath, basename, dirname, isRoot} from '../../../src/ngtsc/file_system';
-import {PackageJsonUpdater} from '../writing/package_json_updater';
+import {PackageJsonUpdater, insertAlphabetically} from '../writing/package_json_updater';
 import {EntryPointPackageJson, PackageJsonFormatProperties} from './entry_point';
 
 export const NGCC_VERSION = '0.0.0-PLACEHOLDER';
@@ -60,7 +60,7 @@ export function markAsProcessed(
 
   // Update the format properties to mark them as processed.
   for (const prop of formatProperties) {
-    update.addChange(['__processed_by_ivy_ngcc__', prop], NGCC_VERSION, 'alphabetic');
+    update.addChange(['__processed_by_ivy_ngcc__', prop], NGCC_VERSION, insertAlphabetically);
   }
 
   // Update the `prepublishOnly` script (keeping a backup, if necessary) to prevent `ngcc`'d
