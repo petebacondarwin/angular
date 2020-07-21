@@ -264,6 +264,12 @@ export function compileComponentFromMetadata(
   return {expression, type};
 }
 
+export function compilePartialComponentFromMetadata(
+    meta: R3ComponentMetadata, constantPool: ConstantPool,
+    bindingParser: BindingParser): R3ComponentDef {
+  throw new Error('NOT IMPLEMENTED');
+}
+
 /**
  * A wrapper around `compileDirective` which depends on render2 global analysis data as its input
  * instead of the `R3DirectiveMetadata`.
