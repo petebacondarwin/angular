@@ -1,0 +1,176 @@
+{
+  "$schema": "../../test_case_schema.json",
+  "cases": [
+    {
+      "description": "should instantiate directives",
+      "inputFiles": [
+        "directives.ts"
+      ],
+      "focusTest": true,
+      "expectations": [
+        {
+          "files": [
+            {
+              "generated": "directives.js",
+              "expected": "directives_child_component_def.js"
+            }
+          ],
+          "failureMessage": "Incorrect ChildComponent.ɵcmp"
+        },
+        {
+          "files": [
+            {
+              "generated": "directives.js",
+              "expected": "directives_child_component_factory.js"
+            }
+          ],
+          "failureMessage": "Incorrect ChildComponent.ɵfac"
+        },
+        {
+          "files": [
+            {
+              "generated": "directives.js",
+              "expected": "directives_my_component_def.js"
+            }
+          ],
+          "failureMessage": "Incorrect MyComponent.ɵcmp"
+        },
+        {
+          "files": [
+            {
+              "generated": "directives.js",
+              "expected": "directives_my_component_factory.js"
+            }
+          ],
+          "failureMessage": "Incorrect MyComponent.ɵfac"
+        },
+        {
+          "files": [
+            {
+              "generated": "directives.js",
+              "expected": "directives_some_directive_def.js"
+            }
+          ],
+          "failureMessage": "Incorrect SomeDirective.ɵdir"
+        },
+        {
+          "files": [
+            {
+              "generated": "directives.js",
+              "expected": "directives_some_directive_factory.js"
+            }
+          ],
+          "failureMessage": "Incorrect SomeDirective.ɵdir"
+        }
+      ]
+    },
+    {
+      "description": "should support complex selectors",
+      "inputFiles": [
+        "complex_selectors.ts"
+      ],
+      "focusTest": true,
+      "expectations": [
+        {
+          "files": [
+            {
+              "generated": "complex_selectors.js",
+              "expected": "complex_selectors_some_directive_def.js"
+            }
+          ],
+          "failureMessage": "Incorrect SomeDirective.ɵdir"
+        },
+        {
+          "files": [
+            {
+              "generated": "complex_selectors.js",
+              "expected": "complex_selectors_some_directive_factory.js"
+            }
+          ],
+          "failureMessage": "Incorrect SomeDirective.ɵdir"
+        },
+        {
+          "files": [
+            {
+              "generated": "complex_selectors.js",
+              "expected": "complex_selectors_other_directive_def.js"
+            }
+          ],
+          "failureMessage": "Incorrect OtherDirective.ɵdir"
+        },
+        {
+          "files": [
+            {
+              "generated": "complex_selectors.js",
+              "expected": "complex_selectors_other_directive_factory.js"
+            }
+          ],
+          "failureMessage": "Incorrect OtherDirective.ɵdir"
+        }
+      ]
+    },
+    {
+      "description": "should convert #my-app selector to [\"\", \"id\", \"my-app\"]",
+      "focusTest": true,
+      "inputFiles": [
+        "id_selector.ts"
+      ],
+      "expectations": [
+        {
+          "failureMessage": "Incorrect SomeComponent.ɵcmp"
+        }
+      ]
+    },
+    {
+      "description": "should support components without selector"
+    },
+    {
+      "description": "should not treat ElementRef, ViewContainerRef, or ChangeDetectorRef specially when injecting',"
+    },
+    {
+      "description": "should support structural directives"
+    },
+    {
+      "description": "local reference"
+    },
+    {
+      "description": "local references in nested views"
+    },
+    {
+      "description": "should support local refs mixed with context assignments"
+    },
+    {
+      "description": "should instantiate directives in a closure when they are forward referenced"
+    },
+    {
+      "description": "should instantiate pipes in a closure when they are forward referenced"
+    },
+    {
+      "description": "should split multiple `exportAs` values into an array"
+    },
+    {
+      "description": "should not throw for empty property bindings on ng-template"
+    },
+    {
+      "description": "should not generate a selectors array if the directive does not have a selector"
+    },
+    {
+      "description": "should generate a pure function for constant object literals"
+    },
+    {
+      "description": "should generate a pure function for constant array literals"
+    },
+    {
+      "description": "should not share pure functions between null and object literals"
+    },
+    {
+      "description": "should not share pure functions between null and array literals"
+    },
+    {
+      "description": "should not share pure functions between null and function calls"
+    },
+    {
+      "description": "should emit a valid setClassMetadata call in ES5 if a class with a custom decorator is referencing itself inside "
+    }
+  ]
+}
