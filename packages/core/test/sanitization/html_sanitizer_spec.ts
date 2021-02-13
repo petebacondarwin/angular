@@ -89,6 +89,11 @@ function sanitizeHtml(defaultDoc: any, unsafeHtmlInput: string): string {
       expect(logMsgs).toEqual([]);
     });
 
+    it('supports table rows and cells without a containing table element', () => {
+      expect(sanitizeHtml(defaultDoc, '<tr><td>Hello {{ world }}!</td></tr>'))
+          .toEqual('<tr><td>Hello {{ world }}!</td></tr>');
+    });
+
     it('does not warn when just re-encoding text', () => {
       expect(sanitizeHtml(defaultDoc, '<p>Hellö Wörld</p>'))
           .toEqual('<p>Hell&#246; W&#246;rld</p>');
@@ -237,12 +242,7 @@ function sanitizeHtml(defaultDoc: any, unsafeHtmlInput: string): string {
        () => {
          expect(sanitizeHtml(
                     defaultDoc, '<svg><p><style><img src="</style><img src=x onerror=alert(1)//">'))
-             .toEqual(
-                 isDOMParserAvailable() ?
-                     // PlatformBrowser output
-                     '<p><img src="x"></p>' :
-                     // PlatformServer output
-                     '<p></p>');
+             .toEqual('<p><img src="x"></p>');
        });
 
     if (browserDetection.isWebkit) {
