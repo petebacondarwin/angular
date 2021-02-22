@@ -25,15 +25,16 @@ runInEachFileSystem(() => {
       fs = getFileSystem();
       testDir = absoluteFrom('/test');
 
+      debugger;
       testFilesDir = fs.resolve(testDir, 'test_files');
       loadTestDirectory(fs, realResolve(__dirname, 'test_files'), testFilesDir);
       translationFilesDir = fs.resolve(testDir, 'test_files');
       loadTestDirectory(fs, realResolve(__dirname, 'locales'), translationFilesDir);
     });
 
-    it('should copy non-code files to the destination folders', () => {
+    fit('should copy non-code files to the destination folders', () => {
       const diagnostics = new Diagnostics();
-      const outputPathFn = getOutputPathFn(fs.resolve(testDir, '{{LOCALE}}'));
+      const outputPathFn = getOutputPathFn(fs, fs.resolve(testDir, '{{LOCALE}}'));
       translateFiles({
         sourceRootPath: testFilesDir,
         sourceFilePaths: ['test-1.txt', 'test-2.txt'],
@@ -69,7 +70,7 @@ runInEachFileSystem(() => {
 
     it('should translate and copy source-code files to the destination folders', () => {
       const diagnostics = new Diagnostics();
-      const outputPathFn = getOutputPathFn(fs.resolve(testDir, '{{LOCALE}}'));
+      const outputPathFn = getOutputPathFn(fs, fs.resolve(testDir, '{{LOCALE}}'));
       translateFiles({
         sourceRootPath: testFilesDir,
         sourceFilePaths: ['test.js'],
@@ -97,7 +98,7 @@ runInEachFileSystem(() => {
 
     it('should translate and copy source-code files overriding the locales', () => {
       const diagnostics = new Diagnostics();
-      const outputPathFn = getOutputPathFn(fs.resolve(testDir, '{{LOCALE}}'));
+      const outputPathFn = getOutputPathFn(fs, fs.resolve(testDir, '{{LOCALE}}'));
       translateFiles({
         sourceRootPath: testFilesDir,
         sourceFilePaths: ['test.js'],
@@ -131,7 +132,7 @@ runInEachFileSystem(() => {
 
     it('should merge translation files, if more than one provided, and translate source-code', () => {
       const diagnostics = new Diagnostics();
-      const outputPathFn = getOutputPathFn(fs.resolve(testDir, '{{LOCALE}}'));
+      const outputPathFn = getOutputPathFn(fs, fs.resolve(testDir, '{{LOCALE}}'));
       translateFiles({
         sourceRootPath: testFilesDir,
         sourceFilePaths: ['test-extra.js'],
@@ -163,9 +164,9 @@ runInEachFileSystem(() => {
               `var name="World";var message="Hola, "+name+"!";var message="Goodbye, "+name+"!";`);
     });
 
-    it('should transform and/or copy files to the destination folders', () => {
+    fit('should transform and/or copy files to the destination folders', () => {
       const diagnostics = new Diagnostics();
-      const outputPathFn = getOutputPathFn(fs.resolve(testDir, '{{LOCALE}}'));
+      const outputPathFn = getOutputPathFn(fs, fs.resolve(testDir, '{{LOCALE}}'));
       translateFiles({
         sourceRootPath: testFilesDir,
         sourceFilePaths: ['test-1.txt', 'test-2.txt', 'test.js'],

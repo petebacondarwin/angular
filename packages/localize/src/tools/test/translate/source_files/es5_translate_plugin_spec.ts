@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import {runInEachFileSystem} from '@angular/compiler-cli/src/ngtsc/file_system/testing';
+import {absoluteFrom, FileSystem, getFileSystem, relativeFrom} from '@angular/compiler-cli/src/ngtsc/file_system';
 import {ɵcomputeMsgId, ɵparseTranslation} from '@angular/localize';
 import {ɵParsedTranslation} from '@angular/localize/private';
 import {transformSync} from '@babel/core';
@@ -15,6 +16,9 @@ import {TranslatePluginOptions} from '../../../src/source_file_utils';
 import {makeEs5TranslatePlugin} from '../../../src/translate/source_files/es5_translate_plugin';
 
 runInEachFileSystem(() => {
+  let fs: FileSystem;
+  beforeEach(() => fs = getFileSystem());
+
   describe('makeEs5Plugin', () => {
     describe('(no translations)', () => {
       it('should transform `$localize` calls with binary expression', () => {
@@ -142,7 +146,7 @@ runInEachFileSystem(() => {
            expect(diagnostics.hasErrors).toBe(true);
            expect(diagnostics.messages[0]).toEqual({
              type: 'error',
-             message: '/app/dist/test.js: `$localize` called without any arguments.\n' +
+             message: `${relativeFrom('app/dist/test.js')}: \`$localize\` called without any arguments.\n` +
                  '> 1 | $localize()\n' +
                  '    | ^^^^^^^^^^^',
            });
@@ -157,7 +161,7 @@ runInEachFileSystem(() => {
            expect(diagnostics.messages[0]).toEqual({
              type: 'error',
              message:
-                 '/app/dist/test.js: Unexpected argument to `$localize` (expected an array).\n' +
+                 `${relativeFrom('app/dist/test.js')}: Unexpected argument to \`$localize\` (expected an array).\n` +
                  '> 1 | $localize(...x)\n' +
                  '    |           ^^^^',
            });
@@ -172,7 +176,7 @@ runInEachFileSystem(() => {
            expect(diagnostics.messages[0]).toEqual({
              type: 'error',
              message:
-                 '/app/dist/test.js: Unexpected messageParts for `$localize` (expected an array of strings).\n' +
+                 `${relativeFrom('app/dist/test.js')}: Unexpected messageParts for \`$localize\` (expected an array of strings).\n` +
                  '> 1 | $localize(null, [])\n' +
                  '    |           ^^^^',
            });
@@ -187,7 +191,7 @@ runInEachFileSystem(() => {
            expect(diagnostics.messages[0]).toEqual({
              type: 'error',
              message:
-                 '/app/dist/test.js: Unexpected `raw` argument to the "makeTemplateObject()" function (expected an expression).\n' +
+                 `${relativeFrom('app/dist/test.js')}: Unexpected \`raw\` argument to the "makeTemplateObject()" function (expected an expression).\n` +
                  '> 1 | $localize(__makeTemplateObject([], ...[]))\n' +
                  '    |                                    ^^^^^',
            });
@@ -202,7 +206,7 @@ runInEachFileSystem(() => {
            expect(diagnostics.messages[0]).toEqual({
              type: 'error',
              message:
-                 '/app/dist/test.js: Unexpected `cooked` argument to the "makeTemplateObject()" function (expected an expression).\n' +
+                 `${relativeFrom('app/dist/test.js')}: Unexpected \`cooked\` argument to the "makeTemplateObject()" function (expected an expression).\n` +
                  '> 1 | $localize(__makeTemplateObject(...[], []))\n' +
                  '    |                                ^^^^^',
            });
@@ -217,7 +221,7 @@ runInEachFileSystem(() => {
            expect(diagnostics.messages[0]).toEqual({
              type: 'error',
              message:
-                 '/app/dist/test.js: Unexpected messageParts for `$localize` (expected an array of strings).\n' +
+                 `${relativeFrom('app/dist/test.js')}: Unexpected messageParts for \`$localize\` (expected an array of strings).\n` +
                  '> 1 | $localize(__makeTemplateObject(["a", 12, "b"], ["a", "12", "b"]))\n' +
                  '    |                                ^^^^^^^^^^^^^^',
            });
@@ -232,7 +236,7 @@ runInEachFileSystem(() => {
            expect(diagnostics.messages[0]).toEqual({
              type: 'error',
              message:
-                 '/app/dist/test.js: Unexpected messageParts for `$localize` (expected an array of strings).\n' +
+                 `${relativeFrom('app/dist/test.js')}: Unexpected messageParts for \`$localize\` (expected an array of strings).\n` +
                  '> 1 | $localize(__makeTemplateObject(["a", "12", "b"], ["a", 12, "b"]))\n' +
                  '    |                                                  ^^^^^^^^^^^^^^',
            });
@@ -247,7 +251,7 @@ runInEachFileSystem(() => {
            expect(diagnostics.messages[0]).toEqual({
              type: 'error',
              message:
-                 '/app/dist/test.js: Invalid substitutions for `$localize` (expected all substitution arguments to be expressions).\n' +
+                 `${relativeFrom('app/dist/test.js')}: Invalid substitutions for \`$localize\` (expected all substitution arguments to be expressions).\n` +
                  '> 1 | $localize(__makeTemplateObject(["a", "b"], ["a", "b"]), ...[])\n' +
                  '    |                                                         ^^^^^',
            });
@@ -361,9 +365,10 @@ runInEachFileSystem(() => {
   function transformCode(
       input: string, translations: Record<string, ɵParsedTranslation> = {},
       pluginOptions?: TranslatePluginOptions, diagnostics = new Diagnostics()): string {
-    return transformSync(input, {
+        return transformSync(input, {
              plugins: [makeEs5TranslatePlugin(diagnostics, translations, pluginOptions)],
-             filename: '/app/dist/test.js'
+             filename: absoluteFrom('/app/dist/test.js'),
+             cwd: absoluteFrom('/'),
            })!.code!;
   }
 });

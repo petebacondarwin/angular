@@ -7,15 +7,18 @@
  */
 import {absoluteFrom, AbsoluteFsPath, FileSystem, getFileSystem, setFileSystem} from '@angular/compiler-cli/src/ngtsc/file_system';
 import {InvalidFileSystem} from '@angular/compiler-cli/src/ngtsc/file_system/src/invalid_file_system';
-import {runInEachFileSystem} from '@angular/compiler-cli/src/ngtsc/file_system/testing';
+import {MockFileSystemNative, runInEachFileSystem} from '@angular/compiler-cli/src/ngtsc/file_system/testing';
 import {MockLogger} from '@angular/compiler-cli/src/ngtsc/logging/testing';
 import {loadTestDirectory} from '@angular/compiler-cli/src/ngtsc/testing';
+import * as os from 'os';
 
 import {extractTranslations} from '../../../src/extract/main';
 import {FormatOptions} from '../../../src/extract/translation_files/format_options';
 import {toAttributes} from '../translation_files/utils';
 
-runInEachFileSystem(() => {
+// Because Babel uses the native `path.resolve()` function internally, it is not possible to mock out the
+// file-system effectively in Windows. So in that operating system only test the native mode.
+(os.platform() === 'win32' ? runInNativeWindowsFileSystem : runInEachFileSystem)(() => {
   let fs: FileSystem;
   let logger: MockLogger;
   let rootPath: AbsoluteFsPath;
@@ -497,3 +500,11 @@ runInEachFileSystem(() => {
     });
   });
 });
+
+function runInNativeWindowsFileSystem(callback: () => void) {
+  describe(`<<FileSystem: Native Windows>>`, () => {
+    beforeEach(() => setFileSystem(new MockFileSystemNative()));
+    afterEach(() => setFileSystem(new InvalidFileSystem()));
+    callback();
+  });
+}

@@ -5,13 +5,17 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import {absoluteFrom, getFileSystem, relativeFrom} from '@angular/compiler-cli/src/ngtsc/file_system';
+import {absoluteFrom, getFileSystem} from '@angular/compiler-cli/src/ngtsc/file_system';
 import {runInEachFileSystem} from '@angular/compiler-cli/src/ngtsc/file_system/testing';
 import {MockLogger} from '@angular/compiler-cli/src/ngtsc/logging/testing';
+import * as os from 'os';
 
 import {MessageExtractor} from '../../src/extract/extraction';
+import {runInNativeWindowsFileSystem} from '../source_file_utils_spec';
 
-runInEachFileSystem(() => {
+// Because Babel uses the native `path.resolve()` function internally, it is not possible to mock out the
+// file-system effectively in Windows. So in that operating system only test the native mode.
+(os.platform() === 'win32' ? runInNativeWindowsFileSystem : runInEachFileSystem)(() => {
   describe('extractMessages', () => {
     it('should extract a message for each $localize template tag', () => {
       const fs = getFileSystem();

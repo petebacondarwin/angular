@@ -5,17 +5,22 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import {absoluteFrom, getFileSystem, PathManipulation} from '@angular/compiler-cli/src/ngtsc/file_system';
-import {runInEachFileSystem} from '@angular/compiler-cli/src/ngtsc/file_system/testing';
+import {absoluteFrom, AbsoluteFsPath, getFileSystem, PathManipulation, setFileSystem} from '@angular/compiler-cli/src/ngtsc/file_system';
+import { InvalidFileSystem } from '@angular/compiler-cli/src/ngtsc/file_system/src/invalid_file_system';
+import {MockFileSystemNative, runInEachFileSystem} from '@angular/compiler-cli/src/ngtsc/file_system/testing';
 import {ɵmakeTemplateObject} from '@angular/localize';
 import {NodePath, TransformOptions, transformSync} from '@babel/core';
 import generate from '@babel/generator';
-
 import template from '@babel/template';
 import {Expression, Identifier, TaggedTemplateExpression, ExpressionStatement, CallExpression, isParenthesizedExpression, numericLiteral, binaryExpression, NumericLiteral} from '@babel/types';
+import * as os from 'os';
+import {resolve as realResolve} from 'path';
+
 import {isGlobalIdentifier, isNamedIdentifier, isStringLiteralArray, isArrayOfExpressions, unwrapStringLiteralArray, unwrapMessagePartsFromLocalizeCall, wrapInParensIfNecessary, buildLocalizeReplacement, unwrapSubstitutionsFromLocalizeCall, unwrapMessagePartsFromTemplateLiteral, getLocation} from '../src/source_file_utils';
 
-runInEachFileSystem(() => {
+// Because Babel uses the native `path.resolve()` function internally, it is not possible to mock out the
+// file-system effectively in Windows. So in that operating system only test the native mode.
+(os.platform() === 'win32' ? runInNativeWindowsFileSystem : runInEachFileSystem)(() => {
   let fs: PathManipulation;
   beforeEach(() => fs = getFileSystem());
   describe('utils', () => {
@@ -316,7 +321,7 @@ runInEachFileSystem(() => {
       it('should return a plain object containing the start, end and file of a NodePath', () => {
         const taggedTemplate = getTaggedTemplate('const x = $localize `message`;', {
           filename: 'src/test.js',
-          sourceRoot: '/root',
+          sourceRoot: realResolve('/root'),
         });
         const location = getLocation(fs, taggedTemplate)!;
         expect(location).toBeDefined();
@@ -324,7 +329,7 @@ runInEachFileSystem(() => {
         expect(location.start.constructor.name).toEqual('Object');
         expect(location.end).toEqual({line: 0, column: 29});
         expect(location.end?.constructor.name).toEqual('Object');
-        expect(location.file).toEqual(absoluteFrom('/root/src/test.js'));
+        expect(location.file).toEqual(getTestPath('/root/src/test.js'));
       });
 
       it('should return `undefined` if the NodePath has no filename', () => {
@@ -335,6 +340,11 @@ runInEachFileSystem(() => {
       });
     });
   });
+
+  function getTestPath(p: string): AbsoluteFsPath {
+    const cwd = '/';
+    return fs.resolve(realResolve(cwd, p));
+  }
 });
 
 function getTaggedTemplate(
@@ -353,7 +363,8 @@ function getExpressions<T extends Expression>(
   const expressions: NodePath<Expression>[] = [];
   transformSync(code, {
     code: false,
-    filename: '/test/file.js',
+    filename: 'test/file.js',
+    cwd: '/',
     plugins: [{
       visitor: {
         Expression: (path: NodePath<Expression>) => {
@@ -370,7 +381,8 @@ function getLocalizeCall(code: string): NodePath<CallExpression> {
   let callPaths: NodePath<CallExpression>[] = [];
   transformSync(code, {
     code: false,
-    filename: '/test/file.js',
+    filename: 'test/file.js',
+    cwd: '/',
     plugins: [{
       visitor: {
         CallExpression(path) {
@@ -387,4 +399,12 @@ function getLocalizeCall(code: string): NodePath<CallExpression> {
     throw new Error(`$localize cannot be found in ${code}`);
   }
   return localizeCall;
+}
+
+export function runInNativeWindowsFileSystem(callback: () => void) {
+  describe(`<<FileSystem: Native Windows>>`, () => {
+    beforeEach(() => setFileSystem(new MockFileSystemNative()));
+    afterEach(() => setFileSystem(new InvalidFileSystem()));
+    callback();
+  });
 }

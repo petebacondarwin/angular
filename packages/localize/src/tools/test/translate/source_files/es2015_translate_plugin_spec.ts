@@ -5,6 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import { absoluteFrom } from '@angular/compiler-cli/src/ngtsc/file_system';
 import {runInEachFileSystem} from '@angular/compiler-cli/src/ngtsc/file_system/testing';
 import {ɵcomputeMsgId, ɵparseTranslation} from '@angular/localize';
 import {ɵParsedTranslation} from '@angular/localize/private';
@@ -174,7 +175,8 @@ runInEachFileSystem(() => {
       pluginOptions?: TranslatePluginOptions, diagnostics = new Diagnostics()): string {
     return transformSync(input, {
              plugins: [makeEs2015TranslatePlugin(diagnostics, translations, pluginOptions)],
-             filename: '/app/dist/test.js'
+             filename: absoluteFrom('/app/dist/test.js'),
+             cwd : absoluteFrom('/')
            })!.code!;
   }
 });
