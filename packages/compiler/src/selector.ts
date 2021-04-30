@@ -13,11 +13,11 @@ const _SELECTOR_REGEXP = new RegExp(
         '(([\\.\\#]?)[-\\w]+)|' +  // 2: "tag"; 3: "."/"#";
         // "-" should appear first in the regexp below as FF31 parses "[.-\w]" as a range
         // 4: attribute; 5: attribute_string; 6: attribute_value
-        '(?:\\[([-.\\w*]+)(?:=([\"\']?)([^\\]\"\']*)\\5)?\\])|' +  // "[name]", "[name=value]",
-                                                                   // "[name="value"]",
-                                                                   // "[name='value']"
-        '(\\))|' +                                                 // 7: ")"
-        '(\\s*,\\s*)',                                             // 8: ","
+        '(?:\\[([-.\\w*\\\\$]+)(?:=([\"\']?)([^\\]\"\']*)\\5)?\\])|' +  // "[name]", "[name=value]",
+                                                                        // "[name="value"]",
+                                                                        // "[name='value']"
+        '(\\))|' +                                                      // 7: ")"
+        '(\\s*,\\s*)',                                                  // 8: ","
     'g');
 
 /**
@@ -95,7 +95,7 @@ export class CssSelector {
       }
       const attribute = match[SelectorRegexp.ATTRIBUTE];
       if (attribute) {
-        current.addAttribute(attribute, match[SelectorRegexp.ATTRIBUTE_VALUE]);
+        current.addAttribute(unescapeAttribute(attribute), match[SelectorRegexp.ATTRIBUTE_VALUE]);
       }
       if (match[SelectorRegexp.NOT_END]) {
         inNot = false;
@@ -165,7 +165,7 @@ export class CssSelector {
     }
     if (this.attrs) {
       for (let i = 0; i < this.attrs.length; i += 2) {
-        const name = this.attrs[i];
+        const name = escapeAttribute(this.attrs[i]);
         const value = this.attrs[i + 1];
         res += `[${name}${value ? '=' + value : ''}]`;
       }
@@ -173,6 +173,29 @@ export class CssSelector {
     this.notSelectors.forEach(notSelector => res += `:not(${notSelector})`);
     return res;
   }
+}
+
+function unescapeAttribute(attr: string): string {
+  let result = '';
+  let escaping = false;
+  for (let i = 0; i < attr.length; i++) {
+    const char = attr.charAt(i);
+    if (char === '\\') {
+      escaping = true;
+      continue;
+    }
+    if (char === '$' && !escaping) {
+      throw new Error(
+          `Error in attribute selector "${attr}". ` +
+          `Unescaped "$" is not supported. Please escape with "\\$".`);
+    }
+    result += char;
+  }
+  return result;
+}
+
+function escapeAttribute(attr: string): string {
+  return attr.replace(/\\/g, '\\\\').replace(/\$/g, '\\$');
 }
 
 /**

@@ -5,8 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-
-import {ɵgetDOM as getDOM} from '@angular/common';
 import {CssSelector, SelectorMatcher} from '@angular/compiler/src/selector';
 import {el} from '@angular/platform-browser/testing/src/browser_util';
 
@@ -319,6 +317,34 @@ import {el} from '@angular/platform-browser/testing/src/browser_util';
       expect(cssSelector.attrs).toEqual(['attrname', '']);
 
       expect(cssSelector.toString()).toEqual('[attrname]');
+    });
+
+    it('should detect attr names with escaped $', () => {
+      let cssSelector = CssSelector.parse('[attrname\\$]')[0];
+      expect(cssSelector.attrs).toEqual(['attrname$', '']);
+      expect(cssSelector.toString()).toEqual('[attrname\\$]');
+
+      cssSelector = CssSelector.parse('[\\$attrname]')[0];
+      expect(cssSelector.attrs).toEqual(['$attrname', '']);
+      expect(cssSelector.toString()).toEqual('[\\$attrname]');
+
+      cssSelector = CssSelector.parse('[foo\\$bar]')[0];
+      expect(cssSelector.attrs).toEqual(['foo$bar', '']);
+      expect(cssSelector.toString()).toEqual('[foo\\$bar]');
+    });
+
+    it('should error on attr names with unescaped $', () => {
+      expect(() => CssSelector.parse('[attrname$]'))
+          .toThrowError(
+              'Error in attribute selector "attrname$". Unescaped "$" is not supported. Please escape with "\\$".');
+
+      expect(() => CssSelector.parse('[$attrname]'))
+          .toThrowError(
+              'Error in attribute selector "$attrname". Unescaped "$" is not supported. Please escape with "\\$".');
+
+      expect(() => CssSelector.parse('[foo$bar]'))
+          .toThrowError(
+              'Error in attribute selector "foo$bar". Unescaped "$" is not supported. Please escape with "\\$".');
     });
 
     it('should detect attr values', () => {
