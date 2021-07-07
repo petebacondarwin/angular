@@ -31,6 +31,20 @@
       "angularCompilerOptions": {
         "transformAsyncAwaitForZoneJS": false
       }
+    },
+    {
+      "description": "should convert complex parameters for async functions to generator functions",
+      "inputFiles": [
+        "complex_params.ts"
+      ],
+      "expectations": [
+        {
+          "failureMessage": "Incorrect async function transformation"
+        }
+      ],
+      "angularCompilerOptions": {
+        "transformAsyncAwaitForZoneJS": true
+      }
     }
   ]
 }

@@ -82,7 +82,9 @@ class AsyncFunctionVisitor {
    */
   private transformAsyncFunction(asyncFn: ts.SignatureDeclaration): ts.Node {
     const modifiers = filterAsyncModifier(asyncFn.modifiers);
-    const awaiterCall = this.createAwaiterCall(asyncFn);
+    const generatorFn = this.createGeneratorFunction(asyncFn);
+    const args = this.convertParamsToArgs(asyncFn.parameters ?? []);
+    const awaiterCall = this.createAwaiterCall(generatorFn, args);
 
     if (ts.isArrowFunction(asyncFn)) {
       return this.factory.updateArrowFunction(
@@ -118,15 +120,58 @@ class AsyncFunctionVisitor {
    * Create a call to the `Zone.__awaiter()` function, which passes in the new generator function as
    * one of its parameters.
    */
-  private createAwaiterCall(asyncFn: ts.SignatureDeclaration): ts.CallExpression {
+  private createAwaiterCall(generatorFn: ts.FunctionExpression, args: ts.Expression[]):
+      ts.CallExpression {
     const globalZone = this.factory.createIdentifier('Zone');
     const awaiterFn = this.factory.createPropertyAccessExpression(globalZone, '__awaiter');
     const awaiterArgs: readonly ts.Expression[] = [
       this.factory.createThis(),
-      this.factory.createArrayLiteralExpression([]),
-      this.createGeneratorFunction(asyncFn),
+      this.factory.createArrayLiteralExpression(args),
+      generatorFn,
     ];
     return this.factory.createCallExpression(awaiterFn, undefined, awaiterArgs);
+  }
+
+  /**
+   * Convert the params to a list of expressions that can be passed as arguments.
+   *
+   * This is necessary because if we have `foo(...[{x: a}])` which is a complex parameter,
+   * we need to pass an equivalent expression through to the generator when calling it via
+   * the awaiter helper function, `Zone.__awaiter(this, [...[{x: a}]], generatorFn)`.
+   */
+  private convertParamsToArgs(params: readonly ts.ParameterDeclaration[]): ts.Expression[] {
+    const visitBinding: (node: ts.Node) => ts.Expression = node => {
+      if (ts.isIdentifier(node)) {
+        return node;
+      }
+      if (ts.isArrayBindingPattern(node)) {
+        const args = node.elements.map(element => {
+          if (ts.isOmittedExpression(element)) {
+            return element;
+          }
+          const arg = visitBinding(element.name);
+          return element.dotDotDotToken !== undefined ? this.factory.createSpreadElement(arg) : arg;
+        });
+        return this.factory.createArrayLiteralExpression(args);
+      }
+      if (ts.isObjectBindingPattern(node)) {
+        const args = node.elements.map(element => {
+          const name = visitBinding(element.name);
+          if (element.dotDotDotToken !== undefined) {
+            return this.factory.createSpreadAssignment(name);
+          }
+          return (element.propertyName === undefined && ts.isIdentifier(name)) ?
+              this.factory.createShorthandPropertyAssignment(name) :
+              this.factory.createPropertyAssignment(element.propertyName!, name);
+        });
+        return this.factory.createObjectLiteralExpression(args);
+      }
+      throw new Error('Unknown parameter binding expression');
+    };
+    return params.map(param => {
+      const arg = visitBinding(param.name);
+      return param.dotDotDotToken !== undefined ? this.factory.createSpreadElement(arg) : arg;
+    });
   }
 
   /**
@@ -137,7 +182,7 @@ class AsyncFunctionVisitor {
     const generatorName = this.computeGeneratorName(asyncFn);
     const generatorBody = this.createGeneratorBody(asyncFn);
     const generatorFn = this.factory.createFunctionExpression(
-        undefined, star, generatorName, undefined, undefined, undefined, generatorBody);
+        undefined, star, generatorName, undefined, asyncFn.parameters, undefined, generatorBody);
     return generatorFn;
   }
 

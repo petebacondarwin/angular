@@ -11,6 +11,7 @@ import {MockFileSystem, runInEachFileSystem} from '../../file_system/testing';
 import {loadStandardTestFiles, makeProgram} from '../../testing';
 import {createAsyncTransform} from '../src/async_transform';
 
+
 runInEachFileSystem(() => {
   describe('async transform', () => {
     let _: typeof absoluteFrom;
@@ -134,7 +135,7 @@ runInEachFileSystem(() => {
       const emittedContent = emitProgram(testFile);
       expect(emittedContent.split(/\r?\n/g)).toEqual([
         'export const foo = function foo(a, b) {',
-        '    return Zone.__awaiter(this, [], function* foo_generator_1() {',
+        '    return Zone.__awaiter(this, [a, b], function* foo_generator_1(a, b) {',
         '        const x = yield a;',
         '        if (x) {',
         '            yield 200;',
@@ -162,7 +163,7 @@ runInEachFileSystem(() => {
       const emittedContent = emitProgram(testFile);
       expect(emittedContent.split(/\r?\n/g)).toEqual([
         'export function foo(a, b) {',
-        '    return Zone.__awaiter(this, [], function* foo_generator_1() {',
+        '    return Zone.__awaiter(this, [a, b], function* foo_generator_1(a, b) {',
         '        const x = yield a;',
         '        if (x) {',
         '            yield 200;',
@@ -189,7 +190,7 @@ runInEachFileSystem(() => {
       };
       const emittedContent = emitProgram(testFile);
       expect(emittedContent.split(/\r?\n/g)).toEqual([
-        'const foo = (a, b) => Zone.__awaiter(this, [], function* anonymous_generator_1() {',
+        'const foo = (a, b) => Zone.__awaiter(this, [a, b], function* anonymous_generator_1(a, b) {',
         '    const x = yield a;',
         '    if (x) {',
         '        yield 200;',
@@ -219,7 +220,7 @@ runInEachFileSystem(() => {
       expect(emittedContent.split(/\r?\n/g)).toEqual([
         'class Test {',
         '    foo(a, b) {',
-        '        return Zone.__awaiter(this, [], function* foo_generator_1() {',
+        '        return Zone.__awaiter(this, [a, b], function* foo_generator_1(a, b) {',
         '            const x = yield a;',
         '            if (x) {',
         '                yield 200;',
@@ -252,7 +253,7 @@ runInEachFileSystem(() => {
         'const Input = {};',
         'class Test {',
         '    foo(a, b) {',
-        '        return Zone.__awaiter(this, [], function* foo_generator_1() {',
+        '        return Zone.__awaiter(this, [a, b], function* foo_generator_1(a, b) {',
         '            return yield 300;',
         '        });',
         '    }',
@@ -260,6 +261,36 @@ runInEachFileSystem(() => {
         '__decorate([',
         '    Input',
         '], Test.prototype, "foo", null);',
+        '',
+      ]);
+    });
+
+    it('should transform array literal function parameters correctly', () => {
+      const testFile = {
+        name: _('/test.ts'),
+        contents: 'export async function foo(...[a, [b = 20], ...c]: any[]) {};',
+      };
+      const emittedContent = emitProgram(testFile);
+      expect(emittedContent.split(/\r?\n/g)).toEqual([
+        'export function foo(...[a, [b = 20], ...c]) {',
+        '    return Zone.__awaiter(this, [...[a, [b], ...c]], function* foo_generator_1(...[a, [b = 20], ...c]) { });',
+        '}',
+        ';',
+        '',
+      ]);
+    });
+
+    it('should transform object literal function parameters correctly', () => {
+      const testFile = {
+        name: _('/test.ts'),
+        contents: 'export async function foo({a = 10}, ...{"b-b": {c: d = 20}, ...e}) {};',
+      };
+      const emittedContent = emitProgram(testFile);
+      expect(emittedContent.split(/\r?\n/g)).toEqual([
+        'export function foo({ a = 10 }, ...{ "b-b": { c: d = 20 }, ...e }) {',
+        '    return Zone.__awaiter(this, [{ a }, ...{ "b-b": { c: d }, ...e }], function* foo_generator_1({ a = 10 }, ...{ "b-b": { c: d = 20 }, ...e }) { });',
+        '}',
+        ';',
         '',
       ]);
     });
