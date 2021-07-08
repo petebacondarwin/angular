@@ -52,10 +52,11 @@ runInEachFileSystem(() => {
       };
       const emittedContent = emitProgram(testFile);
       expect(emittedContent.split(/\r?\n/g)).toEqual([
+        'function* foo_generator_1() {',
+        '    return 100;',
+        '}',
         'export const foo = function foo() {',
-        '    return Zone.__awaiter(this, [], function* foo_generator_1() {',
-        '        return 100;',
-        '    });',
+        '    return Zone.__awaiter(this, [], foo_generator_1);',
         '};',
         '',
       ]);
@@ -72,10 +73,11 @@ runInEachFileSystem(() => {
       };
       const emittedContent = emitProgram(testFile);
       expect(emittedContent.split(/\r?\n/g)).toEqual([
+        'function* foo_generator_1() {',
+        '    return 100;',
+        '}',
         'function foo() {',
-        '    return Zone.__awaiter(this, [], function* foo_generator_1() {',
-        '        return 100;',
-        '    });',
+        '    return Zone.__awaiter(this, [], foo_generator_1);',
         '}',
         '',
       ]);
@@ -90,7 +92,8 @@ runInEachFileSystem(() => {
       };
       const emittedContent = emitProgram(testFile);
       expect(emittedContent.split(/\r?\n/g)).toEqual([
-        'const foo = () => Zone.__awaiter(this, [], function* anonymous_generator_1() { return 100; });',
+        'function* anonymous_generator_1() { return 100; }',
+        'const foo = () => Zone.__awaiter(this, [], anonymous_generator_1);',
         '',
       ]);
     });
@@ -108,11 +111,12 @@ runInEachFileSystem(() => {
       };
       const emittedContent = emitProgram(testFile);
       expect(emittedContent.split(/\r?\n/g)).toEqual([
+        'function* foo_generator_1() {',
+        '    return 100;',
+        '}',
         'class Test {',
         '    foo() {',
-        '        return Zone.__awaiter(this, [], function* foo_generator_1() {',
-        '            return 100;',
-        '        });',
+        '        return Zone.__awaiter(this, [], foo_generator_1);',
         '    }',
         '}',
         '',
@@ -134,14 +138,15 @@ runInEachFileSystem(() => {
       };
       const emittedContent = emitProgram(testFile);
       expect(emittedContent.split(/\r?\n/g)).toEqual([
+        'function* foo_generator_1(a, b) {',
+        '    const x = yield a;',
+        '    if (x) {',
+        '        yield 200;',
+        '    }',
+        '    return yield 300;',
+        '}',
         'export const foo = function foo(a, b) {',
-        '    return Zone.__awaiter(this, [a, b], function* foo_generator_1(a, b) {',
-        '        const x = yield a;',
-        '        if (x) {',
-        '            yield 200;',
-        '        }',
-        '        return yield 300;',
-        '    });',
+        '    return Zone.__awaiter(this, [a, b], foo_generator_1);',
         '};',
         '',
       ]);
@@ -162,14 +167,15 @@ runInEachFileSystem(() => {
       };
       const emittedContent = emitProgram(testFile);
       expect(emittedContent.split(/\r?\n/g)).toEqual([
+        'function* foo_generator_1(a, b) {',
+        '    const x = yield a;',
+        '    if (x) {',
+        '        yield 200;',
+        '    }',
+        '    return yield 300;',
+        '}',
         'export function foo(a, b) {',
-        '    return Zone.__awaiter(this, [a, b], function* foo_generator_1(a, b) {',
-        '        const x = yield a;',
-        '        if (x) {',
-        '            yield 200;',
-        '        }',
-        '        return yield 300;',
-        '    });',
+        '    return Zone.__awaiter(this, [a, b], foo_generator_1);',
         '}',
         '',
       ]);
@@ -190,13 +196,14 @@ runInEachFileSystem(() => {
       };
       const emittedContent = emitProgram(testFile);
       expect(emittedContent.split(/\r?\n/g)).toEqual([
-        'const foo = (a, b) => Zone.__awaiter(this, [a, b], function* anonymous_generator_1(a, b) {',
+        'function* anonymous_generator_1(a, b) {',
         '    const x = yield a;',
         '    if (x) {',
         '        yield 200;',
         '    }',
         '    return yield 300;',
-        '});',
+        '}',
+        'const foo = (a, b) => Zone.__awaiter(this, [a, b], anonymous_generator_1);',
         '',
       ]);
     });
@@ -218,15 +225,16 @@ runInEachFileSystem(() => {
       };
       const emittedContent = emitProgram(testFile);
       expect(emittedContent.split(/\r?\n/g)).toEqual([
+        'function* foo_generator_1(a, b) {',
+        '    const x = yield a;',
+        '    if (x) {',
+        '        yield 200;',
+        '    }',
+        '    return yield 300;',
+        '}',
         'class Test {',
         '    foo(a, b) {',
-        '        return Zone.__awaiter(this, [a, b], function* foo_generator_1(a, b) {',
-        '            const x = yield a;',
-        '            if (x) {',
-        '                yield 200;',
-        '            }',
-        '            return yield 300;',
-        '        });',
+        '        return Zone.__awaiter(this, [a, b], foo_generator_1);',
         '    }',
         '}',
         '',
@@ -248,14 +256,15 @@ runInEachFileSystem(() => {
       };
       const emittedContent = emitProgram(testFile);
       // Strip out the decorator helper code
-      const cleanedContent = emittedContent.replace(/^[\s\S]*const Input/, 'const Input');
+      const cleanedContent = emittedContent.replace(/^[\s\S]*function\*/, 'function*');
       expect(cleanedContent.split(/\r?\n/g)).toEqual([
+        'function* foo_generator_1(a, b) {',
+        '    return yield 300;',
+        '}',
         'const Input = {};',
         'class Test {',
         '    foo(a, b) {',
-        '        return Zone.__awaiter(this, [a, b], function* foo_generator_1(a, b) {',
-        '            return yield 300;',
-        '        });',
+        '        return Zone.__awaiter(this, [a, b], foo_generator_1);',
         '    }',
         '}',
         '__decorate([',
@@ -272,8 +281,9 @@ runInEachFileSystem(() => {
       };
       const emittedContent = emitProgram(testFile);
       expect(emittedContent.split(/\r?\n/g)).toEqual([
+        'function* foo_generator_1(...[a, [b = 20], ...c]) { }',
         'export function foo(...[a, [b = 20], ...c]) {',
-        '    return Zone.__awaiter(this, [...[a, [b], ...c]], function* foo_generator_1(...[a, [b = 20], ...c]) { });',
+        '    return Zone.__awaiter(this, [...[a, [b], ...c]], foo_generator_1);',
         '}',
         ';',
         '',
@@ -287,8 +297,9 @@ runInEachFileSystem(() => {
       };
       const emittedContent = emitProgram(testFile);
       expect(emittedContent.split(/\r?\n/g)).toEqual([
+        'function* foo_generator_1({ a = 10 }, ...{ "b-b": { c: d = 20 }, ...e }) { }',
         'export function foo({ a = 10 }, ...{ "b-b": { c: d = 20 }, ...e }) {',
-        '    return Zone.__awaiter(this, [{ a }, ...{ "b-b": { c: d }, ...e }], function* foo_generator_1({ a = 10 }, ...{ "b-b": { c: d = 20 }, ...e }) { });',
+        '    return Zone.__awaiter(this, [{ a }, ...{ "b-b": { c: d }, ...e }], foo_generator_1);',
         '}',
         ';',
         '',

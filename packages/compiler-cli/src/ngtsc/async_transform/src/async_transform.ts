@@ -82,9 +82,11 @@ class AsyncFunctionVisitor {
    */
   private transformAsyncFunction(asyncFn: ts.SignatureDeclaration): ts.Node {
     const modifiers = filterAsyncModifier(asyncFn.modifiers);
-    const generatorFn = this.createGeneratorFunction(asyncFn);
+    const generatorName = this.computeGeneratorName(asyncFn);
+    const generatorFn = this.createGeneratorFunction(asyncFn, generatorName);
+    this.context.hoistFunctionDeclaration(generatorFn);
     const args = this.convertParamsToArgs(asyncFn.parameters ?? []);
-    const awaiterCall = this.createAwaiterCall(generatorFn, args);
+    const awaiterCall = this.createAwaiterCall(generatorName, args);
 
     if (ts.isArrowFunction(asyncFn)) {
       return this.factory.updateArrowFunction(
@@ -120,8 +122,7 @@ class AsyncFunctionVisitor {
    * Create a call to the `Zone.__awaiter()` function, which passes in the new generator function as
    * one of its parameters.
    */
-  private createAwaiterCall(generatorFn: ts.FunctionExpression, args: ts.Expression[]):
-      ts.CallExpression {
+  private createAwaiterCall(generatorFn: ts.Expression, args: ts.Expression[]): ts.CallExpression {
     const globalZone = this.factory.createIdentifier('Zone');
     const awaiterFn = this.factory.createPropertyAccessExpression(globalZone, '__awaiter');
     const awaiterArgs: readonly ts.Expression[] = [
@@ -177,12 +178,13 @@ class AsyncFunctionVisitor {
   /**
    * Create the generator function that will replace the async function.
    */
-  private createGeneratorFunction(asyncFn: ts.SignatureDeclaration): ts.FunctionExpression {
+  private createGeneratorFunction(asyncFn: ts.SignatureDeclaration, generatorName: ts.Identifier):
+      ts.FunctionDeclaration {
     const star = this.factory.createToken(ts.SyntaxKind.AsteriskToken);
-    const generatorName = this.computeGeneratorName(asyncFn);
     const generatorBody = this.createGeneratorBody(asyncFn);
-    const generatorFn = this.factory.createFunctionExpression(
-        undefined, star, generatorName, undefined, asyncFn.parameters, undefined, generatorBody);
+    const generatorFn = this.factory.createFunctionDeclaration(
+        undefined, undefined, star, generatorName, undefined, asyncFn.parameters, undefined,
+        generatorBody);
     return generatorFn;
   }
 
