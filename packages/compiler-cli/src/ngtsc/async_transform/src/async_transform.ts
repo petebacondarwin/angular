@@ -31,8 +31,10 @@ export function createAsyncTransform(): ts.TransformerFactory<ts.SourceFile> {
 
     // The transformer function.
     return (sourceFile) => {
-      if (!sourceFile.text.includes('async')) {
-        // Do not waste time with visiting the AST if there is no `async` string in the file.
+      if (sourceFile.isDeclarationFile || !sourceFile.text.includes('async')) {
+        // Do not waste time visiting the AST if:
+        // - it is a .d.ts file or
+        // - there is no `async` string in the file.
         return sourceFile;
       }
       return ts.visitNode(sourceFile, visitor.visit);
@@ -44,8 +46,9 @@ export function createAsyncTransform(): ts.TransformerFactory<ts.SourceFile> {
  * This class implements a TypeScript visitor function to transform async functions into Zone safe
  * wrapped generator functions.
  */
-class AsyncFunctionVisitor {
+export class AsyncFunctionVisitor {
   private readonly factory = this.context.factory;
+  private readonly asyncFnStack: any[] = [];
 
   constructor(private readonly context: ts.TransformationContext) {}
 
@@ -56,20 +59,40 @@ class AsyncFunctionVisitor {
    * value correctly when called as a free-standing function.
    */
   visit: ts.Visitor = node => {
-    node = ts.visitEachChild(node, this.visit, this.context);
-
-    if (isAsyncFunction(node)) {
-      // Convert async functions to generators wrapped in `Zone.__awaiter()` calls.
-      node = this.transformAsyncFunction(node);
+    let result = this.enter(node);
+    if (result === undefined) {
+      return undefined;
     }
+    result = flatMap(result, node => ts.visitEachChild(node, this.visit, this.context));
+    return flatMap(result, node => this.exit(node));
+  };
 
+  /**
+   * Processing on a node when it is first encountered before any children have been processed.
+   */
+  private enter(node: ts.Node): ts.VisitResult<ts.Node> {
+    if (isAsyncFunction(node)) {
+      this.asyncFnStack.push(node);
+    }
+    return node;
+  }
+
+  /**
+   * Processing on a node after all its children have been processed.
+   */
+  private exit(node: ts.Node): ts.VisitResult<ts.Node> {
     if (ts.isAwaitExpression(node)) {
       // Convert `await` to `yield`.
       node = this.factory.createYieldExpression(undefined, node.expression);
     }
 
+    if (isAsyncFunction(node)) {
+      this.asyncFnStack.pop();
+      // Convert async functions to generators wrapped in `Zone.__awaiter()` calls.
+      node = this.transformAsyncFunction(node);
+    }
     return node;
-  };
+  }
 
   /**
    * Transform the identified async function into a generator function that is wrapped in a call to
@@ -85,6 +108,7 @@ class AsyncFunctionVisitor {
     const generatorName = this.computeGeneratorName(asyncFn);
     const generatorFn = this.createGeneratorFunction(asyncFn, generatorName);
     this.context.hoistFunctionDeclaration(generatorFn);
+
     const args = this.convertParamsToArgs(asyncFn.parameters ?? []);
     const awaiterCall = this.createAwaiterCall(generatorName, args);
 
@@ -185,7 +209,7 @@ class AsyncFunctionVisitor {
     const generatorFn = this.factory.createFunctionDeclaration(
         undefined, undefined, star, generatorName, undefined, asyncFn.parameters, undefined,
         generatorBody);
-    return generatorFn;
+    return ts.visitEachChild(generatorFn, this.visit, this.context);
   }
 
   /**
@@ -273,4 +297,27 @@ function hasFunctionBody(fn: ts.SignatureDeclaration): fn is ts.SignatureDeclara
     {body: ts.FunctionBody} {
   return ts.isFunctionExpression(fn) || ts.isFunctionDeclaration(fn) ||
       ts.isMethodDeclaration(fn) && fn.body !== undefined;
+}
+
+function flatMap(
+    nodes: ts.VisitResult<ts.Node>,
+    transformFn: (node: ts.Node) => ts.VisitResult<ts.Node>): ts.VisitResult<ts.Node> {
+  if (nodes === undefined) {
+    return undefined;
+  }
+  if (!Array.isArray(nodes)) {
+    return transformFn(nodes);
+  }
+  const results: ts.Node[] = [];
+  for (const node of nodes) {
+    const result = transformFn(node);
+    if (result === undefined) {
+      continue;
+    } else if (Array.isArray(result)) {
+      results.push(...result);
+    } else {
+      results.push(result);
+    }
+  }
+  return results;
 }

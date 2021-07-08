@@ -23,7 +23,7 @@ runInEachFileSystem(() => {
       fs.init(libs);
     });
 
-    it('should ignore code that does not contain `async` keyword', () => {
+    it('should not change code that does not contain `async` keyword', () => {
       const testFile = {
         name: _('/test.ts'),
         contents: `
@@ -116,6 +116,31 @@ runInEachFileSystem(() => {
         '}',
         'class Test {',
         '    foo() {',
+        '        return Zone.__awaiter(this, [], foo_generator_1);',
+        '    }',
+        '}',
+        '',
+      ]);
+    });
+
+    it('should transform a simple async static method to a generator', () => {
+      const testFile = {
+        name: _('/test.ts'),
+        contents: [
+          'class Test {',
+          '  static async foo() {',
+          '    return 100;',
+          '  }',
+          '}',
+        ].join('\n')
+      };
+      const emittedContent = emitProgram(testFile);
+      expect(emittedContent.split(/\r?\n/g)).toEqual([
+        'function* foo_generator_1() {',
+        '    return 100;',
+        '}',
+        'class Test {',
+        '    static foo() {',
         '        return Zone.__awaiter(this, [], foo_generator_1);',
         '    }',
         '}',
@@ -274,10 +299,89 @@ runInEachFileSystem(() => {
       ]);
     });
 
+    it('should transform nested async functions', () => {
+      const testFile = {
+        name: _('/test.ts'),
+        contents: [
+          'async function outer(x, y) {',
+          '  async function inner(a, b) {',
+          '    return await 300;',
+          '  }',
+          '  await inner(x, y);',
+          '}',
+        ].join('\n')
+      };
+      const emittedContent = emitProgram(testFile);
+      expect(emittedContent.split(/\r?\n/g)).toEqual([
+        'function* outer_generator_1(x, y) {',
+        '    function* inner_generator_1(a, b) {',
+        '        return yield 300;',
+        '    }',
+        '    function inner(a, b) {',
+        '        return Zone.__awaiter(this, [a, b], inner_generator_1);',
+        '    }',
+        '    yield inner(x, y);',
+        '}',
+        'function outer(x, y) {',
+        '    return Zone.__awaiter(this, [x, y], outer_generator_1);',
+        '}',
+        '',
+      ]);
+    });
+
+    xit('should transform a super accesses within a method', () => {
+      const testFile = {
+        name: _('/test.ts'),
+        contents: [
+          'class Base {',
+          '  async foo(a, b) {}',
+          '  bar() {}',
+          '}',
+          'class Child extends Base {',
+          '  async foo(a, b) {',
+          '    await super.foo(a, b);',
+          '    super["bar"]();',
+          '    const foo = super.foo;',
+          '    const bar = () => super.foo(10, 20);',
+          '    super.bar = () => {};',
+          '  }',
+          '}',
+        ].join('\n')
+      };
+      const emittedContent = emitProgram(testFile);
+      // Note that since we need to access the `_super` variable the generator is defined inline.
+      expect(emittedContent.split(/\r?\n/g)).toEqual([
+        'function foo_generator_1* (a, b) {}',
+        'class Base {',
+        '    foo(a, b) {',
+        '        __awaiter(this, [a, b], foo_generator_1)',
+        '    }',
+        '    bar() {}',
+        '}',
+        'class Child extends Base {',
+        '    foo(a, b) {',
+        // '        const _super = Object.create(null, {',
+        // '            foo: { get: () => super.foo }',
+        // '            bar: { get: () => super.bar, set: v => super.bar = v }',
+        // '        });',
+        '        const _super = super.constructor.prototype;',
+        '        return __awaiter(this, [a, b], function* foo_generator_1(a, b) {',
+        '            yield _super.foo.call(this, a, b);',
+        '            _super["bar"].call(this);',
+        '            const foo = _super.foo;',
+        '            const bar = () => _super.foo.call(this, 10, 20);',
+        '            _super.bar = () => {};',
+        '        });',
+        '    }',
+        '}',
+        '',
+      ]);
+    });
+
     it('should transform array literal function parameters correctly', () => {
       const testFile = {
         name: _('/test.ts'),
-        contents: 'export async function foo(...[a, [b = 20], ...c]: any[]) {};',
+        contents: 'export async function foo(...[a, [b = 20], ...c]: any[]) {}',
       };
       const emittedContent = emitProgram(testFile);
       expect(emittedContent.split(/\r?\n/g)).toEqual([
@@ -285,7 +389,6 @@ runInEachFileSystem(() => {
         'export function foo(...[a, [b = 20], ...c]) {',
         '    return Zone.__awaiter(this, [...[a, [b], ...c]], foo_generator_1);',
         '}',
-        ';',
         '',
       ]);
     });
@@ -293,7 +396,7 @@ runInEachFileSystem(() => {
     it('should transform object literal function parameters correctly', () => {
       const testFile = {
         name: _('/test.ts'),
-        contents: 'export async function foo({a = 10}, ...{"b-b": {c: d = 20}, ...e}) {};',
+        contents: 'export async function foo({a = 10}, ...{"b-b": {c: d = 20}, ...e}) {}',
       };
       const emittedContent = emitProgram(testFile);
       expect(emittedContent.split(/\r?\n/g)).toEqual([
@@ -301,7 +404,6 @@ runInEachFileSystem(() => {
         'export function foo({ a = 10 }, ...{ "b-b": { c: d = 20 }, ...e }) {',
         '    return Zone.__awaiter(this, [{ a }, ...{ "b-b": { c: d }, ...e }], foo_generator_1);',
         '}',
-        ';',
         '',
       ]);
     });
