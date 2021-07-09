@@ -26,6 +26,7 @@
     {% if doc.deprecated !== undefined %}<label class="api-status-label deprecated">deprecated</label>{% endif %}
     {% if doc.security !== undefined %}<label class="api-status-label security">security</label>{% endif %}
     {% if doc.pipeOptions.pure === 'false' %}<label class="api-status-label impure-pipe">impure</label>{% endif %}
+    {% if doc.docType === 'class' and doc.extensible !== true %}<label class="api-status-label sealed" title="This class should not be extended.">sealed</label>{% endif %}
   </header>
   {% endblock %}
   <aio-toc class="embedded"></aio-toc>
