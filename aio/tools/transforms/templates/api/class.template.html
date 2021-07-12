@@ -1,15 +1,5 @@
 {% import "lib/ngmodule.html" as ngModuleHelpers -%}
 {% extends 'export-base.template.html' -%}
-{% block shortDescription %}
-    {$ doc.shortDescription | marked $}
-    {% if doc.docType === 'class' and doc.extensible !== true %}
-    <p class="final-message">
-      This class is "final" should not be extended.
-      See the <a href="https://github.com/angular/angular/blob/master/docs/PUBLIC_API.md#final-classes">public API notes</a>.
-    </p>
-    {% endif %}
-    {% if doc.description %}<p><a href="#description">See more...</a></p>{% endif %}
-  {% endblock %}
 {% block overview %}
   {% include "includes/class-overview.html" %}
 {% endblock %}
