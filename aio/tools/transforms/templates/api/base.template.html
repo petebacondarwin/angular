@@ -27,7 +27,7 @@
     {% if doc.security !== undefined %}<label class="api-status-label security">security</label>{% endif %}
     {% if doc.pipeOptions.pure === 'false' %}<label class="api-status-label impure-pipe">impure</label>{% endif %}
     {% if doc.docType === 'class' and doc.extensible !== true %}<label class="github-links api-status-label final" title="This class should not be extended.">
-      <a href="https://github.com/angular/angular/blob/master/docs/PUBLIC_API.md#final-classes">final</a>
+      <a href="{$ github.githubVersionedUrl(versionInfo) $}/docs/PUBLIC_API.md#final-classes">final</a>
     </label>{% endif %}
   </header>
   {% endblock %}
