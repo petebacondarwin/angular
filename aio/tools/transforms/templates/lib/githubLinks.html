@@ -13,7 +13,7 @@ https://github.com/{$ versionInfo.gitRepoInfo.owner $}/{$ versionInfo.gitRepoInf
 
 {% macro githubViewHref(doc, versionInfo) -%}
 {% set lineInfo = doc.startingLine and ('#L' + (doc.startingLine + 1) + '-L' + (doc.endingLine + 1)) or '' -%}
-{$ githubVersionedUrl(versionInfo) $}/tree/{$ version $}/{$ projectRelativePath(doc.fileInfo) $}{$ lineInfo $}
+{$ githubVersionedUrl(versionInfo) $}/{$ projectRelativePath(doc.fileInfo) $}{$ lineInfo $}
 {%- endmacro %}
 
 {% macro githubEditHref(doc, versionInfo, pathPrefix) -%}
